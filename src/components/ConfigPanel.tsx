@@ -73,7 +73,7 @@ const FONTS: { value: string; label: string; preview: string; googleFamily?: str
 
 export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMermaidThemeChange }: ConfigPanelProps) {
   const diagramType = detectDiagramType(code)
-  const isBaseTheme = mermaidTheme === 'base'
+  const isBaseTheme = mermaidTheme === 'base' || !(['default', 'neutral', 'dark', 'forest'] as string[]).includes(mermaidTheme)
   const isDark = mode === 'dark'
   const [viewMode, setViewMode] = useState<'visual' | 'json'>('visual')
   // In JSON mode: track user-edited text separately; in visual mode: derive from config

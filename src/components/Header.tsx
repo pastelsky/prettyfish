@@ -246,7 +246,31 @@ function ThemeDropdown({
         )}
         style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
           <div className="py-1">
-            {MERMAID_THEMES.map((t) => {
+            {/* Built-in themes */}
+            <div className={cn('px-3 pt-1 pb-0.5 text-[9px] font-semibold uppercase tracking-widest', isDark ? 'text-zinc-600' : 'text-zinc-400')}>Built-in</div>
+            {MERMAID_THEMES.filter(t => t.group === 'builtin').map((t) => {
+              const isActive = t.value === value
+              return (
+                <button
+                  key={t.value}
+                  onClick={() => { onChange(t.value); setOpen(false) }}
+                  className={cn(
+                    'flex items-center justify-between w-full px-3 py-1.5 text-xs cursor-pointer transition-colors text-left',
+                    isActive
+                      ? (isDark ? 'bg-primary/15 text-primary' : 'bg-primary/8 text-primary')
+                      : (isDark ? 'text-zinc-100 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4'),
+                  )}
+                >
+                  {t.label}
+                  {isActive && <Check className="w-3 h-3" />}
+                </button>
+              )
+            })}
+            {/* Separator */}
+            <div className={cn('mx-2 my-1 h-px', isDark ? 'bg-white/8' : 'bg-black/6')} />
+            {/* Custom themes */}
+            <div className={cn('px-3 pt-0.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest', isDark ? 'text-zinc-600' : 'text-zinc-400')}>Custom</div>
+            {MERMAID_THEMES.filter(t => t.group === 'custom').map((t) => {
               const isActive = t.value === value
               return (
                 <button

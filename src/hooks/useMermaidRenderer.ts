@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import mermaid from 'mermaid'
 import type { MermaidTheme, DiagramConfig } from '../types'
+import { BUILTIN_THEMES } from '../types'
+import { CUSTOM_THEME_PRESETS } from '../lib/themePresets'
 
 let renderCounter = 0
 
@@ -106,16 +108,21 @@ export function useMermaidRenderer(
       }
 
       const fontSizeStr = `${diagramConfig.fontSize}px`
+      const isCustom = !BUILTIN_THEMES.has(theme)
+      const customPreset = isCustom ? CUSTOM_THEME_PRESETS[theme] : null
+      const effectiveTheme = isCustom ? 'base' : theme
+
       mermaid.initialize({
         startOnLoad: false,
-        theme,
+        theme: effectiveTheme,
         securityLevel: 'loose',
         look: diagramConfig.look,
         fontFamily: diagramConfig.fontFamily,
         fontSize: diagramConfig.fontSize,
         themeVariables: {
+          ...(customPreset ? customPreset.themeVariables : {}),
           ...diagramConfig.themeVariables,
-          fontFamily: diagramConfig.fontFamily,
+          fontFamily: customPreset?.themeVariables.fontFamily ?? diagramConfig.fontFamily,
           fontSize: fontSizeStr,
         },
         flowchart: diagramConfig.flowchart,
