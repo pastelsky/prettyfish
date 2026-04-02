@@ -12,18 +12,14 @@ import {
   X,
   CaretDown,
   Books,
-  CaretUpDown,
-  PencilSimple,
-  TrashSimple,
-  Plus,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { copyShareUrl } from '../lib/share'
 import { ExportPopover } from './ExportPopover'
-import type { AppMode, AppState, MermaidTheme, DiagramPage } from '../types'
+import { PagesDropdown } from './PagesDropdown'
+import type { AppMode, AppState, MermaidTheme, DiagramPage, DiagramFolder } from '../types'
 import { MERMAID_THEMES } from '../types'
 import { CUSTOM_THEME_PRESETS } from '@/lib/themePresets'
-import { detectDiagramType, type DiagramType } from '@/lib/detectDiagram'
 
 /** Color swatches for theme preview — [primary, secondary, accent/line] */
 const THEME_SWATCHES: Record<string, [string, string, string]> = {
@@ -57,12 +53,18 @@ interface HeaderProps {
   pageName: string
   getState: () => AppState
   pages: DiagramPage[]
+  folders: DiagramFolder[]
   activePageId: string
   onSelectPage: (id: string) => void
   onAddPage: () => string
   onRenamePage: (id: string, name: string) => void
   onDeletePage: (id: string) => void
   onReorderPages: (from: number, to: number) => void
+  onAddFolder: (name: string) => string
+  onDeleteFolder: (id: string) => void
+  onRenameFolder: (id: string, name: string) => void
+  onToggleFolderCollapsed: (id: string) => void
+  onMovePageToFolder: (pageId: string, folderId: string | null) => void
   onModeChange: (mode: AppMode) => void
   onMermaidThemeChange: (theme: MermaidTheme) => void
   onToggleSidebar: () => void
@@ -81,12 +83,18 @@ export function Header({ pageName,
   previewBg,
   getState,
   pages,
+  folders,
   activePageId,
   onSelectPage,
   onAddPage,
   onRenamePage,
   onDeletePage,
   onReorderPages,
+  onAddFolder,
+  onDeleteFolder,
+  onRenameFolder,
+  onToggleFolderCollapsed,
+  onMovePageToFolder,
   onModeChange,
   onMermaidThemeChange,
   onToggleSidebar,
@@ -140,12 +148,18 @@ export function Header({ pageName,
       <div className={pillClass}>
         <PagesDropdown
           pages={pages}
+          folders={folders}
           activePageId={activePageId}
           onSelectPage={onSelectPage}
           onAddPage={onAddPage}
           onRenamePage={onRenamePage}
           onDeletePage={onDeletePage}
           onReorderPages={onReorderPages}
+          onAddFolder={onAddFolder}
+          onDeleteFolder={onDeleteFolder}
+          onRenameFolder={onRenameFolder}
+          onToggleFolderCollapsed={onToggleFolderCollapsed}
+          onMovePageToFolder={onMovePageToFolder}
           isDark={isDark}
         />
       </div>
@@ -259,255 +273,6 @@ export function Header({ pageName,
   )
 }
 
-// ── Diagram Icon ──────────────────────────────────────────────────────────────
-
-function DiagramIcon({ type, className }: { type: DiagramType; className?: string }) {
-  const base = { fill: 'none', stroke: 'currentColor', strokeLinecap: 'round' as const, strokeLinejoin: 'round' as const }
-
-  switch (type) {
-    case 'flowchart': return (
-      <svg viewBox="0 0 24 24" className={className} {...base}>
-        <rect x="7" y="1.5" width="10" height="6" rx="1.5" strokeWidth="1.4"/>
-        <line x1="12" y1="7.5" x2="12" y2="10.5" strokeWidth="1.4"/>
-        <polygon points="12,10.5 7,16 17,16" strokeWidth="1.4" fill="none"/>
-        <line x1="7" y1="16" x2="4" y2="16" strokeWidth="1.3"/>
-        <line x1="17" y1="16" x2="20" y2="16" strokeWidth="1.3"/>
-        <rect x="1" y="16" width="6" height="5.5" rx="1.2" strokeWidth="1.3"/>
-        <rect x="17" y="16" width="6" height="5.5" rx="1.2" strokeWidth="1.3"/>
-      </svg>
-    )
-    case 'sequence': return (
-      <svg viewBox="0 0 24 24" className={className} {...base}>
-        <rect x="2" y="1" width="5" height="4" rx="1" strokeWidth="1.4"/>
-        <rect x="17" y="1" width="5" height="4" rx="1" strokeWidth="1.4"/>
-        <line x1="4.5" y1="5" x2="4.5" y2="23" strokeWidth="1.1" strokeDasharray="2 1.5"/>
-        <line x1="19.5" y1="5" x2="19.5" y2="23" strokeWidth="1.1" strokeDasharray="2 1.5"/>
-        <line x1="4.5" y1="9" x2="19.5" y2="9" strokeWidth="1.4"/>
-        <polyline points="16.5,7.5 19.5,9 16.5,10.5" strokeWidth="1.3"/>
-        <line x1="19.5" y1="14" x2="4.5" y2="14" strokeWidth="1.3" strokeDasharray="2.5 1.5"/>
-        <polyline points="7.5,12.5 4.5,14 7.5,15.5" strokeWidth="1.3"/>
-      </svg>
-    )
-    default: return (
-      <svg viewBox="0 0 24 24" className={className} {...base}>
-        <rect x="4" y="2" width="16" height="20" rx="2" strokeWidth="1.4"/>
-        <line x1="8" y1="8" x2="16" y2="8" strokeWidth="1.3"/>
-        <line x1="8" y1="12" x2="16" y2="12" strokeWidth="1.3"/>
-        <line x1="8" y1="16" x2="13" y2="16" strokeWidth="1.3"/>
-      </svg>
-    )
-  }
-}
-
-// ── Pages Dropdown ────────────────────────────────────────────────────────────
-
-function PagesDropdown({
-  pages,
-  activePageId,
-  onSelectPage,
-  onAddPage,
-  onRenamePage,
-  onDeletePage,
-  onReorderPages,
-  isDark,
-}: {
-  pages: DiagramPage[]
-  activePageId: string
-  onSelectPage: (id: string) => void
-  onAddPage: () => string
-  onRenamePage: (id: string, name: string) => void
-  onDeletePage: (id: string) => void
-  onReorderPages: (from: number, to: number) => void
-  isDark: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [dragFromIndex, setDragFromIndex] = useState<number | null>(null)
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
-  const ref = useRef<HTMLDivElement>(null)
-  const renameInputRef = useRef<HTMLInputElement>(null)
-
-  const activePage = pages.find(p => p.id === activePageId)
-
-  const startRename = (page: DiagramPage) => {
-    setRenamingId(page.id)
-    setRenameValue(page.name)
-    setTimeout(() => renameInputRef.current?.select(), 0)
-  }
-
-  const commitRename = () => {
-    if (renamingId && renameValue.trim()) {
-      onRenamePage(renamingId, renameValue.trim())
-    }
-    setRenamingId(null)
-    setRenameValue('')
-  }
-
-  const handleAddPage = () => {
-    onAddPage()
-    setOpen(false)
-  }
-
-  useEffect(() => {
-    if (!open) return
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [open])
-
-  return (
-    <div ref={ref} className="relative flex items-center">
-      <button
-        onClick={() => setOpen(!open)}
-        className={cn(
-          'flex items-center gap-1.5 h-6 px-2.5 rounded-lg text-xs cursor-pointer transition-colors border',
-          isDark
-            ? 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/15 text-zinc-200'
-            : 'bg-black/4 border-black/10 hover:bg-black/7 hover:border-black/15 text-zinc-700',
-          open && (isDark ? 'bg-white/10 border-white/15' : 'bg-black/7 border-black/15'),
-        )}
-      >
-        <DiagramIcon type={detectDiagramType(activePage?.code ?? '')} className="w-3.5 h-3.5 text-primary shrink-0" />
-        <span className="font-medium truncate text-sm">{activePage?.name ?? 'Untitled'}</span>
-        <CaretUpDown className="w-3 h-3 text-muted-foreground shrink-0" />
-      </button>
-
-      {/* Dropdown */}
-      {open && (
-        <div className={cn(
-          'absolute left-0 top-full mt-1.5 z-50 rounded-lg border overflow-hidden animate-fade-up',
-          isDark
-            ? 'bg-[oklch(0.17_0.018_260)] border-white/12'
-            : 'bg-white border-black/10',
-        )}
-        style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
-          <div className="max-h-48 overflow-y-auto custom-scrollbar py-1">
-            {pages.map((page, index) => {
-              const isActive = page.id === activePageId
-              const isRenaming = renamingId === page.id
-              const isConfirmDelete = confirmDeleteId === page.id
-              const isDragOver = dragOverIndex === index && dragFromIndex !== index
-              return (
-                <div
-                  key={page.id}
-                  draggable={!isRenaming && !isConfirmDelete}
-                  onDragStart={(e) => {
-                    setDragFromIndex(index)
-                    e.dataTransfer.effectAllowed = 'move'
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    e.dataTransfer.dropEffect = 'move'
-                    setDragOverIndex(index)
-                  }}
-                  onDragLeave={() => setDragOverIndex(null)}
-                  onDrop={(e) => {
-                    e.preventDefault()
-                    if (dragFromIndex !== null && dragFromIndex !== index) {
-                      onReorderPages(dragFromIndex, index)
-                    }
-                    setDragFromIndex(null)
-                    setDragOverIndex(null)
-                  }}
-                  onDragEnd={() => {
-                    setDragFromIndex(null)
-                    setDragOverIndex(null)
-                  }}
-                  className={cn(
-                    'group flex items-center gap-2 px-2.5 py-1.5 text-xs transition-colors select-none',
-                    isRenaming || isConfirmDelete ? 'cursor-default' : 'cursor-grab',
-                    isDragOver && (isDark ? 'border-t-2 border-primary/60' : 'border-t-2 border-primary/50'),
-                    dragFromIndex === index && 'opacity-40',
-                    isActive
-                      ? cn('font-medium', isDark ? 'bg-white/10 text-white' : 'bg-primary/8 text-foreground')
-                      : cn(isDark ? 'text-zinc-200 hover:bg-white/6 hover:text-white' : 'text-zinc-700 hover:bg-black/4 hover:text-foreground'),
-                  )}
-                  onClick={() => {
-                    if (!isRenaming && !isConfirmDelete) {
-                      onSelectPage(page.id)
-                      setOpen(false)
-                    }
-                  }}
-                >
-                  <DiagramIcon type={detectDiagramType(page.code)} className={cn('w-3.5 h-3.5 shrink-0', isActive ? 'text-primary' : 'text-muted-foreground')} />
-
-                  {isConfirmDelete ? (
-                    <>
-                      <span className={cn('flex-1 text-xs', isDark ? 'text-red-300' : 'text-red-600')}>Delete "{page.name}"?</span>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDeletePage(page.id); setConfirmDeleteId(null); if (pages.length <= 1) setOpen(false) }}
-                        className={cn('px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer transition-colors', isDark ? 'bg-red-500/20 hover:bg-red-500/35 text-red-300' : 'bg-red-100 hover:bg-red-200 text-red-600')}
-                      >Yes</button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
-                        className={cn('px-1.5 py-0.5 rounded text-[10px] font-medium cursor-pointer transition-colors', isDark ? 'hover:bg-white/8 text-zinc-400' : 'hover:bg-black/5 text-zinc-500')}
-                      >No</button>
-                    </>
-                  ) : isRenaming ? (
-                    <input
-                      ref={renameInputRef}
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      onBlur={commitRename}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') commitRename()
-                        if (e.key === 'Escape') setRenamingId(null)
-                      }}
-                      className="flex-1 bg-transparent outline-none border-b border-primary text-xs text-foreground"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  ) : (
-                    <span className="flex-1 truncate">{page.name}</span>
-                  )}
-
-                  {/* Actions — visible on hover */}
-                  {!isRenaming && (
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <button
-                        onClick={(e) => { e.stopPropagation(); startRename(page) }}
-                        className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-                        title="Rename"
-                      >
-                        <PencilSimple className="w-3.5 h-3.5" />
-                      </button>
-                      {pages.length > 1 && (
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(page.id) }}
-                          className="p-0.5 rounded hover:bg-destructive/15 text-muted-foreground hover:text-destructive"
-                          title="Delete"
-                        >
-                          <TrashSimple className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-
-          {/* New diagram button inside dropdown */}
-          <div className="border-t border-border/40 px-1 py-1">
-            <button
-              onClick={handleAddPage}
-              className={cn(
-                'flex items-center gap-2 w-full px-2.5 py-1.5 rounded-md text-xs cursor-pointer transition-colors',
-                isDark ? 'text-zinc-400 hover:bg-white/5 hover:text-white' : 'text-zinc-500 hover:bg-black/3 hover:text-foreground',
-              )}
-            >
-              <Plus className="w-3 h-3" />
-              <span>New diagram</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ── Theme Dropdown ────────────────────────────────────────────────────────────
 

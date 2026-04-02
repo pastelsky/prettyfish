@@ -7,6 +7,12 @@ export type DiagramConfigOverrides = {
   [K in keyof DiagramConfig]?: DiagramConfig[K] extends object ? Partial<DiagramConfig[K]> : DiagramConfig[K]
 }
 
+export interface DiagramFolder {
+  id: string
+  name: string
+  collapsed: boolean
+}
+
 export interface DiagramPage {
   id: string
   name: string
@@ -16,10 +22,13 @@ export interface DiagramPage {
   configOverrides?: DiagramConfigOverrides
   /** @deprecated — use configOverrides instead. Kept for backward compat with old saved state */
   diagramConfig?: DiagramConfig
+  /** Optional folder ID — if set, page belongs to this folder */
+  folderId?: string
 }
 
 export interface AppState {
   pages: DiagramPage[]
+  folders: DiagramFolder[]
   activePageId: string
   mode: AppMode
   mermaidTheme: MermaidTheme
@@ -50,6 +59,10 @@ export const DEFAULT_DIAGRAM = `flowchart TD
 
 export function createPage(name: string, code: string = DEFAULT_DIAGRAM): DiagramPage {
   return { id: crypto.randomUUID(), name, code, mermaidTheme: 'default', configOverrides: {} }
+}
+
+export function createFolder(name: string): DiagramFolder {
+  return { id: crypto.randomUUID(), name, collapsed: false }
 }
 
 /** Deep merge: base ← overrides. Only copies defined override keys. */

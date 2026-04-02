@@ -2,6 +2,7 @@ const PREFIX = 'mermaid-renderer:'
 
 export const STORAGE_KEYS = {
   pages: `${PREFIX}pages`,
+  folders: `${PREFIX}folders`,
   activePageId: `${PREFIX}active-page-id`,
   mode: `${PREFIX}mode`,
   mermaidTheme: `${PREFIX}mermaid-theme`,
