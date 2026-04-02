@@ -14,6 +14,7 @@ import { decodeStateFromHash } from './lib/share'
 import { DEFAULT_DIAGRAM, DEFAULT_DIAGRAM_CONFIG, createPage, resolveConfig } from './types'
 import type { AppMode, AppState, MermaidTheme, DiagramPage, DiagramConfig, DiagramConfigOverrides } from './types'
 import { CUSTOM_THEME_PRESETS } from './lib/themePresets'
+import { useIsMobile } from './hooks/useIsMobile'
 
 function getInitialState() {
   const fromHash = decodeStateFromHash()
@@ -46,7 +47,8 @@ export default function App() {
   const [globalMermaidTheme] = useState<MermaidTheme>(initial.mermaidTheme)
   const [editorLigatures, setEditorLigatures] = useState<boolean>(initial.editorLigatures)
   const [autoFormat, setAutoFormat] = useState<boolean>(initial.autoFormat)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const isMobile = useIsMobile()
+  const [sidebarOpen, setSidebarOpen] = useState(!isMobile)
   const [docsOpen, setDocsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const insertRef = useRef<((text: string) => void) | null>(null)
@@ -193,7 +195,12 @@ export default function App() {
     if (prev) setActivePageId(prev.id)
   }, [pages, activePageId])
 
-  const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), [])
+  const toggleSidebar = useCallback(() => {
+    setSidebarOpen((v) => {
+      if (!v && isMobile) setDocsOpen(false) // close docs when opening sidebar on mobile
+      return !v
+    })
+  }, [isMobile])
   const toggleMode = useCallback(() => setMode((m) => m === 'dark' ? 'light' : 'dark'), [])
   const focusEditor = useCallback(() => {
     setSidebarOpen(true)
@@ -229,6 +236,7 @@ export default function App() {
           sidebarOpen={sidebarOpen}
           sidebarWidth={sidebarWidth}
           docsOpen={docsOpen}
+          isMobile={isMobile}
           transformRef={transformRef}
         />
       </ErrorBoundary>
@@ -245,27 +253,48 @@ export default function App() {
         getState={getState}
         onModeChange={setMode}
         onMermaidThemeChange={setMermaidTheme}
+        isMobile={isMobile}
         onToggleSidebar={toggleSidebar}
-        onToggleDocs={() => setDocsOpen(o => !o)}
+        onToggleDocs={() => {
+          setDocsOpen(o => {
+            if (!o && isMobile) setSidebarOpen(false) // close sidebar when opening docs on mobile
+            return !o
+          })
+        }}
         onOpenHelp={() => setHelpOpen(true)}
       />
+
+      {/* Mobile backdrop */}
+      {isMobile && (sidebarOpen || docsOpen) && (
+        <div
+          className="fixed inset-0 z-20 bg-black/40 animate-fade-in"
+          onClick={() => { setSidebarOpen(false); setDocsOpen(false) }}
+        />
+      )}
 
       {/* Floating sidebar */}
       {sidebarOpen && (
         <div
           data-sidebar-panel
-          className="absolute top-14 bottom-4 left-4 z-20"
-          style={{ width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }}
+          className={
+            isMobile
+              ? 'fixed left-0 right-0 bottom-0 z-30 rounded-t-2xl overflow-hidden'
+              : 'absolute top-14 bottom-4 left-4 z-20'
+          }
+          style={
+            isMobile
+              ? { height: '80vh', maxHeight: '80vh' }
+              : { width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }
+          }
         >
-          {/* Right-edge resize handle */}
-          <div
+          {/* Right-edge resize handle — desktop only */}
+          {!isMobile && <div
             onMouseDown={handleResizeStart}
             className="absolute top-0 bottom-0 right-0 z-30 w-2 cursor-ew-resize translate-x-1 flex items-center justify-center group"
             title="Drag to resize"
           >
-            {/* Subtle grip dots */}
             <div className="w-0.5 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-primary/40" />
-          </div>
+          </div>}
           <ErrorBoundary label="Editor panel failed to load">
             <Sidebar
               code={activePage.code}
@@ -299,11 +328,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Floating docs panel — right side */}
+      {/* Floating docs panel — right side (desktop) / bottom sheet (mobile) */}
       {docsOpen && (
         <div
-          className="absolute top-14 bottom-4 right-4 z-20 w-72 rounded-xl border overflow-hidden flex flex-col"
+          className={
+            isMobile
+              ? 'fixed left-0 right-0 bottom-0 z-30 rounded-t-2xl border-t overflow-hidden flex flex-col'
+              : 'absolute top-14 bottom-4 right-4 z-20 w-72 rounded-xl border overflow-hidden flex flex-col'
+          }
           style={{
+            ...(isMobile ? { height: '75vh', maxHeight: '75vh' } : {}),
             background: mode === 'dark' ? 'oklch(0.16 0.015 260 / 0.97)' : 'rgba(255,255,255,0.97)',
             borderColor: mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)',
             backdropFilter: 'none',

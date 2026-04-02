@@ -23,6 +23,7 @@ interface HeaderProps {
   mermaidTheme: MermaidTheme
   sidebarOpen: boolean
   docsOpen: boolean
+  isMobile?: boolean
   svg: string
   previewBg: string
   pageName: string
@@ -39,6 +40,7 @@ export function Header({ pageName,
   mermaidTheme,
   sidebarOpen,
   docsOpen,
+  isMobile = false,
   svg,
   previewBg,
   getState,
@@ -70,7 +72,10 @@ export function Header({ pageName,
   )
 
   return (
-    <div className="absolute top-0 left-0 right-0 z-30 flex items-start justify-between px-4 pt-3 pointer-events-none">
+    <div className={cn(
+      'absolute top-0 left-0 right-0 z-30 flex items-start pointer-events-none',
+      isMobile ? 'justify-between px-2 pt-2 gap-1' : 'justify-between px-4 pt-3',
+    )}>
 
       {/* Left: Logo pill */}
       <div className={pillClass}>
@@ -107,12 +112,12 @@ export function Header({ pageName,
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
-        {/* Theme selector */}
-        <ThemeDropdown
+        {/* Theme selector — hidden on mobile */}
+        {!isMobile && <ThemeDropdown
           value={mermaidTheme}
           onChange={onMermaidThemeChange}
           isDark={isDark}
-        />
+        />}
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
@@ -172,8 +177,8 @@ export function Header({ pageName,
           <TooltipContent side="bottom">Reference docs (⌘⇧R)</TooltipContent>
         </Tooltip>
 
-        {/* Help */}
-        <Tooltip>
+        {/* Help — hidden on mobile */}
+        {!isMobile && <Tooltip>
           <TooltipTrigger>
             <Button
               onClick={onOpenHelp}
@@ -185,11 +190,11 @@ export function Header({ pageName,
             </Button>
           </TooltipTrigger>
           <TooltipContent side="bottom">Shortcuts (?)</TooltipContent>
-        </Tooltip>
+        </Tooltip>}
       </div>
 
-      {/* Right: spacer to balance logo */}
-      <div className="w-[100px]" />
+      {/* Right: spacer to balance logo — hidden on mobile */}
+      {!isMobile && <div className="w-[100px]" />}
     </div>
   )
 }

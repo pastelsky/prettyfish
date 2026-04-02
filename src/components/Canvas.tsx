@@ -14,6 +14,7 @@ interface CanvasProps {
   sidebarOpen: boolean
   sidebarWidth: number | null
   docsOpen?: boolean
+  isMobile?: boolean
   transformRef: RefObject<ReactZoomPanPinchRef | null>
 }
 
@@ -21,7 +22,7 @@ const SIDEBAR_GAP = 16 + 16 // left-4 margin + gap before content
 const DOCS_WIDTH = 288 + 16 + 16 // w-72 + right-4 + gap
 const FIT_PADDING = 48 // px padding around diagram when fitting
 
-export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpen, transformRef }: CanvasProps) {
+export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpen, isMobile = false, transformRef }: CanvasProps) {
   const isDark = mode === 'dark'
   const previewBg = isDark ? '#0f1019' : '#f0f1f5'
   const [isPanning, setIsPanning] = useState(false)
@@ -37,7 +38,7 @@ export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpe
 
   // Calculate pixel offset of the left edge of the visible canvas area
   const getSidebarPixelWidth = useCallback((): number => {
-    if (!sidebarOpen) return 0
+    if (isMobile || !sidebarOpen) return 0
     if (sidebarWidth) return sidebarWidth + SIDEBAR_GAP
     // Parse clamp default — use the actual rendered sidebar width via DOM if possible
     const el = document.querySelector('[data-sidebar-panel]') as HTMLElement | null
@@ -45,7 +46,7 @@ export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpe
     // Fallback: 34vw clamped to 320-480
     const vwBased = window.innerWidth * 0.34
     return Math.min(480, Math.max(320, vwBased)) + SIDEBAR_GAP
-  }, [sidebarOpen, sidebarWidth])
+  }, [sidebarOpen, sidebarWidth, isMobile])
 
   const fitToArea = useCallback(() => {
     const api = transformRef.current
@@ -122,10 +123,10 @@ export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpe
       {/* Zoom controls — centered in visible canvas (after sidebar) */}
       <div
         className="absolute bottom-4 z-10 flex justify-center transition-[left] duration-200"
-        style={{
-          left: leftStyle,
-          right: docsOpen ? `${DOCS_WIDTH + 8}px` : '0',
-        }}
+        style={isMobile
+          ? { left: '0', right: '0' }
+          : { left: leftStyle, right: docsOpen ? `${DOCS_WIDTH + 8}px` : '0' }
+        }
       >
         <div className={cn(
           'flex items-center rounded-lg overflow-hidden border',
