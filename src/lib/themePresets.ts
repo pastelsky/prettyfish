@@ -4,7 +4,7 @@
  * Uses mermaid's 'base' theme with full themeVariables + DiagramConfig overrides.
  */
 
-import type { DiagramConfig, FlowchartCurve, MermaidLook } from '../types'
+import type { DiagramConfig, MermaidLook } from '../types'
 
 export interface ThemePreset {
   label: string
