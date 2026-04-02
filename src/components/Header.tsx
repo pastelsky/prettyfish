@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
   SidebarSimple,
+  CodeSimple,
   ShareNetwork,
   SunHorizon,
   Moon,
@@ -104,20 +105,23 @@ export function Header({ pageName,
               size="icon-sm"
               className={cn('rounded-lg', sidebarOpen && (isDark ? 'bg-white/8' : 'bg-black/5'))}
             >
-              <SidebarSimple className="w-3.5 h-3.5" />
+              {isMobile
+                ? <CodeSimple className="w-3.5 h-3.5" />
+                : <SidebarSimple className="w-3.5 h-3.5" />
+              }
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{sidebarOpen ? 'Hide' : 'Show'} editor (⌘\)</TooltipContent>
+          <TooltipContent side="bottom">{sidebarOpen ? 'Hide' : 'Show'} editor{!isMobile && ' (⌘\\)'}</TooltipContent>
         </Tooltip>
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
         {/* Theme selector — hidden on mobile */}
-        {!isMobile && <ThemeDropdown
+        <ThemeDropdown
           value={mermaidTheme}
           onChange={onMermaidThemeChange}
           isDark={isDark}
-        />}
+        />
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
