@@ -22,12 +22,35 @@ import {
   PencilSimple,
   TrashSimple,
   TextAa,
-  MagicWand,
   Code,
   CopySimple,
   Check,
 } from '@phosphor-icons/react'
 import { formatMermaid } from 'mermaid-formatter'
+
+/** Add spaces around arrows and operators in mermaid code */
+function spacifyMermaid(code: string): string {
+  return code.split('\n').map(line => {
+    // Skip comment lines
+    if (line.trim().startsWith('%%')) return line
+    // Skip lines that are just diagram declarations
+    if (/^\s*(flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|gantt|pie|gitGraph|mindmap|timeline|xychart-beta|quadrantChart|requirementDiagram)\b/.test(line.trim())) return line
+
+    // Add spaces around arrow operators (but not inside strings or labels)
+    // Match mermaid arrows: -->, --->, -.->, -.-, ==>, ===>, --x, --o, <--, etc.
+    // Careful not to break |label| or [text] or {text} or (text)
+    let result = line
+    // Arrows with text labels like -->|text| — space before arrow, after closing |
+    result = result.replace(/(\S)(--+>|--+x|--+o|==+>|-\.+-?>|<--+|<==+|<-\.+-?)(\|)/g, '$1 $2$3')
+    result = result.replace(/(\|)(\S)/g, '$1 $2')
+    // Regular arrows without labels
+    result = result.replace(/(\]|\)|\}|[a-zA-Z0-9_"])(\s*)(--+>|--+x|--+o|==+>|-\.+-?>|<--+|<==+|<-\.+-?)(\s*)(\[|\(|\{|[a-zA-Z0-9_"])/g,
+      (_, before, _s1, arrow, _s2, after) => `${before} ${arrow} ${after}`)
+    // Sequence diagram arrows: ->>, ->, -->, -->>, -x, --)
+    result = result.replace(/(\S)(\s*)(--?>>?|--?>|--?x|--?\))([\s:])/, (_, before, _s, arrow, after) => `${before} ${arrow}${after}`)
+    return result
+  }).join('\n')
+}
 import { cn } from '@/lib/utils'
 import { detectDiagramType, type DiagramType } from '@/lib/detectDiagram'
 
@@ -415,7 +438,7 @@ export function Sidebar({
   const handleFormat = (src?: string) => {
     const target = src ?? code
     try {
-      const formatted = formatMermaid(target, { indentSize: 2 })
+      const formatted = spacifyMermaid(formatMermaid(target, { indentSize: 2 }))
       if (formatted && formatted.trim() !== target.trim()) {
         onChange(formatted)
         return formatted
@@ -680,23 +703,6 @@ export function Sidebar({
               </Button>
             </TooltipTrigger>
             <TooltipContent>{autoFormat ? 'Auto-format on (click to disable)' : 'Auto-format off (click to enable)'}</TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Manual format button — only shown when auto-format is off */}
-        {activeTab === 'code' && !autoFormat && code.trim() !== '' && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => handleFormat()}
-                className="shrink-0 rounded-lg text-muted-foreground hover:text-foreground"
-              >
-                <MagicWand className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Format code</TooltipContent>
           </Tooltip>
         )}
 
