@@ -119,12 +119,9 @@ export function useMermaidRenderer(
         look: diagramConfig.look,
         fontFamily: diagramConfig.fontFamily,
         fontSize: diagramConfig.fontSize,
-        themeVariables: {
-          ...(customPreset ? customPreset.themeVariables : {}),
-          ...diagramConfig.themeVariables,
-          fontFamily: customPreset?.themeVariables.fontFamily ?? diagramConfig.fontFamily,
-          fontSize: fontSizeStr,
-        },
+        themeVariables: customPreset
+          ? { ...customPreset.themeVariables, fontSize: fontSizeStr }
+          : { ...diagramConfig.themeVariables, fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr },
         flowchart: diagramConfig.flowchart,
         sequence: diagramConfig.sequence,
         gantt: diagramConfig.gantt,
