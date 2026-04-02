@@ -81,7 +81,8 @@ export function Header({ pageName,
           <span className="font-semibold">Pretty</span><span className="font-serif italic text-primary ml-0.5">Fish</span>
         </span>
         <span className={cn(
-          'text-[10px] font-medium text-muted-foreground ml-1 hidden sm:inline',
+          'text-[10px] font-medium tracking-wider uppercase px-1.5 py-0.5 rounded-full ml-0.5 hidden sm:inline',
+          isDark ? 'bg-accent/15 text-accent' : 'bg-primary/10 text-primary',
         )}>
           Mermaid Diagram Editor
         </span>
