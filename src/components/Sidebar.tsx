@@ -202,6 +202,17 @@ function DiagramIcon({ type, className }: { type: DiagramType; className?: strin
         <circle cx="18" cy="7" r="1.2" fill="currentColor" strokeWidth="0"/>
       </svg>
     )
+    case 'architecture': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="2" y="3" width="7" height="5" rx="1" strokeWidth="1.3"/>
+        <rect x="15" y="3" width="7" height="5" rx="1" strokeWidth="1.3"/>
+        <rect x="8.5" y="16" width="7" height="5" rx="1" strokeWidth="1.3"/>
+        <line x1="5.5" y1="8" x2="5.5" y2="13" strokeWidth="1.2"/>
+        <line x1="18.5" y1="8" x2="18.5" y2="13" strokeWidth="1.2"/>
+        <line x1="5.5" y1="13" x2="18.5" y2="13" strokeWidth="1.2"/>
+        <line x1="12" y1="13" x2="12" y2="16" strokeWidth="1.2"/>
+      </svg>
+    )
     default: return (
       <svg viewBox="0 0 24 24" className={className} {...base}>
         <rect x="4" y="2" width="16" height="20" rx="2" strokeWidth="1.4"/>

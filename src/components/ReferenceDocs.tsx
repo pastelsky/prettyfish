@@ -49,6 +49,7 @@ const TYPE_LABELS: Record<string, string> = {
   timeline:        'Time',
   quadrantChart:   'Quad',
   'xychart-beta':  'XY',
+  'architecture':  'Arch',
 }
 
 // ─── RefTypePicker ────────────────────────────────────────────────────────────

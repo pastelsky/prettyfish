@@ -215,6 +215,18 @@ function XYChartIcon({ className }: { className?: string }) {
 }
 
 // Icon map by template id
+function ArchitectureIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className}>
+      <rect x="2" y="2" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="14" y="2" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <rect x="8" y="17" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
+      <path d="M6 7v5h12V7" stroke="currentColor" strokeWidth="1.2"/>
+      <line x1="12" y1="12" x2="12" y2="17" stroke="currentColor" strokeWidth="1.2"/>
+    </svg>
+  )
+}
+
 const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   flowchart: FlowchartIcon,
   sequence: SequenceIcon,
@@ -228,6 +240,7 @@ const ICON_MAP: Record<string, React.FC<{ className?: string }>> = {
   timeline: TimelineIcon,
   quadrant: QuadrantIcon,
   xychart: XYChartIcon,
+  architecture: ArchitectureIcon,
 }
 
 export function TemplateGallery({ mode, onSelect }: TemplateGalleryProps) {

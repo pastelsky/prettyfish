@@ -310,4 +310,19 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     bar  [32, 41, 55, 48, 63, 72, 68, 85, 91, 78, 95, 112]
     line [32, 41, 55, 48, 63, 72, 68, 85, 91, 78, 95, 112]`,
   },
+  {
+    id: 'architecture',
+    name: 'Architecture',
+    description: 'System architecture diagrams (beta)',
+    icon: '🏗️',
+    code: `architecture-beta
+    group api(cloud)[API Layer]
+
+    service gateway(internet)[API Gateway] in api
+    service auth(server)[Auth Service] in api
+    service users(database)[User DB] in api
+
+    gateway:R --> L:auth
+    auth:R --> L:users`,
+  },
 ]

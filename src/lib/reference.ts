@@ -1641,6 +1641,78 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
       },
     ],
   },
+  architecture: {
+    id: 'architecture',
+    label: 'Architecture',
+    elements: [
+      {
+        name: 'architecture-beta',
+        syntax: 'architecture-beta',
+        description: 'Declares an architecture diagram (beta)',
+        examples: [
+          { label: 'Basic', code: 'architecture-beta\n  service api(server)[API Server]' },
+        ],
+      },
+      {
+        name: 'service',
+        syntax: 'service <id>(<icon>)[<label>]',
+        description: 'Defines a service node with an icon shape and label',
+        examples: [
+          { label: 'Server', code: 'architecture-beta\n  service api(server)[API Server]' },
+          { label: 'Database', code: 'architecture-beta\n  service db(database)[PostgreSQL]' },
+        ],
+      },
+      {
+        name: 'group',
+        syntax: 'group <id>(<icon>)[<label>]',
+        description: 'Groups services together visually',
+        examples: [
+          { label: 'Cloud group', code: 'architecture-beta\n  group cloud(cloud)[AWS Cloud]\n  service api(server)[API] in cloud\n  service db(database)[DB] in cloud' },
+        ],
+      },
+      {
+        name: 'in',
+        syntax: 'service <id>(<icon>)[<label>] in <group>',
+        description: 'Places a service inside a group',
+        examples: [
+          { label: 'Service in group', code: 'architecture-beta\n  group vpc(cloud)[VPC]\n  service web(server)[Web] in vpc' },
+        ],
+      },
+      {
+        name: 'junction',
+        syntax: 'junction <id>',
+        description: 'A connection point for routing edges through',
+        examples: [
+          { label: 'Junction', code: 'architecture-beta\n  service a(server)[A]\n  service b(server)[B]\n  junction junc\n  a:R --> L:junc\n  junc:R --> L:b' },
+        ],
+      },
+      {
+        name: 'edge (-->)',
+        syntax: '<service>:<side> --> <side>:<service>',
+        description: 'Connects two services. Sides: T (top), B (bottom), L (left), R (right)',
+        examples: [
+          { label: 'Left to right', code: 'architecture-beta\n  service a(server)[App]\n  service b(database)[DB]\n  a:R --> L:b' },
+          { label: 'Top to bottom', code: 'architecture-beta\n  service a(server)[App]\n  service b(database)[DB]\n  a:B --> T:b' },
+        ],
+      },
+      {
+        name: 'edge (<-->)',
+        syntax: '<service>:<side> <--> <side>:<service>',
+        description: 'Bidirectional connection between services',
+        examples: [
+          { label: 'Bidirectional', code: 'architecture-beta\n  service a(server)[App A]\n  service b(server)[App B]\n  a:R <--> L:b' },
+        ],
+      },
+      {
+        name: 'icon shapes',
+        syntax: '(cloud), (server), (database), (internet), (disk), (firewall), (users)',
+        description: 'Built-in icon shapes for service nodes',
+        examples: [
+          { label: 'All shapes', code: 'architecture-beta\n  service a(cloud)[Cloud]\n  service b(server)[Server]\n  service c(database)[DB]\n  service d(internet)[Internet]\n  service e(disk)[Disk]' },
+        ],
+      },
+    ],
+  },
 }
 
 export const GENERIC_REF: DiagramRef = {

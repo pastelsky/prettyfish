@@ -125,6 +125,7 @@ const STREAM_KEYWORD_MAPS: Record<string, Record<string, string>> = {
   timeline:         {},
   quadrantChart:    {},
   'xychart-beta':   {},
+  'architecture-beta': { service: 'service', group: 'group', junction: 'junction', edge: 'edge (-->)', cloud: 'icon shapes', server: 'icon shapes', database: 'icon shapes', internet: 'icon shapes', disk: 'icon shapes', firewall: 'icon shapes', users: 'icon shapes', in: 'in' },
 }
 
 // ─── Relationship / operator patterns (StreamLanguage diagrams) ───────────────
@@ -220,6 +221,7 @@ function normalizeDiagramType(raw: string): string {
   if (t === 'timeline') return 'timeline'
   if (t === 'quadrantchart') return 'quadrantChart'
   if (t === 'xychart-beta') return 'xychart-beta'
+  if (t === 'architecture-beta' || t === 'architecture') return 'architecture-beta'
   return t
 }
 

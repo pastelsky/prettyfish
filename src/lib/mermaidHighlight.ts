@@ -34,6 +34,9 @@ const KEYWORDS = new Set([
   'quadrantChart', 'x-axis', 'y-axis', 'quadrant-1', 'quadrant-2', 'quadrant-3', 'quadrant-4',
   // xychart
   'xychart-beta', 'bar', 'line', 'x-axis', 'y-axis',
+  // architecture
+  'architecture-beta', 'service', 'group', 'junction', 'edge',
+  'cloud', 'server', 'database', 'internet', 'disk', 'firewall', 'users',
   // general
   'subgraph', 'direction', 'LR', 'RL', 'TD', 'TB', 'BT', 'TB',
 ])

@@ -11,6 +11,7 @@ export type DiagramType =
   | 'timeline'
   | 'quadrant'
   | 'xychart'
+  | 'architecture'
   | 'other'
 
 const PATTERNS: [RegExp, DiagramType][] = [
@@ -26,6 +27,7 @@ const PATTERNS: [RegExp, DiagramType][] = [
   [/^\s*timeline\b/i, 'timeline'],
   [/^\s*quadrantChart\b/i, 'quadrant'],
   [/^\s*xychart/i, 'xychart'],
+  [/^\s*architecture/i, 'architecture'],
 ]
 
 export function detectDiagramType(code: string): DiagramType {
