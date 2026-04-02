@@ -30,7 +30,7 @@ interface ShortcutSection {
 
 const SECTIONS: ShortcutSection[] = [
   {
-    title: 'The Ocean',
+    title: 'Canvas',
     shortcuts: [
       { keys: [Mod, '+'], description: 'Zoom in' },
       { keys: [Mod, '-'], description: 'Zoom out' },
@@ -40,7 +40,7 @@ const SECTIONS: ShortcutSection[] = [
     ],
   },
   {
-    title: 'The Net',
+    title: 'Editor',
     shortcuts: [
       { keys: [Mod, '\\'], description: 'Toggle sidebar' },
       { keys: [Mod, '/'], description: 'Focus editor' },
@@ -48,7 +48,7 @@ const SECTIONS: ShortcutSection[] = [
     ],
   },
   {
-    title: 'School of Fish',
+    title: 'Pages',
     shortcuts: [
       { keys: [Mod, 'T'], description: 'New diagram' },
       { keys: [Mod, Shift, ']'], description: 'Next tab' },
@@ -57,7 +57,7 @@ const SECTIONS: ShortcutSection[] = [
     ],
   },
   {
-    title: 'Tricks',
+    title: 'Actions',
     shortcuts: [
       { keys: [Mod, Shift, 'S'], description: 'Export' },
       { keys: [Mod, Shift, 'D'], description: 'Toggle theme' },
@@ -84,7 +84,7 @@ export function KeyboardHelp({ open, onOpenChange }: KeyboardHelpProps) {
       <DialogContent className="max-w-sm max-h-[75vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 font-serif italic">
-            Navigate the waters
+            Shortcuts
             <Badge variant="secondary" className="text-[10px] font-mono font-normal">
               {isMac ? 'macOS' : 'Win/Linux'}
             </Badge>

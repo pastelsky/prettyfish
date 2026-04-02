@@ -576,7 +576,7 @@ export function Sidebar({
 
                         {isConfirmDelete ? (
                           <>
-                            <span className={cn('flex-1 text-xs', isDark ? 'text-red-300' : 'text-red-600')}>Release "{page.name}"?</span>
+                            <span className={cn('flex-1 text-xs', isDark ? 'text-red-300' : 'text-red-600')}>Delete "{page.name}"?</span>
                             <button
                               onClick={(e) => { e.stopPropagation(); onDeletePage(page.id); setConfirmDeleteId(null); if (pages.length <= 1) setPagesOpen(false) }}
                               className={cn('px-1.5 py-0.5 rounded text-[10px] font-semibold cursor-pointer transition-colors', isDark ? 'bg-red-500/20 hover:bg-red-500/35 text-red-300' : 'bg-red-100 hover:bg-red-200 text-red-600')}

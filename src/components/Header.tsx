@@ -137,7 +137,7 @@ export function Header({ pageName,
                <><ShareNetwork className="w-3 h-3" /> Share</>}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Cast a link to share 🔗</TooltipContent>
+          <TooltipContent side="bottom">Copy shareable link</TooltipContent>
         </Tooltip>
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
@@ -154,7 +154,7 @@ export function Header({ pageName,
               {isDark ? <SunHorizon className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{isDark ? 'Surface to light ☀' : 'Dive into dark 🌙'} (⌘⇧D)</TooltipContent>
+          <TooltipContent side="bottom">{isDark ? 'Light mode' : 'Dark mode'} (⌘⇧D)</TooltipContent>
         </Tooltip>
 
         {/* Docs toggle */}

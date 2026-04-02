@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M8 5v3.5M8 11v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
           </svg>
-          <span>{label ?? 'Something fishy happened'}</span>
+          <span>{label ?? 'Something went wrong'}</span>
         </div>
       )
     }
@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <path d="M16 13v5M16 21v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
         <div>
-          <p className="text-sm font-medium text-foreground/70">{label ?? 'Something fishy happened'}</p>
+          <p className="text-sm font-medium text-foreground/70">{label ?? 'Something went wrong'}</p>
           <p className="text-xs text-muted-foreground mt-1 font-mono max-w-xs break-words">{error.message}</p>
         </div>
         <button
