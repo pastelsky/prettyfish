@@ -6,6 +6,8 @@ export interface DiagramPage {
   id: string
   name: string
   code: string
+  mermaidTheme?: MermaidTheme
+  diagramConfig?: DiagramConfig
 }
 
 export interface AppState {
@@ -37,8 +39,8 @@ export const DEFAULT_DIAGRAM = `flowchart TD
     B -->|No| D[Debug]
     D --> A`
 
-export function createPage(name: string, code: string = DEFAULT_DIAGRAM): DiagramPage {
-  return { id: crypto.randomUUID(), name, code }
+export function createPage(name: string, code: string = DEFAULT_DIAGRAM, mermaidTheme: MermaidTheme = 'default', diagramConfig: DiagramConfig = DEFAULT_DIAGRAM_CONFIG): DiagramPage {
+  return { id: crypto.randomUUID(), name, code, mermaidTheme, diagramConfig }
 }
 
 // ─── Mermaid diagram config ───────────────────────────────────────────────────

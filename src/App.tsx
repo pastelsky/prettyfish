@@ -41,8 +41,9 @@ export default function App() {
   const [pages, setPages] = useState<DiagramPage[]>(initial.pages)
   const [activePageId, setActivePageId] = useState<string>(initial.activePageId)
   const [mode, setMode] = useState<AppMode>(initial.mode)
-  const [mermaidTheme, setMermaidTheme] = useState<MermaidTheme>(initial.mermaidTheme)
-  const [diagramConfig, setDiagramConfig] = useState<DiagramConfig>(initial.diagramConfig)
+  // Theme and config are now per-page; global state used only as fallback for legacy pages
+  const [globalMermaidTheme] = useState<MermaidTheme>(initial.mermaidTheme)
+  const [globalDiagramConfig] = useState<DiagramConfig>(initial.diagramConfig)
   const [editorLigatures, setEditorLigatures] = useState<boolean>(initial.editorLigatures)
   const [autoFormat, setAutoFormat] = useState<boolean>(initial.autoFormat)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -92,6 +93,18 @@ export default function App() {
 
   const activePage = pages.find((p) => p.id === activePageId) ?? pages[0]!
 
+  // Per-page theme and config (fall back to global for legacy pages without these fields)
+  const mermaidTheme = activePage?.mermaidTheme ?? globalMermaidTheme
+  const diagramConfig = activePage?.diagramConfig ?? globalDiagramConfig
+
+  const setMermaidTheme = useCallback((theme: MermaidTheme) => {
+    setPages((prev) => prev.map((p) => p.id === activePageId ? { ...p, mermaidTheme: theme } : p))
+  }, [activePageId])
+
+  const setDiagramConfig = useCallback((config: DiagramConfig) => {
+    setPages((prev) => prev.map((p) => p.id === activePageId ? { ...p, diagramConfig: config } : p))
+  }, [activePageId])
+
   const isDark = mode === 'dark'
   const previewBg = isDark ? '#0f1019' : '#f0f1f5'
 
@@ -99,8 +112,6 @@ export default function App() {
   useEffect(() => saveToStorage(STORAGE_KEYS.pages, pages), [pages])
   useEffect(() => saveToStorage(STORAGE_KEYS.activePageId, activePageId), [activePageId])
   useEffect(() => saveToStorage(STORAGE_KEYS.mode, mode), [mode])
-  useEffect(() => saveToStorage(STORAGE_KEYS.mermaidTheme, mermaidTheme), [mermaidTheme])
-  useEffect(() => saveToStorage(STORAGE_KEYS.diagramConfig, diagramConfig), [diagramConfig])
   useEffect(() => saveToStorage(STORAGE_KEYS.editorLigatures, editorLigatures), [editorLigatures])
   useEffect(() => saveToStorage(STORAGE_KEYS.autoFormat, autoFormat), [autoFormat])
 
@@ -251,6 +262,7 @@ export default function App() {
               mermaidTheme={mermaidTheme}
               onConfigChange={setDiagramConfig}
               onMermaidThemeChange={(t) => setMermaidTheme(t as MermaidTheme)}
+
               onLigaturesChange={setEditorLigatures}
               onAutoFormatChange={setAutoFormat}
             />
