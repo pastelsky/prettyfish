@@ -260,13 +260,95 @@ function DiagramIcon({ type, className }: { type: DiagramType; className?: strin
     )
     case 'architecture': return (
       <svg viewBox="0 0 24 24" className={className} {...base}>
-        <rect x="2" y="3" width="7" height="5" rx="1" strokeWidth="1.3"/>
-        <rect x="15" y="3" width="7" height="5" rx="1" strokeWidth="1.3"/>
-        <rect x="8.5" y="16" width="7" height="5" rx="1" strokeWidth="1.3"/>
-        <line x1="5.5" y1="8" x2="5.5" y2="13" strokeWidth="1.2"/>
-        <line x1="18.5" y1="8" x2="18.5" y2="13" strokeWidth="1.2"/>
-        <line x1="5.5" y1="13" x2="18.5" y2="13" strokeWidth="1.2"/>
-        <line x1="12" y1="13" x2="12" y2="16" strokeWidth="1.2"/>
+        <path d="M5 9 C5 7 6.5 6 8 6.5 C8.5 5 10 4 12 4 C14 4 15.5 5 16 6.5 C17.5 6 19 7 19 9 C19 10.5 17.8 11 16.5 11 L7.5 11 C6.2 11 5 10.5 5 9Z" strokeWidth="1.2"/>
+        <line x1="12" y1="11" x2="12" y2="14" strokeWidth="1.2"/>
+        <rect x="8" y="14" width="8" height="4" rx="1" strokeWidth="1.2"/>
+        <line x1="9.5" y1="15.5" x2="14.5" y2="15.5" strokeWidth="0.7"/>
+        <line x1="12" y1="18" x2="12" y2="19.5" strokeWidth="1.2"/>
+        <ellipse cx="12" cy="20" rx="4" ry="1.2" strokeWidth="1.1"/>
+        <line x1="8" y1="20" x2="8" y2="22" strokeWidth="1.1"/>
+        <line x1="16" y1="20" x2="16" y2="22" strokeWidth="1.1"/>
+        <path d="M8 22 Q12 23 16 22" strokeWidth="1.1" fill="none"/>
+      </svg>
+    )
+    case 'kanban': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="2" y="2" width="6" height="18" rx="1" strokeWidth="1.3"/>
+        <rect x="9" y="2" width="6" height="12" rx="1" strokeWidth="1.3"/>
+        <rect x="16" y="2" width="6" height="8" rx="1" strokeWidth="1.3"/>
+        <line x1="4" y1="6" x2="6" y2="6" strokeWidth="0.9"/>
+        <line x1="4" y1="9" x2="6" y2="9" strokeWidth="0.9"/>
+        <line x1="11" y1="6" x2="13" y2="6" strokeWidth="0.9"/>
+        <line x1="18" y1="6" x2="20" y2="6" strokeWidth="0.9"/>
+      </svg>
+    )
+    case 'sankey': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="1" y="3" width="3" height="5" rx="0.5" fill="currentColor" opacity="0.6" stroke="none"/>
+        <rect x="1" y="10" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.4" stroke="none"/>
+        <rect x="1" y="15" width="3" height="6" rx="0.5" fill="currentColor" opacity="0.5" stroke="none"/>
+        <rect x="20" y="2" width="3" height="8" rx="0.5" fill="currentColor" opacity="0.6" stroke="none"/>
+        <rect x="20" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.4" stroke="none"/>
+        <path d="M4 4 C10 4 14 3 20 3" strokeWidth="2.5" strokeOpacity="0.4" fill="none"/>
+        <path d="M4 8 C10 8 14 10 20 10" strokeWidth="2.5" strokeOpacity="0.4" fill="none"/>
+        <path d="M4 16 C10 16 14 18 20 18" strokeWidth="3.5" strokeOpacity="0.35" fill="none"/>
+      </svg>
+    )
+    case 'block': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="2" y="2" width="20" height="6" rx="1" strokeWidth="1.3"/>
+        <rect x="2" y="10" width="9.5" height="5" rx="1" strokeWidth="1.3"/>
+        <rect x="12.5" y="10" width="9.5" height="5" rx="1" strokeWidth="1.3"/>
+        <rect x="2" y="17" width="20" height="5" rx="1" strokeWidth="1.3"/>
+      </svg>
+    )
+    case 'packet': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="2" y="2" width="20" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="2" y="7" width="10" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="12" y="7" width="10" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="2" y="12" width="20" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="2" y="17" width="7" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="9" y="17" width="6" height="4" rx="0.5" strokeWidth="1.2"/>
+        <rect x="15" y="17" width="7" height="4" rx="0.5" strokeWidth="1.2"/>
+      </svg>
+    )
+    case 'journey': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <circle cx="12" cy="4" r="2" strokeWidth="1.2"/>
+        <path d="M9 8h6" strokeWidth="1.2"/>
+        <line x1="2" y1="14" x2="22" y2="14" strokeWidth="1" strokeDasharray="1.5 1"/>
+        <line x1="9" y1="11" x2="9" y2="21" strokeWidth="0.8" opacity="0.4"/>
+        <line x1="16" y1="11" x2="16" y2="21" strokeWidth="0.8" opacity="0.4"/>
+        <circle cx="4" cy="14" r="1.5" fill="currentColor" opacity="0.8" stroke="none"/>
+        <line x1="4" y1="11" x2="4" y2="12.5" strokeWidth="1.5"/>
+        <circle cx="12.5" cy="14" r="1.5" fill="currentColor" opacity="0.8" stroke="none"/>
+        <line x1="12.5" y1="15.5" x2="12.5" y2="18" strokeWidth="1.5"/>
+        <circle cx="19.5" cy="14" r="1.5" fill="currentColor" opacity="0.8" stroke="none"/>
+        <line x1="19.5" y1="11" x2="19.5" y2="12.5" strokeWidth="1.5"/>
+      </svg>
+    )
+    case 'requirement': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <rect x="2" y="2" width="9" height="7" rx="1" strokeWidth="1.3"/>
+        <rect x="13" y="2" width="9" height="7" rx="1" strokeWidth="1.3"/>
+        <rect x="7.5" y="15" width="9" height="7" rx="1" strokeWidth="1.3"/>
+        <line x1="6.5" y1="9" x2="10" y2="15" strokeWidth="1.2"/>
+        <line x1="17.5" y1="9" x2="14" y2="15" strokeWidth="1.2"/>
+        <line x1="4" y1="5" x2="9" y2="5" strokeWidth="0.8"/>
+        <line x1="4" y1="7" x2="7" y2="7" strokeWidth="0.8"/>
+      </svg>
+    )
+    case 'radar': return (
+      <svg viewBox="0 0 24 24" className={className} {...base}>
+        <polygon points="12,2 21,9 18,20 6,20 3,9" strokeWidth="1" opacity="0.3"/>
+        <polygon points="12,6 17.5,10.5 16,17 8,17 6.5,10.5" strokeWidth="1" opacity="0.35"/>
+        <polygon points="12,8 15,12 14,16 10,16 9,12" strokeWidth="1.3" fill="currentColor" fillOpacity="0.15"/>
+        <line x1="12" y1="2" x2="12" y2="12" strokeWidth="0.8"/>
+        <line x1="3" y1="9" x2="12" y2="12" strokeWidth="0.8"/>
+        <line x1="21" y1="9" x2="12" y2="12" strokeWidth="0.8"/>
+        <line x1="6" y1="20" x2="12" y2="12" strokeWidth="0.8"/>
+        <line x1="18" y1="20" x2="12" y2="12" strokeWidth="0.8"/>
       </svg>
     )
     default: return (

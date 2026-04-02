@@ -233,9 +233,20 @@ function KanbanIcon({ className }: { className?: string }) {
 function SankeyIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M2 4c4 0 6 2 10 6s6 6 10 6" stroke="currentColor" strokeWidth="3" opacity="0.4"/>
-      <path d="M2 8c4 0 8 4 10 6s6 4 10 4" stroke="currentColor" strokeWidth="2" opacity="0.6"/>
-      <path d="M2 14c6 0 8-4 10-6s6-2 10-2" stroke="currentColor" strokeWidth="2" opacity="0.5"/>
+      {/* Left source bars */}
+      <rect x="1" y="3" width="3" height="5" rx="0.5" fill="currentColor" opacity="0.7"/>
+      <rect x="1" y="10" width="3" height="3" rx="0.5" fill="currentColor" opacity="0.5"/>
+      <rect x="1" y="15" width="3" height="6" rx="0.5" fill="currentColor" opacity="0.6"/>
+      {/* Right target bars */}
+      <rect x="20" y="2" width="3" height="8" rx="0.5" fill="currentColor" opacity="0.7"/>
+      <rect x="20" y="12" width="3" height="10" rx="0.5" fill="currentColor" opacity="0.5"/>
+      {/* Flow bands */}
+      <path d="M4 4 C10 4 14 3 20 3" stroke="currentColor" strokeWidth="3" strokeOpacity="0.4" fill="none"/>
+      <path d="M4 8 C10 8 14 10 20 10" stroke="currentColor" strokeWidth="3" strokeOpacity="0.4" fill="none"/>
+      <path d="M4 11 C10 11 14 13 20 13" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.4" fill="none"/>
+      <path d="M4 13 C10 13 14 17 20 17" stroke="currentColor" strokeWidth="1.5" strokeOpacity="0.4" fill="none"/>
+      <path d="M4 16 C10 16 14 19 20 19" stroke="currentColor" strokeWidth="4" strokeOpacity="0.35" fill="none"/>
+      <path d="M4 20 C10 20 14 22 20 22" stroke="currentColor" strokeWidth="2" strokeOpacity="0.35" fill="none"/>
     </svg>
   )
 }
@@ -265,10 +276,21 @@ function PacketIcon({ className }: { className?: string }) {
 function JourneyIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <path d="M3 18c3-4 5-12 9-12s6 8 9 12" stroke="currentColor" strokeWidth="1.4"/>
-      <circle cx="6" cy="14" r="1.5" fill="currentColor"/>
-      <circle cx="12" cy="6" r="1.5" fill="currentColor"/>
-      <circle cx="18" cy="14" r="1.5" fill="currentColor"/>
+      {/* Person/actor icon at top */}
+      <circle cx="12" cy="4" r="2" stroke="currentColor" strokeWidth="1.2"/>
+      <path d="M9 8h6" stroke="currentColor" strokeWidth="1.2"/>
+      {/* Horizontal journey path */}
+      <line x1="2" y1="14" x2="22" y2="14" stroke="currentColor" strokeWidth="1" strokeDasharray="1.5 1"/>
+      {/* Section dividers */}
+      <line x1="9" y1="11" x2="9" y2="21" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.4"/>
+      <line x1="16" y1="11" x2="16" y2="21" stroke="currentColor" strokeWidth="0.8" strokeOpacity="0.4"/>
+      {/* Task dots with ratings (bars above/below line) */}
+      <circle cx="4" cy="14" r="1.5" fill="currentColor" opacity="0.8"/>
+      <line x1="4" y1="11" x2="4" y2="12.5" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="12.5" cy="14" r="1.5" fill="currentColor" opacity="0.8"/>
+      <line x1="12.5" y1="15.5" x2="12.5" y2="18" stroke="currentColor" strokeWidth="1.5"/>
+      <circle cx="19.5" cy="14" r="1.5" fill="currentColor" opacity="0.8"/>
+      <line x1="19.5" y1="11" x2="19.5" y2="12.5" stroke="currentColor" strokeWidth="1.5"/>
     </svg>
   )
 }
@@ -303,11 +325,22 @@ function RadarIcon({ className }: { className?: string }) {
 function ArchitectureIcon({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" className={className}>
-      <rect x="2" y="2" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
-      <rect x="14" y="2" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
-      <rect x="8" y="17" width="8" height="5" rx="1" stroke="currentColor" strokeWidth="1.3"/>
-      <path d="M6 7v5h12V7" stroke="currentColor" strokeWidth="1.2"/>
-      <line x1="12" y1="12" x2="12" y2="17" stroke="currentColor" strokeWidth="1.2"/>
+      {/* Cloud shape at top (API gateway / internet) */}
+      <path d="M5 9 C5 7 6.5 6 8 6.5 C8.5 5 10 4 12 4 C14 4 15.5 5 16 6.5 C17.5 6 19 7 19 9 C19 10.5 17.8 11 16.5 11 L7.5 11 C6.2 11 5 10.5 5 9Z" stroke="currentColor" strokeWidth="1.2"/>
+      {/* Connector line down */}
+      <line x1="12" y1="11" x2="12" y2="14" stroke="currentColor" strokeWidth="1.2"/>
+      {/* Middle server box */}
+      <rect x="8" y="14" width="8" height="4.5" rx="1" stroke="currentColor" strokeWidth="1.2"/>
+      {/* Server rack lines */}
+      <line x1="9.5" y1="15.5" x2="14.5" y2="15.5" stroke="currentColor" strokeWidth="0.7"/>
+      <line x1="9.5" y1="17" x2="13" y2="17" stroke="currentColor" strokeWidth="0.7"/>
+      {/* Connector to DB cylinder */}
+      <line x1="12" y1="18.5" x2="12" y2="20" stroke="currentColor" strokeWidth="1.2"/>
+      {/* DB cylinder */}
+      <ellipse cx="12" cy="20.5" rx="4" ry="1.2" stroke="currentColor" strokeWidth="1.1"/>
+      <line x1="8" y1="20.5" x2="8" y2="22.5" stroke="currentColor" strokeWidth="1.1"/>
+      <line x1="16" y1="20.5" x2="16" y2="22.5" stroke="currentColor" strokeWidth="1.1"/>
+      <path d="M8 22.5 Q12 23.7 16 22.5" stroke="currentColor" strokeWidth="1.1" fill="none"/>
     </svg>
   )
 }
