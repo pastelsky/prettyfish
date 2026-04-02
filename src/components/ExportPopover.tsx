@@ -94,7 +94,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
           isDark
             ? 'bg-[oklch(0.18_0.015_260)] border-white/10'
             : 'bg-white border-black/8',
-        )} style={{ width: '220px' }}>
+        )} style={{ width: '270px' }}>
 
           {/* Filename */}
           <input
