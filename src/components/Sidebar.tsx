@@ -24,6 +24,8 @@ import {
   TextAa,
   MagicWand,
   Code,
+  CopySimple,
+  Check,
 } from '@phosphor-icons/react'
 import { formatMermaid } from 'mermaid-formatter'
 import { cn } from '@/lib/utils'
@@ -323,6 +325,7 @@ export function Sidebar({
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [dragFromIndex, setDragFromIndex] = useState<number | null>(null)
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null)
+  const [codeCopied, setCodeCopied] = useState(false)
   const renameInputRef = useRef<HTMLInputElement>(null)
   const editorViewRef = useRef<EditorView | null>(null)
   const pagesRef = useRef<HTMLDivElement>(null)
@@ -719,6 +722,27 @@ export function Sidebar({
           </Tooltip>
         )}
 
+        {/* Copy code */}
+        {activeTab === 'code' && code.trim() !== '' && (
+          <Tooltip>
+            <TooltipTrigger>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(code)
+                  setCodeCopied(true)
+                  setTimeout(() => setCodeCopied(false), 1500)
+                }}
+                className={cn('shrink-0 rounded-lg', codeCopied ? 'text-emerald-500' : 'text-muted-foreground hover:text-foreground')}
+              >
+                {codeCopied ? <Check className="w-3.5 h-3.5" /> : <CopySimple className="w-3.5 h-3.5" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>{codeCopied ? 'Copied!' : 'Copy code'}</TooltipContent>
+          </Tooltip>
+        )}
+
         {/* New page shortcut button (always visible) */}
         {activeTab === 'code' && (
           <Tooltip>
@@ -763,6 +787,8 @@ export function Sidebar({
                 style={{
                   height: '100%',
                   fontSize: '12.5px',
+                  lineHeight: '1.7',
+                  paddingTop: '6px',
                   fontVariantLigatures: editorLigatures ? 'common-ligatures' : 'none',
                   fontFeatureSettings: editorLigatures ? '"liga" 1, "calt" 1' : '"liga" 0, "calt" 0',
                 }}
