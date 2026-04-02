@@ -553,6 +553,7 @@ export function Sidebar({
   return (
     <div className={cn(
       'flex flex-col h-full rounded-xl border overflow-hidden animate-sidebar-in',
+      isDark ? '[box-shadow:0_4px_24px_rgba(0,0,0,0.35)]' : '[box-shadow:0_4px_24px_rgba(0,0,0,0.08)]',
       isDark
         ? 'bg-[oklch(0.16_0.015_260)]/95 border-white/8'
         : 'bg-white/95 border-black/6',
