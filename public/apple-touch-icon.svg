@@ -1,12 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <rect width="180" height="180" rx="40" fill="#0f1623"/>
-  <rect x="18" y="28" width="62" height="40" rx="10" fill="none" stroke="#4f8ef7" stroke-width="8"/>
-  <rect x="100" y="28" width="62" height="40" rx="10" fill="none" stroke="#4f8ef7" stroke-width="8"/>
-  <line x1="80" y1="48" x2="100" y2="48" stroke="#4f8ef7" stroke-width="8" stroke-linecap="round"/>
-  <polyline points="92,38 100,48 92,58" fill="none" stroke="#4f8ef7" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <polygon points="90,88 120,114 90,140 60,114" fill="none" stroke="#7eb8f7" stroke-width="8" stroke-linejoin="round"/>
-  <line x1="60" y1="114" x2="28" y2="114" stroke="#7eb8f7" stroke-width="7" stroke-linecap="round"/>
-  <line x1="120" y1="114" x2="152" y2="114" stroke="#7eb8f7" stroke-width="7" stroke-linecap="round"/>
-  <circle cx="28" cy="114" r="14" fill="#1a2540" stroke="#7eb8f7" stroke-width="7"/>
-  <circle cx="152" cy="114" r="14" fill="#1a2540" stroke="#7eb8f7" stroke-width="7"/>
+  <rect width="180" height="180" rx="40" fill="#F0FAF7" />
+  <g transform="translate(22, 28) scale(4.25)">
+    <!-- Fish body -->
+    <path d="M6 16c0-5 4-9 10-9s10 4 10 9-4 9-10 9S6 21 6 16Z" fill="#3ECFB4" />
+    <!-- Tail fin -->
+    <path d="M4 10c3 3 3 6 3 6s0 3-3 6c2-1 5-3 5-6s-3-5-5-6Z" fill="#F9A825" />
+    <!-- Eye -->
+    <circle cx="20.5" cy="14" r="2" fill="white" />
+    <circle cx="21" cy="13.7" r="0.9" fill="#1a1a2e" />
+    <!-- Scale lines -->
+    <path d="M12 13c2-.5 4 0 5 1M11 17c2 .5 4 0 5-1" stroke="#2BB99A" stroke-width="0.7" fill="none" stroke-linecap="round" />
+  </g>
 </svg>
