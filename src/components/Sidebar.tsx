@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo, type RefObject } from 'react'
+import React, { useState, useRef, useEffect, useMemo, type RefObject } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { mermaid as mermaidLang } from 'codemirror-lang-mermaid'
 import { mermaidFallbackLanguage } from '@/lib/mermaidHighlight'
@@ -286,7 +286,7 @@ type SidebarTab = 'code' | 'config'
 
 interface SidebarProps {
   code: string
-  insertRef?: RefObject<((text: string) => void) | null>
+  insertRef?: React.MutableRefObject<((text: string) => void) | null>
   onAltClick?: (ref: TokenRef) => void
   mode: AppMode
   pages: DiagramPage[]
@@ -344,7 +344,6 @@ export function Sidebar({
 
   const altClickExt = useMemo(
     () => onAltClick ? mermaidAltClickExtension(onAltClick, isDark) : [],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [onAltClick, isDark],
   )
 
@@ -441,7 +440,8 @@ export function Sidebar({
 
   // Expose insertAtCursor via ref so parent can call it (e.g. from docs panel)
   useEffect(() => {
-    if (insertRef) (insertRef as React.MutableRefObject<((t: string) => void) | null>).current = insertAtCursor
+    if (!insertRef) return
+    insertRef.current = insertAtCursor
   })
 
   const handleCodeChange = (value: string) => {

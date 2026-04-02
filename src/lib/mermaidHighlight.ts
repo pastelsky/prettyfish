@@ -118,7 +118,7 @@ export const mermaidFallbackLanguage = StreamLanguage.define<State>({
     return null
   },
 
-  blankLine(_state) {
+  blankLine() {
     // no-op
   },
 

@@ -69,7 +69,7 @@ export function mermaidAltClickExtension(
         return { dom }
       },
     }
-  }, { hoverTime: 300, hideOn: (_tr, _tooltip) => false })
+  }, { hoverTime: 300, hideOn: () => false })
 
   // 2. Alt+click handler
   const clickHandler = EditorView.domEventHandlers({

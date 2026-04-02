@@ -73,7 +73,7 @@ export default function App() {
       const delta = ev.clientX - sidebarResizeRef.current.startX
       const next = Math.min(SIDEBAR_MAX, Math.max(SIDEBAR_MIN, sidebarResizeRef.current.startW + delta))
       setSidebarWidth(next)
-      try { sessionStorage.setItem('diagram-studio:sidebar-width', String(next)) } catch {}
+      try { sessionStorage.setItem('diagram-studio:sidebar-width', String(next)) } catch { /* ignore */ }
     }
     const onUp = () => {
       sidebarResizeRef.current = null

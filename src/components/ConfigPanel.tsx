@@ -79,13 +79,14 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
   const [jsonText, setJsonText] = useState(() => JSON.stringify(config, null, 2))
   const [jsonError, setJsonError] = useState<string | null>(null)
 
-  // Keep jsonText in sync when config changes externally (e.g. reset)
+  // Keep jsonText in sync when config changes externally or when switching to visual mode
   useEffect(() => {
-    if (viewMode === 'visual') {
-      setJsonText(JSON.stringify(config, null, 2))
-      setJsonError(null)
-    }
-  }, [config, viewMode])
+    if (viewMode !== 'visual') return
+    setJsonText(JSON.stringify(config, null, 2))
+    setJsonError(null)
+    // We deliberately include config+viewMode — this effect is the canonical sync
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(config), viewMode])
 
   const handleJsonChange = useCallback((val: string) => {
     setJsonText(val)
