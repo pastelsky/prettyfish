@@ -18,6 +18,25 @@ import { copyShareUrl } from '../lib/share'
 import { ExportPopover } from './ExportPopover'
 import type { AppMode, AppState, MermaidTheme } from '../types'
 import { MERMAID_THEMES } from '../types'
+import { CUSTOM_THEME_PRESETS } from '@/lib/themePresets'
+
+/** Color swatches for theme preview — [primary, secondary, accent/line] */
+const THEME_SWATCHES: Record<string, [string, string, string]> = {
+  default: ['#4f46e5', '#eef2ff', '#6b7280'],
+  neutral: ['#6b7280', '#f3f4f6', '#9ca3af'],
+  dark: ['#1f2937', '#374151', '#9ca3af'],
+  forest: ['#228b22', '#e6f4e6', '#2d8f2d'],
+  base: ['#4f46e5', '#ffffff', '#6b7280'],
+}
+// Derive custom theme swatches from their themeVariables
+for (const [key, preset] of Object.entries(CUSTOM_THEME_PRESETS)) {
+  const tv = preset.themeVariables
+  THEME_SWATCHES[key] = [
+    tv.primaryColor ?? '#4f46e5',
+    tv.secondaryColor ?? tv.mainBkg ?? '#eee',
+    tv.lineColor ?? '#888',
+  ]
+}
 
 interface HeaderProps {
   mode: AppMode
@@ -244,6 +263,12 @@ function ThemeDropdown({
           open && (isDark ? 'bg-white/10' : 'bg-black/7'),
         )}
       >
+        {(() => { const sw = THEME_SWATCHES[value]; return sw ? (
+          <span className="flex gap-px shrink-0">
+            <span className="w-2 h-2 rounded-full border border-black/10" style={{ background: sw[0] }} />
+            <span className="w-2 h-2 rounded-full border border-black/10" style={{ background: sw[1] }} />
+          </span>
+        ) : null })()}
         {current?.label ?? value}
         <CaretDown className="w-3 h-3 text-muted-foreground" />
       </button>
@@ -261,19 +286,25 @@ function ThemeDropdown({
             <div className={cn('px-3 pt-1 pb-0.5 text-[9px] font-semibold uppercase tracking-widest', isDark ? 'text-zinc-600' : 'text-zinc-400')}>Built-in</div>
             {MERMAID_THEMES.filter(t => t.group === 'builtin').map((t) => {
               const isActive = t.value === value
+              const sw = THEME_SWATCHES[t.value]
               return (
                 <button
                   key={t.value}
                   onClick={() => { onChange(t.value); setOpen(false) }}
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-1.5 text-xs cursor-pointer transition-colors text-left',
+                    'flex items-center gap-2 w-full px-3 py-1.5 text-xs cursor-pointer transition-colors text-left',
                     isActive
                       ? (isDark ? 'bg-primary/15 text-primary' : 'bg-primary/8 text-primary')
                       : (isDark ? 'text-zinc-100 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4'),
                   )}
                 >
-                  {t.label}
-                  {isActive && <Check className="w-3 h-3" />}
+                  {sw && <span className="flex gap-0.5 shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[0] }} />
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[1] }} />
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[2] }} />
+                  </span>}
+                  <span className="flex-1">{t.label}</span>
+                  {isActive && <Check className="w-3 h-3 shrink-0" />}
                 </button>
               )
             })}
@@ -283,19 +314,25 @@ function ThemeDropdown({
             <div className={cn('px-3 pt-0.5 pb-0.5 text-[9px] font-semibold uppercase tracking-widest', isDark ? 'text-zinc-600' : 'text-zinc-400')}>Custom</div>
             {MERMAID_THEMES.filter(t => t.group === 'custom').map((t) => {
               const isActive = t.value === value
+              const sw = THEME_SWATCHES[t.value]
               return (
                 <button
                   key={t.value}
                   onClick={() => { onChange(t.value); setOpen(false) }}
                   className={cn(
-                    'flex items-center justify-between w-full px-3 py-1.5 text-xs cursor-pointer transition-colors text-left',
+                    'flex items-center gap-2 w-full px-3 py-1.5 text-xs cursor-pointer transition-colors text-left',
                     isActive
                       ? (isDark ? 'bg-primary/15 text-primary' : 'bg-primary/8 text-primary')
                       : (isDark ? 'text-zinc-100 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4'),
                   )}
                 >
-                  {t.label}
-                  {isActive && <Check className="w-3 h-3" />}
+                  {sw && <span className="flex gap-0.5 shrink-0">
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[0] }} />
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[1] }} />
+                    <span className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: sw[2] }} />
+                  </span>}
+                  <span className="flex-1">{t.label}</span>
+                  {isActive && <Check className="w-3 h-3 shrink-0" />}
                 </button>
               )
             })}
