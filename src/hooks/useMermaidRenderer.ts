@@ -120,8 +120,14 @@ export function useMermaidRenderer(
         fontFamily: diagramConfig.fontFamily,
         fontSize: diagramConfig.fontSize,
         themeVariables: customPreset
+          // Custom preset: use preset colors
           ? { ...customPreset.themeVariables, fontSize: fontSizeStr }
-          : { ...diagramConfig.themeVariables, fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr },
+          // Built-in 'base' theme: user controls colors via config panel
+          : effectiveTheme === 'base'
+            ? { ...diagramConfig.themeVariables, fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr }
+            // Other built-in themes (default, neutral, dark, forest): only pass font info,
+            // don't pass color themeVariables or they'll override the theme's own palette
+            : { fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr },
         flowchart: diagramConfig.flowchart,
         sequence: diagramConfig.sequence,
         gantt: diagramConfig.gantt,
