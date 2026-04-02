@@ -300,6 +300,7 @@ export const ReferenceDocs = forwardRef<ReferenceDocsHandle, ReferenceDocsProps>
     const [selectedType, setSelectedType] = useState<string>(detectedType)
     const [expandedElements, setExpandedElements] = useState<Record<string, boolean>>({})
     const [insertedCode, setInsertedCode] = useState<string | null>(null)
+    const [searchQuery, setSearchQuery] = useState('')
     const elementRefs = useRef<Record<string, HTMLDivElement | null>>({})
 
     // Auto-sync selected type when code changes diagram type
@@ -345,11 +346,23 @@ export const ReferenceDocs = forwardRef<ReferenceDocsHandle, ReferenceDocsProps>
     const handleSelectType = useCallback((type: string) => {
       setSelectedType(type)
       setExpandedElements({})
+      setSearchQuery('')
     }, [])
 
     const docRef = getRef(selectedType)
     const { border } = useTheme(isDark)
     const bg = isDark ? 'oklch(0.16 0.015 260)' : '#ffffff'
+
+    // Filter elements by search query
+    const q = searchQuery.trim().toLowerCase()
+    const filteredElements = q
+      ? docRef.elements.filter(el =>
+          el.name.toLowerCase().includes(q) ||
+          el.description.toLowerCase().includes(q) ||
+          el.syntax?.toLowerCase().includes(q) ||
+          el.examples?.some(ex => ex.code.toLowerCase().includes(q) || ex.label.toLowerCase().includes(q))
+        )
+      : docRef.elements
 
     return (
       <div className="flex flex-col h-full overflow-hidden" style={{ background: bg }}>
@@ -359,9 +372,24 @@ export const ReferenceDocs = forwardRef<ReferenceDocsHandle, ReferenceDocsProps>
             isDark={isDark}
             onSelect={handleSelectType}
           />
+          {/* Search */}
+          <div className="px-3 pb-2">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search elements..."
+              className={cn(
+                'w-full px-2.5 py-1.5 rounded-md text-xs outline-none transition-colors border',
+                isDark
+                  ? 'bg-white/5 border-white/8 text-zinc-200 placeholder:text-zinc-600 focus:border-primary/40'
+                  : 'bg-black/3 border-black/8 text-zinc-800 placeholder:text-zinc-400 focus:border-primary/40',
+              )}
+            />
+          </div>
         </div>
         <RefElementList
-          elements={docRef.elements}
+          elements={filteredElements}
           isDark={isDark}
           selectedType={selectedType}
           expandedElements={expandedElements}
