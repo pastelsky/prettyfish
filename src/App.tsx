@@ -6,6 +6,7 @@ import { Sidebar } from './components/Sidebar'
 import { Canvas } from './components/Canvas'
 import { KeyboardHelp } from './components/KeyboardHelp'
 import { ReferenceDocs, type ReferenceDocsHandle } from './components/ReferenceDocs'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { useMermaidRenderer } from './hooks/useMermaidRenderer'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { loadFromStorage, saveToStorage, STORAGE_KEYS } from './lib/storage'
@@ -180,15 +181,17 @@ export default function App() {
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       {/* Full-bleed canvas */}
-      <Canvas
-        svg={svg}
-        hasError={!!error}
-        mode={mode}
-        sidebarOpen={sidebarOpen}
-        sidebarWidth={sidebarWidth}
-        docsOpen={docsOpen}
-        transformRef={transformRef}
-      />
+      <ErrorBoundary label="Canvas rendering failed">
+        <Canvas
+          svg={svg}
+          hasError={!!error}
+          mode={mode}
+          sidebarOpen={sidebarOpen}
+          sidebarWidth={sidebarWidth}
+          docsOpen={docsOpen}
+          transformRef={transformRef}
+        />
+      </ErrorBoundary>
 
       {/* Floating header */}
       <Header
@@ -223,33 +226,35 @@ export default function App() {
             {/* Subtle grip dots */}
             <div className="w-0.5 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-primary/40" />
           </div>
-          <Sidebar
-            code={activePage.code}
-            mode={mode}
-            pages={pages}
-            activePageId={activePageId}
-            diagramConfig={diagramConfig}
-            error={error}
-            editorLigatures={editorLigatures}
-            autoFormat={autoFormat}
-            editorFocusRef={editorFocusRef}
-            onInsertReady={handleInsertReady}
-            onAltClick={(ref) => {
-              setDocsOpen(true)
-              setTimeout(() => referenceDocsRef.current?.scrollToElement(ref.diagramType, ref.elementName), 50)
-            }}
-            onChange={updateCode}
-            onSelectPage={setActivePageId}
-            onAddPage={addPage}
-            onRenamePage={renamePage}
-            onDeletePage={deletePage}
-            onReorderPages={reorderPages}
-            mermaidTheme={mermaidTheme}
-            onConfigChange={setDiagramConfig}
-            onMermaidThemeChange={(t) => setMermaidTheme(t as MermaidTheme)}
-            onLigaturesChange={setEditorLigatures}
-            onAutoFormatChange={setAutoFormat}
-          />
+          <ErrorBoundary label="Editor panel failed to load">
+            <Sidebar
+              code={activePage.code}
+              mode={mode}
+              pages={pages}
+              activePageId={activePageId}
+              diagramConfig={diagramConfig}
+              error={error}
+              editorLigatures={editorLigatures}
+              autoFormat={autoFormat}
+              editorFocusRef={editorFocusRef}
+              onInsertReady={handleInsertReady}
+              onAltClick={(ref) => {
+                setDocsOpen(true)
+                setTimeout(() => referenceDocsRef.current?.scrollToElement(ref.diagramType, ref.elementName), 50)
+              }}
+              onChange={updateCode}
+              onSelectPage={setActivePageId}
+              onAddPage={addPage}
+              onRenamePage={renamePage}
+              onDeletePage={deletePage}
+              onReorderPages={reorderPages}
+              mermaidTheme={mermaidTheme}
+              onConfigChange={setDiagramConfig}
+              onMermaidThemeChange={(t) => setMermaidTheme(t as MermaidTheme)}
+              onLigaturesChange={setEditorLigatures}
+              onAutoFormatChange={setAutoFormat}
+            />
+          </ErrorBoundary>
         </div>
       )}
 
@@ -263,12 +268,14 @@ export default function App() {
             backdropFilter: 'none',
           }}
         >
-          <ReferenceDocs
-            ref={referenceDocsRef}
-            currentCode={activePage.code}
-            mode={mode}
-            onInsert={(text) => insertRef.current?.(text)}
-          />
+          <ErrorBoundary label="Reference docs failed to load">
+            <ReferenceDocs
+              ref={referenceDocsRef}
+              currentCode={activePage.code}
+              mode={mode}
+              onInsert={(text) => insertRef.current?.(text)}
+            />
+          </ErrorBoundary>
         </div>
       )}
 
