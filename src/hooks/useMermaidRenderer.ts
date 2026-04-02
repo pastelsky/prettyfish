@@ -112,25 +112,37 @@ export function useMermaidRenderer(
       const customPreset = isCustom ? CUSTOM_THEME_PRESETS[theme] : null
       const effectiveTheme = isCustom ? 'base' : theme
 
+      // Merge config overrides from custom presets
+      const co = customPreset?.configOverrides
+      const effectiveLook = co?.look ?? diagramConfig.look
+      const effectiveFont = co?.fontFamily ?? diagramConfig.fontFamily
+      const effectiveFontSize = co?.fontSize ?? diagramConfig.fontSize
+      const effectiveFontSizeStr = `${effectiveFontSize}px`
+
       mermaid.initialize({
         startOnLoad: false,
         theme: effectiveTheme,
         securityLevel: 'loose',
-        look: diagramConfig.look,
-        fontFamily: diagramConfig.fontFamily,
-        fontSize: diagramConfig.fontSize,
+        look: effectiveLook,
+        fontFamily: effectiveFont,
+        fontSize: effectiveFontSize,
         themeVariables: customPreset
-          // Custom preset: use preset colors
-          ? { ...customPreset.themeVariables, fontSize: fontSizeStr }
+          // Custom preset: use preset colors + font
+          ? { ...customPreset.themeVariables, fontSize: effectiveFontSizeStr }
           // Built-in 'base' theme: user controls colors via config panel
           : effectiveTheme === 'base'
             ? { ...diagramConfig.themeVariables, fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr }
-            // Other built-in themes (default, neutral, dark, forest): only pass font info,
-            // don't pass color themeVariables or they'll override the theme's own palette
+            // Other built-in themes: only pass font info
             : { fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr },
-        flowchart: diagramConfig.flowchart,
-        sequence: diagramConfig.sequence,
-        gantt: diagramConfig.gantt,
+        flowchart: co?.flowchart
+          ? { ...diagramConfig.flowchart, ...co.flowchart }
+          : diagramConfig.flowchart,
+        sequence: co?.sequence
+          ? { ...diagramConfig.sequence, ...co.sequence }
+          : diagramConfig.sequence,
+        gantt: co?.gantt
+          ? { ...diagramConfig.gantt, ...co.gantt }
+          : diagramConfig.gantt,
       })
 
       try {
