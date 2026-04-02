@@ -1,9 +1,13 @@
 const PREFIX = 'mermaid-renderer:'
 
 export const STORAGE_KEYS = {
-  code: `${PREFIX}code`,
+  pages: `${PREFIX}pages`,
+  activePageId: `${PREFIX}active-page-id`,
   mode: `${PREFIX}mode`,
   mermaidTheme: `${PREFIX}mermaid-theme`,
+  diagramConfig: `${PREFIX}diagram-config`,
+  editorLigatures: `${PREFIX}editor-ligatures`,
+  autoFormat: `${PREFIX}auto-format`,
 } as const
 
 export function loadFromStorage<T>(key: string, fallback: T): T {

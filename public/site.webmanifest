@@ -1,0 +1,25 @@
+{
+  "name": "Diagram Studio",
+  "short_name": "Diagram Studio",
+  "description": "A professional Mermaid diagram editor with live preview, multi-page support, and one-click export.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f1623",
+  "theme_color": "#0f1623",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities", "developer tools"],
+  "screenshots": []
+}

@@ -1,4 +1,4 @@
-import type { AppState } from '../types'
+import type { AppState } from '@/types'
 
 const HASH_PREFIX = '#/d/'
 
