@@ -444,8 +444,8 @@ export function Sidebar({
     onInsertReady?.(insertAtCursor)
   }, [onInsertReady, insertAtCursor])
 
+  // eslint-disable-next-line react-compiler/react-compiler
   function handleCreateEditor(view: EditorView) {
-    // eslint-disable-next-line react-compiler/react-compiler
     editorViewRef.current = view
     editorFocusRef.current = () => view.focus()
   }
