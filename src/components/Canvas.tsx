@@ -118,7 +118,7 @@ export function Canvas({ svg, hasError, mode, sidebarOpen, sidebarWidth, docsOpe
     : '0'
 
   return (
-    <div className="w-full h-full relative" style={backgroundStyle} ref={wrapperRef}>
+    <div className="w-full h-full relative" style={{ ...backgroundStyle, touchAction: 'none' }} ref={wrapperRef}>
 
       {/* Zoom controls — centered in visible canvas (after sidebar) */}
       <div

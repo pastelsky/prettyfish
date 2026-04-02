@@ -124,6 +124,12 @@
   * {
     @apply border-border outline-ring/50;
   }
+  html {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
@@ -131,6 +137,19 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+  }
+  /* Re-enable touch scrolling inside scrollable panels */
+  [data-sidebar-panel],
+  .overflow-y-auto,
+  .custom-scrollbar {
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
   }
   h1, h2, h3 {
     @apply font-serif;

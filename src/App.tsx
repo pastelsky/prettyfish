@@ -226,7 +226,7 @@ export default function App() {
   }), [pages, activePageId, mode, mermaidTheme, diagramConfig, editorLigatures])
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden">
+    <div className="relative w-full h-full overflow-hidden" style={{ position: 'fixed', inset: 0 }}>
       {/* Full-bleed canvas */}
       <ErrorBoundary label="Canvas rendering failed">
         <Canvas
