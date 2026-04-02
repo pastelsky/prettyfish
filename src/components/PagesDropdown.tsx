@@ -128,8 +128,8 @@ export function PagesDropdown({
             ? 'bg-[oklch(0.17_0.018_260)] border-white/12'
             : 'bg-white border-black/10',
         )}
-        style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
-          <div className="max-h-64 overflow-y-auto custom-scrollbar py-1">
+        style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)', minWidth: '240px', maxWidth: '320px' }}>
+          <div className="max-h-80 overflow-y-auto custom-scrollbar py-1">
             {/* Ungrouped pages at top */}
             {ungroupedPages.length > 0 && (
               <>
@@ -142,7 +142,7 @@ export function PagesDropdown({
                     <div
                       key={page.id}
                       className={cn(
-                        'group flex items-center gap-2 px-2.5 py-1.5 text-xs transition-colors select-none',
+                        'group flex items-center gap-2 px-3 py-2 text-[13px] transition-colors select-none',
                         isRenaming || isConfirmDelete ? 'cursor-default' : 'cursor-pointer',
                         isActive
                           ? cn('font-medium', isDark ? 'bg-white/10 text-white' : 'bg-primary/8 text-foreground')
@@ -223,7 +223,7 @@ export function PagesDropdown({
                   {/* Folder header */}
                   <div
                     className={cn(
-                      'group flex items-center gap-2 px-2.5 py-1.5 text-xs transition-colors select-none',
+                      'group flex items-center gap-2 px-3 py-2 text-[13px] transition-colors select-none',
                       isRenamingFolder || isConfirmDeleteFolder ? 'cursor-default' : 'cursor-pointer',
                       isDark ? 'text-zinc-200 hover:bg-white/6 hover:text-white' : 'text-zinc-700 hover:bg-black/4 hover:text-foreground',
                     )}
@@ -295,7 +295,7 @@ export function PagesDropdown({
                       <div
                         key={page.id}
                         className={cn(
-                          'group flex items-center gap-2 pl-7 pr-2.5 py-1.5 text-xs transition-colors select-none',
+                          'group flex items-center gap-2 pl-8 pr-3 py-2 text-[13px] transition-colors select-none',
                           isRenaming || isConfirmDelete ? 'cursor-default' : 'cursor-pointer',
                           'border-l border-l-transparent',
                           isDark ? 'hover:border-l-white/20' : 'hover:border-l-black/10',
