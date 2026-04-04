@@ -3,6 +3,7 @@ import mermaid from 'mermaid'
 import type { MermaidTheme, DiagramConfig } from '../types'
 import { BUILTIN_THEMES } from '../types'
 import { CUSTOM_THEME_PRESETS } from '../lib/themePresets'
+import { pfDebug } from '../lib/debug'
 
 let renderCounter = 0
 
@@ -91,6 +92,10 @@ export function useMermaidRenderer(
   const errorDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const prevCodeRef = useRef<string>(code)
 
+  // Serialize diagramConfig for stable dependency comparison
+  // (resolveConfig creates new objects on each call, causing infinite re-renders)
+  const configJson = JSON.stringify(diagramConfig)
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
@@ -101,7 +106,13 @@ export function useMermaidRenderer(
 
     debounceRef.current = setTimeout(async () => {
       const trimmed = code.trim()
+      pfDebug('mermaid-render', 'render scheduled fired', {
+        codeLength: code.length,
+        trimmedLength: trimmed.length,
+        theme,
+      })
       if (!trimmed) {
+        pfDebug('mermaid-render', 'render skipped empty code')
         setSvg('')
         setError(null)
         return
@@ -136,13 +147,16 @@ export function useMermaidRenderer(
 
       try {
         const id = `mermaid-render-${++renderCounter}`
+        pfDebug('mermaid-render', 'render start', { id, theme, codeLength: trimmed.length })
         const { svg: rendered } = await mermaid.render(id, trimmed)
+        pfDebug('mermaid-render', 'render success', { id, svgLength: rendered.length })
         // Success — cancel any pending error reveal and clear immediately
         if (errorDebounceRef.current) clearTimeout(errorDebounceRef.current)
         setSvg(rendered)
         setError(null)
       } catch (err: unknown) {
         const parsed = parseError(err)
+        pfDebug('mermaid-render', 'render error', parsed)
         setSvg('')
         // Delay showing the error 500ms so it doesn't flash while still typing
         if (errorDebounceRef.current) clearTimeout(errorDebounceRef.current)
@@ -160,7 +174,8 @@ export function useMermaidRenderer(
       if (debounceRef.current) clearTimeout(debounceRef.current)
       if (errorDebounceRef.current) clearTimeout(errorDebounceRef.current)
     }
-  }, [code, theme, diagramConfig])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, theme, configJson])
 
   return { svg, error }
 }

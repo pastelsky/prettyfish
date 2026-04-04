@@ -3,9 +3,9 @@ import type { AppState } from '@/types'
 const HASH_PREFIX = '#/d/'
 
 /**
- * Encodes the full app state (code + mode + mermaid theme) into a
- * URL-safe base64 string and sets it as the URL hash.
- * The resulting URL can be shared and will restore the exact state.
+ * Encodes an app state payload into a URL-safe base64 string and sets it as
+ * the URL hash. The payload may represent the full project or a scoped view
+ * such as a single shared diagram.
  */
 export function encodeStateToHash(state: AppState): string {
   const json = JSON.stringify(state)

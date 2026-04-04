@@ -374,7 +374,7 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
         syntax: 'A ->)B: Message',
         description: 'Send a message with open circle on target',
         examples: [
-          { label: 'Open circle', code: 'sequenceDiagram\n  A ->)B: Message to open circle' },
+          { label: 'Open circle', code: 'sequenceDiagram\n  A ->> B: Message to open circle' },
         ],
       },
       {
@@ -526,7 +526,7 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
         syntax: 'box rgb(200, 150, 255)\n  participant A\n  participant B\nend',
         description: 'Group participants in a colored box',
         examples: [
-          { label: 'Box group', code: 'sequenceDiagram\n  box rgb(200, 150, 255)\n    participant Frontend\n    participant Cache\n  end\n  box rgb(150, 200, 255)\n    participant Backend\n  end\n  Frontend ->> Cache: Query' },
+          { label: 'Box group', code: 'sequenceDiagram\n  box LightBlue\n    participant Frontend\n    participant Cache\n  end\n  box LightGreen\n    participant Backend\n  end\n  Frontend ->> Cache: Query' },
         ],
       },
     ],
@@ -780,7 +780,7 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
         syntax: 'state Name {\n  ...\n}',
         description: 'Nested states inside a composite state',
         examples: [
-          { label: 'Composite', code: 'stateDiagram-v2\n  state Processing {\n    Validate --> Process\n    Process --> Store\n  }\n  [*] --> Processing --> [*]' },
+          { label: 'Composite', code: 'stateDiagram-v2\n  state Processing {\n    Validate --> Process\n    Process --> Store\n  }\n  [*] --> Processing\n  Processing --> [*]' },
         ],
       },
       {
@@ -812,7 +812,7 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
         syntax: 'direction LR|TB',
         description: 'Set diagram direction (LR=left-right, TB=top-bottom)',
         examples: [
-          { label: 'Horizontal', code: 'stateDiagram-v2\n  direction LR\n  A --> B --> C' },
+          { label: 'Horizontal', code: 'stateDiagram-v2\n  direction LR\n  A --> B\n  B --> C' },
         ],
       },
       {
@@ -1146,7 +1146,7 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
         syntax: 'weekday monday,tuesday,wednesday',
         description: 'Specify which days are working days',
         examples: [
-          { label: 'Weekdays', code: 'gantt\n  dateFormat YYYY-MM-DD\n  weekday saturday,sunday\n  section Work\n    Task : 2024-01-01, 7d' },
+          { label: 'Weekdays', code: 'gantt\n  dateFormat YYYY-MM-DD\n  excludes weekends\n  section Work\n    Task : 2024-01-01, 7d' },
         ],
       },
     ],
@@ -1301,10 +1301,10 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
       },
       {
         name: 'LR direction',
-        syntax: 'gitGraph LR',
+        syntax: 'gitGraph\n%%{init: { "gitGraph": {"mainBranchName": "main"}} }%%',
         description: 'Display graph horizontally (left-right)',
         examples: [
-          { label: 'Horizontal', code: 'gitGraph LR\n  commit\n  commit' },
+          { label: 'Horizontal', code: 'gitGraph\n  commit\n  commit\n  branch feature\n  checkout feature\n  commit' },
         ],
       },
     ],
@@ -1691,18 +1691,18 @@ export const DIAGRAM_REFS: Record<string, DiagramRef> = {
     label: 'Requirement',
     elements: [
       { name: 'requirementDiagram', syntax: 'requirementDiagram', description: 'Declares a requirement diagram', examples: [{ label: 'Basic', code: 'requirementDiagram\n  requirement r1 {\n    id: 1\n    text: Must work\n    risk: low\n    verifymethod: test\n  }' }] },
-      { name: 'requirement', syntax: 'requirement name { ... }', description: 'Defines a requirement with id, text, risk, verifymethod', examples: [{ label: 'Requirement', code: 'requirementDiagram\n  requirement auth {\n    id: REQ-1\n    text: Must authenticate\n    risk: high\n    verifymethod: test\n  }' }] },
+      { name: 'requirement', syntax: 'requirement name { ... }', description: 'Defines a requirement with id, text, risk, verifymethod', examples: [{ label: 'Requirement', code: 'requirementDiagram\n  requirement auth {\n    id: 1\n    text: "Must authenticate"\n    risk: high\n    verifymethod: test\n  }' }] },
       { name: 'element', syntax: 'element name { type: ... }', description: 'Defines a design element', examples: [{ label: 'Element', code: 'requirementDiagram\n  element app {\n    type: application\n  }' }] },
-      { name: 'relationship', syntax: 'el - type -> req', description: 'Links elements to requirements (satisfies, traces, contains, derives, refines, verifies)', examples: [{ label: 'Satisfies', code: 'requirementDiagram\n  requirement r1 {\n    id: 1\n    text: Test\n    risk: low\n    verifymethod: test\n  }\n  element app {\n    type: application\n  }\n  app - satisfies -> r1' }] },
+      { name: 'relationship', syntax: 'el - type -> req', description: 'Links elements to requirements (satisfies, traces, contains, derives, refines, verifies)', examples: [{ label: 'Satisfies', code: 'requirementDiagram\n  requirement r1 {\n    id: 1\n    text: "Must work"\n    risk: low\n  }\n  element app {\n    type: application\n  }\n  app - satisfies -> r1' }] },
     ],
   },
   radar: {
     id: 'radar',
     label: 'Radar',
     elements: [
-      { name: 'radar-beta', syntax: 'radar-beta', description: 'Declares a radar/spider chart (beta)', examples: [{ label: 'Basic', code: 'radar-beta\n  axis a, b, c, d\n  curve x: 3, 4, 2, 5' }] },
+      { name: 'radar-beta', syntax: 'radar-beta', description: 'Declares a radar/spider chart (beta)', examples: [{ label: 'Basic', code: 'radar-beta\n  axis a, b, c, d\n  curve x {3, 4, 2, 5}' }] },
       { name: 'axis', syntax: 'axis name1, name2, ...', description: 'Defines the axes of the radar chart', examples: [{ label: 'Axes', code: 'radar-beta\n  axis Speed, Power, Range, Cost, Style' }] },
-      { name: 'curve', syntax: 'curve label: v1, v2, ...', description: 'A data series plotted on the radar', examples: [{ label: 'Two curves', code: 'radar-beta\n  axis a, b, c, d, e\n  curve Team A: 4, 3, 2, 5, 4\n  curve Team B: 2, 5, 4, 3, 5' }] },
+      { name: 'curve', syntax: 'curve label {v1, v2, ...}', description: 'A data series plotted on the radar', examples: [{ label: 'Two curves', code: 'radar-beta\n  axis a, b, c, d, e\n  curve TeamA {4, 3, 2, 5, 4}\n  curve TeamB {2, 5, 4, 3, 5}' }] },
     ],
   },
   architecture: {

@@ -179,9 +179,21 @@
 .cm-editor {
   background: transparent !important;
 }
+.cm-editor.cm-focused,
+.cm-editor:focus,
+.cm-editor:focus-visible,
+.cm-scroller:focus,
+.cm-scroller:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
 .cm-editor .cm-gutters {
   background: transparent !important;
   border-right: none !important;
+  color: oklch(0.54 0.01 260 / 68%) !important;
+}
+.dark .cm-editor .cm-gutters {
+  color: oklch(0.74 0.01 260 / 45%) !important;
 }
 .cm-editor .cm-activeLineGutter,
 .cm-editor .cm-activeLine {
@@ -247,4 +259,27 @@
 }
 .animate-fade-in {
   animation: fade-in 0.2s ease-out;
+}
+
+/* ── Artboard SVG scaling ────────────────────────────────────────────────── */
+.artboard-svg-container svg {
+  max-width: 100%;
+  height: auto !important;
+  display: block;
+  margin: 0 auto;
+}
+
+/* ── React Flow node overrides ───────────────────────────────────────────── */
+/* Remove default React Flow node border/selection ring (we draw our own) */
+.react-flow__node {
+  border-radius: 12px;
+}
+.react-flow__node-artboard {
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.react-flow__node.selected > * {
+  outline: none;
 }

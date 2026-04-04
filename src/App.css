@@ -1,1 +1,36 @@
 /* App.css — intentionally minimal; design system lives in index.css */
+
+.react-flow__resize-control.artboard-resize-handle {
+  border-radius: 9999px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+}
+
+.react-flow__resize-control.artboard-resize-line {
+  background: transparent;
+}
+
+.react-flow__resize-control.artboard-resize-line.left,
+.react-flow__resize-control.artboard-resize-line.right {
+  width: 10px !important;
+}
+
+.react-flow__resize-control.artboard-resize-line.top,
+.react-flow__resize-control.artboard-resize-line.bottom {
+  height: 10px !important;
+}
+
+/* Keep the top edge mostly available for dragging via the title area. */
+.react-flow__resize-control.artboard-resize-line.top,
+.react-flow__resize-control.artboard-resize-handle.top,
+.react-flow__resize-control.artboard-resize-handle.top.left,
+.react-flow__resize-control.artboard-resize-handle.top.right {
+  opacity: 0.35;
+}
+
+.react-flow__resize-control.artboard-resize-line.bottom,
+.react-flow__resize-control.artboard-resize-line.left,
+.react-flow__resize-control.artboard-resize-line.right,
+.react-flow__resize-control.artboard-resize-handle {
+  pointer-events: all;
+}
+

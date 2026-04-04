@@ -349,7 +349,12 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
         <Button
           variant="outline"
           size="sm"
-          className="w-full text-xs h-8 rounded-md gap-1.5"
+          className={cn(
+            'w-full text-xs h-8 rounded-md gap-1.5',
+            mode === 'dark'
+              ? 'bg-zinc-950 border-white/10 text-zinc-100 hover:bg-zinc-900 hover:text-zinc-100'
+              : 'bg-white border-black/10 text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900',
+          )}
           onClick={() => onChange(DEFAULT_DIAGRAM_CONFIG)}
         >
           <ArrowCounterClockwise className="w-3 h-3" /> Reset to Defaults
@@ -464,9 +469,6 @@ function ColorSwatch({ label, value, onChange }: { label: string; value: string;
   const [localColor, setLocalColor] = useState(value)
   const ref = useRef<HTMLDivElement>(null)
 
-  // Sync external changes
-  useEffect(() => { setLocalColor(value) }, [value])
-
   useEffect(() => {
     if (!open) return
     const handler = (e: MouseEvent) => {
@@ -484,7 +486,10 @@ function ColorSwatch({ label, value, onChange }: { label: string; value: string;
   return (
     <div ref={ref} className="relative">
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (!open) setLocalColor(value)
+          setOpen(!open)
+        }}
         className={cn(
           'flex flex-col items-center gap-1.5 p-2 rounded-md border border-border/40',
           'cursor-pointer transition-colors hover:border-border/80 w-full',

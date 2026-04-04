@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { DownloadSimple } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
@@ -31,15 +31,12 @@ interface ExportPopoverProps {
 
 export function ExportPopover({ svg, code, previewBg, isDark, pageName }: ExportPopoverProps) {
   const [open, setOpen] = useState(false)
-  const [filename, setFilename] = useState(() => toFilename(pageName))
+  const [filename, setFilename] = useState<string | null>(null)
   const [scale, setScale] = useState(2)
   const [exporting, setExporting] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-
-  // Update filename when pageName changes (e.g. user renames page or switches page)
-  useEffect(() => {
-    setFilename(toFilename(pageName))
-  }, [pageName])
+  const defaultFilename = useMemo(() => toFilename(pageName), [pageName])
+  const effectiveFilename = filename ?? defaultFilename
 
   useEffect(() => {
     if (!open) return
@@ -55,7 +52,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${filename || 'diagram'}.mmd`
+    a.download = `${effectiveFilename || 'diagram'}.mmd`
     a.click()
     URL.revokeObjectURL(url)
     setOpen(false)
@@ -63,20 +60,23 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
 
   const handleSvg = async () => {
     setExporting(true)
-    try { await exportSvg(svg, filename || 'diagram') }
+    try { await exportSvg(svg, effectiveFilename || 'diagram') }
     finally { setExporting(false); setOpen(false) }
   }
 
   const handlePng = async () => {
     setExporting(true)
-    try { await exportPng(svg, previewBg, filename || 'diagram', scale) }
+    try { await exportPng(svg, previewBg, effectiveFilename || 'diagram', scale) }
     finally { setExporting(false); setOpen(false) }
   }
 
   return (
     <div ref={ref} className="relative">
       <Button
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          if (!open) setFilename(null)
+          setOpen(!open)
+        }}
         variant="ghost"
         size="sm"
         className={cn(
@@ -98,7 +98,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
 
           {/* Filename */}
           <input
-            value={filename}
+            value={effectiveFilename}
             onChange={(e) => setFilename(e.target.value)}
             placeholder="filename"
             style={{ fontSize: '12px' }}

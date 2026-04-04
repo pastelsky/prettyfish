@@ -345,9 +345,8 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     description: 'Flow diagrams showing quantities',
     icon: '🌊',
     code: `sankey-beta
-
-Agricultural "ichiban",Prod A,10
-Agricultural "ichiban",Prod B,25
+Agricultural,Prod A,10
+Agricultural,Prod B,25
 Prod A,Consumer X,10
 Prod B,Consumer X,15
 Prod B,Consumer Y,10`,
@@ -408,7 +407,7 @@ Prod B,Consumer Y,10`,
     code: `requirementDiagram
 
   requirement Login {
-    id: REQ-001
+    id: 1
     text: Users must be able to log in
     risk: low
     verifymethod: test
@@ -427,7 +426,7 @@ Prod B,Consumer Y,10`,
     icon: '🎯',
     code: `radar-beta
   axis speed, reliability, cost, features, support
-  curve teamA: 4, 3, 2, 5, 4
-  curve teamB: 2, 5, 4, 3, 5`,
+  curve teamA {4, 3, 2, 5, 4}
+  curve teamB {2, 5, 4, 3, 5}`,
   },
 ]

@@ -14,53 +14,56 @@ interface KeyboardHelpProps {
 
 const isMac = typeof navigator !== 'undefined' && /mac/i.test(navigator.platform)
 const Mod = isMac ? '⌘' : 'Ctrl'
+const BrowserMod = 'Ctrl'
 const Shift = '⇧'
-const _Alt = isMac ? '⌥' : 'Alt'
-const Tab = 'Tab'
 
-interface ShortcutRow {
-  keys: string[]
-  description: string
-}
-
-interface ShortcutSection {
-  title: string
-  shortcuts: ShortcutRow[]
-}
+interface ShortcutRow { keys: string[]; description: string }
+interface ShortcutSection { title: string; shortcuts: ShortcutRow[] }
 
 const SECTIONS: ShortcutSection[] = [
   {
     title: 'Canvas',
     shortcuts: [
-      { keys: [Mod, '+'], description: 'Zoom in' },
-      { keys: [Mod, '-'], description: 'Zoom out' },
-      { keys: [Mod, '0'], description: 'Fit to screen' },
-      { keys: ['Drag'], description: 'Pan canvas' },
       { keys: ['Scroll'], description: 'Zoom' },
+      { keys: ['Drag'], description: 'Pan canvas' },
+      { keys: ['Click'], description: 'Select diagram' },
+      { keys: ['Click name'], description: 'Rename diagram' },
     ],
   },
   {
-    title: 'Editor',
+    title: 'Diagrams',
     shortcuts: [
-      { keys: [Mod, '\\'], description: 'Toggle sidebar' },
-      { keys: [Mod, '/'], description: 'Focus editor' },
-      { keys: ['Esc'], description: 'Blur / dismiss' },
+      { keys: [BrowserMod, 'T'], description: 'New diagram' },
+      { keys: [Mod, 'C'], description: 'Copy selected diagram' },
+      { keys: [Mod, 'V'], description: 'Paste duplicated diagram' },
+      { keys: ['⌫'], description: 'Delete selected diagram' },
     ],
   },
   {
     title: 'Pages',
     shortcuts: [
-      { keys: [Mod, 'T'], description: 'New diagram' },
-      { keys: [Mod, Shift, ']'], description: 'Next tab' },
-      { keys: [Mod, Shift, '['], description: 'Previous tab' },
-      { keys: [Mod, Tab], description: 'Next (alt)' },
+      { keys: [BrowserMod, Shift, 'T'], description: 'New page' },
+      { keys: [BrowserMod, Shift, ']'], description: 'Next page' },
+      { keys: [BrowserMod, Shift, '['], description: 'Previous page' },
     ],
   },
   {
-    title: 'Actions',
+    title: 'Panels',
     shortcuts: [
-      { keys: [Mod, Shift, 'S'], description: 'Export' },
-      { keys: [Mod, Shift, 'D'], description: 'Toggle theme' },
+      { keys: [Mod, '\\'], description: 'Toggle editor sidebar' },
+      { keys: [BrowserMod, Shift, 'R'], description: 'Toggle reference docs' },
+      { keys: [Mod, '/'], description: 'Focus editor' },
+      { keys: ['Esc'], description: 'Blur / dismiss' },
+    ],
+  },
+  {
+    title: 'File & Actions',
+    shortcuts: [
+      { keys: [Mod, 'Z'], description: 'Undo canvas/page operation' },
+      { keys: [Mod, Shift, 'Z'], description: 'Redo canvas/page operation' },
+      { keys: [BrowserMod, 'S'], description: 'Save project' },
+      { keys: [BrowserMod, 'O'], description: 'Open project' },
+      { keys: [BrowserMod, Shift, 'D'], description: 'Toggle dark mode' },
       { keys: ['?'], description: 'This dialog' },
     ],
   },
@@ -86,12 +89,17 @@ export function KeyboardHelp({ open, onOpenChange }: KeyboardHelpProps) {
           <DialogTitle className="flex items-center gap-2 font-serif italic">
             Shortcuts
             <Badge variant="secondary" className="text-[10px] font-mono font-normal">
-              {isMac ? 'macOS' : 'Win/Linux'}
+              {isMac ? 'macOS mixed' : 'Win/Linux'}
             </Badge>
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 mt-1">
+          {isMac && (
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Standard editing uses ⌘. Browser-conflicting actions use Ctrl.
+            </p>
+          )}
           {SECTIONS.map((section, si) => (
             <div key={section.title}>
               {si > 0 && <div className="h-px bg-border/30 mb-4" />}
@@ -120,6 +128,3 @@ export function KeyboardHelp({ open, onOpenChange }: KeyboardHelpProps) {
     </Dialog>
   )
 }
-
-// suppress unused
-void _Alt

@@ -2,37 +2,46 @@ export type AppMode = 'light' | 'dark'
 export type MermaidBuiltinTheme = 'default' | 'neutral' | 'dark' | 'forest' | 'base'
 export type MermaidTheme = MermaidBuiltinTheme | 'wireframe' | 'corporate' | 'amethyst' | 'neon' | 'blueprint'
 
-/** Deep partial of DiagramConfig — only user-overridden fields */
 export type DiagramConfigOverrides = {
   [K in keyof DiagramConfig]?: DiagramConfig[K] extends object ? Partial<DiagramConfig[K]> : DiagramConfig[K]
 }
 
-export interface DiagramFolder {
+// ── Artboard ──────────────────────────────────────────────────────────────────
+// Each artboard lives on an infinite canvas and contains one Mermaid diagram.
+
+export interface Artboard {
   id: string
   name: string
-  collapsed: boolean
+  description?: string
+  code: string
+  /** Canvas position (React Flow coordinates) */
+  x: number
+  y: number
+  /** Artboard width in pixels */
+  width: number
+  mermaidTheme?: MermaidTheme
+  configOverrides?: DiagramConfigOverrides
 }
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+// A page is a named infinite canvas that contains multiple artboards.
 
 export interface DiagramPage {
   id: string
   name: string
-  code: string
-  mermaidTheme?: MermaidTheme
-  /** Only stores user-overridden config fields; rest comes from theme preset + defaults */
-  configOverrides?: DiagramConfigOverrides
-  /** @deprecated — use configOverrides instead. Kept for backward compat with old saved state */
-  diagramConfig?: DiagramConfig
-  /** Optional folder ID — if set, page belongs to this folder */
-  folderId?: string
+  artboards: Artboard[]
+  activeArtboardId: string | null
 }
 
+// ── App state ─────────────────────────────────────────────────────────────────
+
+/** Serializable application state — can be saved to / loaded from a JSON file. */
 export interface AppState {
+  /** Format version for future migrations */
+  version: 1
   pages: DiagramPage[]
-  folders: DiagramFolder[]
   activePageId: string
   mode: AppMode
-  mermaidTheme: MermaidTheme
-  diagramConfig: DiagramConfig
   editorLigatures: boolean
 }
 
@@ -57,15 +66,52 @@ export const DEFAULT_DIAGRAM = `flowchart TD
     B -->|No| D[Debug]
     D --> A`
 
-export function createPage(name: string, code: string = DEFAULT_DIAGRAM): DiagramPage {
-  return { id: crypto.randomUUID(), name, code, mermaidTheme: 'default', configOverrides: {} }
+// Grid layout constants for artboard placement
+export const ARTBOARD_COLS = 3
+export const ARTBOARD_GAP_X = 80
+export const ARTBOARD_GAP_Y = 100
+export const ARTBOARD_DEFAULT_WIDTH = 640
+export const ARTBOARD_DEFAULT_HEIGHT = 480 // approximate, actual height is dynamic
+
+export function nextArtboardPosition(artboards: Artboard[]): { x: number; y: number } {
+  const last = artboards[artboards.length - 1]
+  if (!last) {
+    return { x: 0, y: 0 }
+  }
+
+  return {
+    x: last.x + last.width + ARTBOARD_GAP_X,
+    y: last.y,
+  }
 }
 
-export function createFolder(name: string): DiagramFolder {
-  return { id: crypto.randomUUID(), name, collapsed: false }
+export function createArtboard(
+  name: string,
+  code: string = DEFAULT_DIAGRAM,
+  position?: { x: number; y: number },
+): Artboard {
+  return {
+    id: crypto.randomUUID(),
+    name,
+    code,
+    x: position?.x ?? 0,
+    y: position?.y ?? 0,
+    width: ARTBOARD_DEFAULT_WIDTH,
+    mermaidTheme: 'default',
+    configOverrides: {},
+  }
 }
 
-/** Deep merge: base ← overrides. Only copies defined override keys. */
+export function createPage(name: string, code?: string): DiagramPage {
+  const artboard = createArtboard('Diagram 1', code ?? '', { x: 0, y: 0 })
+  return {
+    id: crypto.randomUUID(),
+    name,
+    artboards: [artboard],
+    activeArtboardId: artboard.id,
+  }
+}
+
 export function deepMergeConfig(base: DiagramConfig, overrides: DiagramConfigOverrides): DiagramConfig {
   const result = { ...base }
   for (const key of Object.keys(overrides) as (keyof DiagramConfig)[]) {
@@ -80,45 +126,29 @@ export function deepMergeConfig(base: DiagramConfig, overrides: DiagramConfigOve
   return result
 }
 
-/** Resolve the effective config: defaults → theme preset config overrides → user overrides.
- *  presetConfigOverrides comes from CUSTOM_THEME_PRESETS[theme].configOverrides */
 export function resolveConfig(
   presetConfigOverrides: DiagramConfigOverrides | undefined,
   userOverrides: DiagramConfigOverrides = {},
   legacyConfig?: DiagramConfig,
 ): DiagramConfig {
-  // If page has a legacy full diagramConfig (old format), use it directly
   if (legacyConfig && Object.keys(userOverrides).length === 0) {
     return legacyConfig
   }
-
-  // Start with defaults
   let config = { ...DEFAULT_DIAGRAM_CONFIG }
-
-  // Apply theme preset config overrides
-  if (presetConfigOverrides) {
-    config = deepMergeConfig(config, presetConfigOverrides)
-  }
-
-  // Apply user overrides on top
+  if (presetConfigOverrides) config = deepMergeConfig(config, presetConfigOverrides)
   config = deepMergeConfig(config, userOverrides)
-
   return config
 }
-
-// ─── Mermaid diagram config ───────────────────────────────────────────────────
 
 export type FlowchartCurve = 'basis' | 'bumpX' | 'bumpY' | 'cardinal' | 'catmullRom' | 'linear' | 'monotoneX' | 'monotoneY' | 'natural' | 'step' | 'stepAfter' | 'stepBefore'
 export type FlowchartDirection = 'TB' | 'BT' | 'LR' | 'RL'
 export type MermaidLook = 'classic' | 'handDrawn'
 
 export interface DiagramConfig {
-  // Global appearance
   look: MermaidLook
   fontFamily: string
   fontSize: number
 
-  // Theme variables (universal)
   themeVariables: {
     primaryColor: string
     primaryTextColor: string
@@ -133,7 +163,6 @@ export interface DiagramConfig {
     fontFamily: string
   }
 
-  // Flowchart
   flowchart: {
     curve: FlowchartCurve
     nodeSpacing: number
@@ -142,7 +171,6 @@ export interface DiagramConfig {
     diagramPadding: number
   }
 
-  // Sequence
   sequence: {
     showSequenceNumbers: boolean
     mirrorActors: boolean
@@ -151,12 +179,15 @@ export interface DiagramConfig {
     width: number
   }
 
-  // Gantt
   gantt: {
     barHeight: number
     barGap: number
     topPadding: number
     axisFormat: string
+  }
+
+  xyChart: {
+    plotColorPalette: string
   }
 }
 
@@ -196,5 +227,8 @@ export const DEFAULT_DIAGRAM_CONFIG: DiagramConfig = {
     barGap: 4,
     topPadding: 50,
     axisFormat: '%Y-%m-%d',
+  },
+  xyChart: {
+    plotColorPalette: '#3498db,#e74c3c,#2ecc71,#f39c12,#9b59b6,#1abc9c,#e67e22',
   },
 }

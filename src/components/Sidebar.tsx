@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, type RefObject } from 'react'
+import { Accordion } from '@base-ui/react/accordion'
 import CodeMirror from '@uiw/react-codemirror'
-import { mermaid as mermaidLang } from 'codemirror-lang-mermaid'
 import { mermaidFallbackLanguage } from '@/lib/mermaidHighlight'
 import { mermaidAltClickExtension } from '@/lib/mermaidAltClick'
 import type { TokenRef } from '@/lib/mermaidTokenLookup'
@@ -11,14 +11,10 @@ import { EditorView } from '@codemirror/view'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
-  CodeSimple,
-  GearSix,
   CaretUp,
   CaretDown,
   WarningCircle,
   ArrowRight,
-  TextAa,
-  Code,
   CopySimple,
   Check,
 } from '@phosphor-icons/react'
@@ -48,60 +44,58 @@ function spacifyMermaid(code: string): string {
   }).join('\n')
 }
 import { cn } from '@/lib/utils'
+import { pfDebug } from '@/lib/debug'
 import { ConfigPanel } from '@/components/ConfigPanel'
 import { TemplateGallery } from '@/components/TemplateGallery'
 import type { AppMode, DiagramConfig } from '../types'
-import type { MermaidError } from '../hooks/useMermaidRenderer'
+import { useMermaidRenderer } from '../hooks/useMermaidRenderer'
+import type { MermaidError as _MermaidError } from '../hooks/useMermaidRenderer'
 
 // ── CodeMirror error line highlighting ──
 
 
 const EXTENSIONS_BASE = [EditorView.lineWrapping]
 
-type SidebarTab = 'code' | 'config'
+type SidebarTab = 'code'
+
+import type { Artboard } from '../types'
 
 interface SidebarProps {
-  code: string
-  activePageId: string
+  artboard: Artboard | null
   onInsertReady?: (fn: (text: string) => void) => void
   onAltClick?: (ref: TokenRef) => void
   mode: AppMode
   diagramConfig: DiagramConfig
-  error: MermaidError | null
-  editorLigatures: boolean
-  autoFormat: boolean
   editorFocusRef: RefObject<(() => void) | null>
   onChange: (value: string) => void
   mermaidTheme: string
   onConfigChange: (config: DiagramConfig) => void
   onMermaidThemeChange: (theme: string) => void
-  onLigaturesChange: (v: boolean) => void
-  onAutoFormatChange: (v: boolean) => void
 }
 
 export function Sidebar({
-  code, activePageId, mode, diagramConfig, error, editorLigatures, autoFormat, mermaidTheme,
+  artboard, mode, diagramConfig, mermaidTheme,
   editorFocusRef,
-  onChange, onConfigChange, onMermaidThemeChange, onLigaturesChange, onAutoFormatChange, onInsertReady, onAltClick,
+  onChange, onConfigChange, onMermaidThemeChange, onInsertReady, onAltClick,
 }: SidebarProps) {
+  const code = artboard?.code ?? ''
+  const activePageId = artboard?.id ?? ''
   'use no memo'
+
+  // Get error state for the active artboard (for inline error display in editor)
+  const { error } = useMermaidRenderer(code, mermaidTheme as import('../types').MermaidTheme, diagramConfig)
   const [activeTab, setActiveTab] = useState<SidebarTab>('code')
   const [collapsed, setCollapsed] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState<string[]>([])
   const [codeCopied, setCodeCopied] = useState(false)
   const editorViewRef = useRef<EditorView | null>(null)
   const isDark = mode === 'dark'
-
-  // Determine which language extension to use
-  // codemirror-lang-mermaid only supports: flowchart/graph, sequenceDiagram, pie, mindmap, gantt, journey, requirementDiagram
-  const NATIVE_LANG_TYPES = ['flowchart', 'graph', 'sequenceDiagram', 'pie', 'mindmap', 'gantt', 'journey', 'requirementDiagram']
-  const firstWord = code.trim().split(/\s/)[0]?.toLowerCase() ?? ''
-  const useNativeLang = NATIVE_LANG_TYPES.some(t => firstWord.startsWith(t.toLowerCase()))
+  const editorLigatures = true
+  const autoFormat = true
 
   const langExtension = useMemo(
-    () => useNativeLang
-      ? mermaidLang()
-      : [mermaidFallbackLanguage, syntaxHighlighting(defaultHighlightStyle)],
-    [useNativeLang],
+    () => [mermaidFallbackLanguage, syntaxHighlighting(defaultHighlightStyle)],
+    [],
   )
 
   const altClickExt = useMemo(
@@ -130,14 +124,11 @@ export function Sidebar({
     const target = src ?? code
     try {
       const formatted = spacifyMermaid(formatMermaid(target, { indentSize: 2 }))
-      if (formatted && formatted.trim() !== target.trim()) {
-        onChange(formatted)
-        return formatted
-      }
+      return formatted || target
     } catch {
       // If formatting fails, leave code as-is
+      return target
     }
-    return target
   }
 
   const insertAtCursor = useCallback((text: string) => {
@@ -167,11 +158,42 @@ export function Sidebar({
   }
 
   const handleCodeChange = (value: string) => {
+    pfDebug('editor', 'handleCodeChange', {
+      diagramId: activePageId,
+      incomingLength: value.length,
+      autoFormat,
+    })
     if (autoFormat) {
-      handleFormat(value)
+      const formatted = handleFormat(value)
+      pfDebug('editor', 'handleCodeChange formatted', {
+        diagramId: activePageId,
+        outgoingLength: formatted.length,
+        changedByFormatter: formatted !== value,
+      })
+      onChange(formatted)
     } else {
       onChange(value)
     }
+  }
+
+  // Placeholder when no diagram is selected
+  if (!artboard) {
+    return (
+      <div className={cn(
+        'flex flex-col h-full rounded-xl border overflow-hidden items-center justify-center gap-3 text-center p-8',
+        isDark
+          ? 'bg-[oklch(0.16_0.015_260)]/95 backdrop-blur-sm border-white/8'
+          : 'bg-white/95 backdrop-blur-sm border-black/6',
+      )}>
+        <div className={cn('text-3xl mb-1', isDark ? 'opacity-30' : 'opacity-20')}>⬡</div>
+        <p className={cn('text-sm font-medium', isDark ? 'text-zinc-400' : 'text-zinc-500')}>
+          Select a diagram to edit
+        </p>
+        <p className={cn('text-xs', isDark ? 'text-zinc-600' : 'text-zinc-400')}>
+          Click any diagram on the canvas, or add a new one from the bottom bar.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -187,91 +209,27 @@ export function Sidebar({
 
       {/* Title bar */}
       <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border/40 shrink-0">
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => { setActiveTab('code'); setCollapsed(false) }}
-              className={cn('shrink-0 rounded-lg', activeTab === 'code' && !collapsed && (isDark ? 'bg-white/8 text-foreground' : 'bg-black/5 text-foreground'))}
-            >
-              <CodeSimple className="w-3.5 h-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Editor</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => { setActiveTab('config'); setCollapsed(false) }}
-              className={cn('shrink-0 rounded-lg', activeTab === 'config' && !collapsed && (isDark ? 'bg-white/8 text-foreground' : 'bg-black/5 text-foreground'))}
-            >
-              <GearSix className="w-3.5 h-3.5" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Diagram Config</TooltipContent>
-        </Tooltip>
-
-        {activeTab === 'config' && (
-          <span className="text-xs font-semibold text-foreground tracking-wide flex-1 pl-1">
-            Configuration
+        <div className="min-w-0 flex-1 px-1 flex items-center gap-2 overflow-hidden">
+          <span className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground shrink-0">
+            Editor
           </span>
-        )}
+          <span className="text-muted-foreground/60 shrink-0">•</span>
+          <span className="text-sm font-medium text-foreground truncate">
+            {artboard?.name ?? 'Diagram'}
+          </span>
+        </div>
 
         {/* Error indicator */}
-        {error && activeTab === 'code' && (
+        {error && (
           <div className="flex items-center gap-1 mr-0.5">
             <WarningCircle className="w-3 h-3 text-red-500" />
           </div>
         )}
 
-        {/* Auto-format toggle */}
-        {activeTab === 'code' && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onAutoFormatChange(!autoFormat)}
-                className={cn(
-                  'shrink-0 rounded-lg',
-                  autoFormat ? 'text-primary' : 'text-muted-foreground',
-                )}
-              >
-                <Code className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{autoFormat ? 'Auto-format on (click to disable)' : 'Auto-format off (click to enable)'}</TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Ligatures toggle */}
-        {activeTab === 'code' && (
-          <Tooltip>
-            <TooltipTrigger>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={() => onLigaturesChange(!editorLigatures)}
-                className={cn(
-                  'shrink-0 rounded-lg',
-                  editorLigatures
-                    ? (isDark ? 'text-primary' : 'text-primary')
-                    : 'text-muted-foreground',
-                )}
-              >
-                <TextAa className="w-3.5 h-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{editorLigatures ? 'Disable ligatures' : 'Enable ligatures'}</TooltipContent>
-          </Tooltip>
-        )}
+        <div className="ml-auto" />
 
         {/* Copy code */}
-        {activeTab === 'code' && code.trim() !== '' && (
+        {code.trim() !== '' && (
           <Tooltip>
             <TooltipTrigger>
               <Button
@@ -291,7 +249,6 @@ export function Sidebar({
           </Tooltip>
         )}
 
-
         <Tooltip>
           <TooltipTrigger>
             <Button variant="ghost" size="icon-sm" onClick={() => setCollapsed(!collapsed)} className="shrink-0 rounded-lg">
@@ -306,11 +263,11 @@ export function Sidebar({
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           {/* Body — editor takes all remaining space; error bar overlays it */}
           <div className="flex-1 min-h-0 overflow-hidden relative">
-            {activeTab === 'code' && code.trim() === '' ? (
+            {code.trim() === '' ? (
               <TemplateGallery mode={mode} onSelect={(code) => {
                 onChange(code)
               }} />
-            ) : activeTab === 'code' ? (
+            ) : (
               <CodeMirror
                 key={activePageId}
                 value={code}
@@ -340,8 +297,6 @@ export function Sidebar({
                   highlightSelectionMatches: true,
                 }}
               />
-            ) : (
-              <ConfigPanel config={diagramConfig} code={code} mode={mode} onChange={onConfigChange} mermaidTheme={mermaidTheme} onMermaidThemeChange={onMermaidThemeChange} />
             )}
           </div>
 
@@ -388,6 +343,56 @@ export function Sidebar({
                 {error.message}
               </p>
             </div>
+          )}
+
+          {code.trim() !== '' && (
+            <Accordion.Root
+              value={settingsOpen}
+              onValueChange={(value: string[]) => setSettingsOpen(value)}
+              className={cn('border-t shrink-0', isDark ? 'border-white/8 bg-white/[0.05]' : 'border-black/6 bg-zinc-50')}
+            >
+              <Accordion.Item value="config">
+                <Accordion.Header>
+                  <Accordion.Trigger
+                    className={cn(
+                      'group w-full flex items-center justify-between px-3 py-2 text-left font-sans transition-colors cursor-pointer',
+                      isDark ? 'text-zinc-200 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4',
+                    )}
+                  >
+                    <span className="min-w-0 flex flex-col">
+                      <span className="text-[11px] font-semibold tracking-wide uppercase">Configuration</span>
+                      <span className={cn('text-[11px] truncate', isDark ? 'text-zinc-400' : 'text-muted-foreground')}>
+                        Theme, layout, and chart options
+                      </span>
+                    </span>
+                    <span className="flex items-center shrink-0 ml-3">
+                      {settingsOpen.includes('config')
+                        ? <CaretUp className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />
+                        : <CaretDown className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100" />}
+                    </span>
+                  </Accordion.Trigger>
+                </Accordion.Header>
+                <Accordion.Panel className="overflow-hidden">
+                  <div className="px-3 pb-3 pt-1">
+                    <div className={cn(
+                      'rounded-lg border max-h-[58vh] overflow-y-auto bg-background',
+                      isDark ? 'border-white/8' : 'border-black/8',
+                    )}>
+                      <div className="p-3">
+                        <ConfigPanel
+                          config={diagramConfig}
+                          code={code}
+                          mode={mode}
+                          onChange={onConfigChange}
+                          mermaidTheme={mermaidTheme}
+                          onMermaidThemeChange={onMermaidThemeChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Accordion.Panel>
+              </Accordion.Item>
+            </Accordion.Root>
           )}
         </div>
       )}

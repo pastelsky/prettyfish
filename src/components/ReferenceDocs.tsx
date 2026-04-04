@@ -247,9 +247,9 @@ function RefElementRow({
       {/* Header */}
       <button
         onClick={onToggle}
-        className={cn('w-full flex items-start gap-2 px-3 py-2 text-left cursor-pointer transition-colors', hoverBg)}
+        className={cn('w-full flex items-center gap-2 px-3 py-2 text-left cursor-pointer transition-colors', hoverBg)}
       >
-        <div className="mt-0.5 shrink-0">
+        <div className="shrink-0 flex items-center">
           {isExpanded
             ? <CaretDown className={cn('w-3 h-3', muted)} />
             : <CaretRight className={cn('w-3 h-3', muted)} />
