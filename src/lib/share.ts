@@ -1,4 +1,5 @@
 import type { AppState } from '@/types'
+import { normalizeAppState } from './documentState'
 
 const HASH_PREFIX = '#/d/'
 
@@ -20,13 +21,13 @@ export function encodeStateToHash(state: AppState): string {
  * Attempts to decode app state from the current URL hash.
  * Returns null if the hash is absent or malformed.
  */
-export function decodeStateFromHash(): Partial<AppState> | null {
+export function decodeStateFromHash(): AppState | null {
   const hash = window.location.hash
   if (!hash.startsWith(HASH_PREFIX)) return null
   try {
     const b64 = hash.slice(HASH_PREFIX.length)
     const json = decodeURIComponent(escape(atob(b64)))
-    return JSON.parse(json) as Partial<AppState>
+    return normalizeAppState(JSON.parse(json))
   } catch {
     return null
   }

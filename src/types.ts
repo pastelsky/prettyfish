@@ -6,10 +6,32 @@ export type DiagramConfigOverrides = {
   [K in keyof DiagramConfig]?: DiagramConfig[K] extends object ? Partial<DiagramConfig[K]> : DiagramConfig[K]
 }
 
-// ── Artboard ──────────────────────────────────────────────────────────────────
-// Each artboard lives on an infinite canvas and contains one Mermaid diagram.
+export interface MermaidRenderError {
+  message: string
+  line: number | null
+  column: number | null
+}
 
-export interface Artboard {
+export type DiagramRenderStatus = 'queued' | 'rendering' | 'ready' | 'error'
+
+export interface DiagramRenderState {
+  status: DiagramRenderStatus
+  svg: string
+  error: MermaidRenderError | null
+  /** Intrinsic rendered SVG width before CSS scaling */
+  svgWidth: number | null
+  /** Intrinsic rendered SVG height before CSS scaling */
+  svgHeight: number | null
+  /** Hash/signature of the latest requested input */
+  inputHash: string | null
+  /** Hash/signature that produced the current svg/error */
+  outputHash: string | null
+}
+
+// ── Diagram ──────────────────────────────────────────────────────────────────
+// Each diagram lives on an infinite canvas and contains one Mermaid diagram.
+
+export interface Diagram {
   id: string
   name: string
   description?: string
@@ -17,20 +39,22 @@ export interface Artboard {
   /** Canvas position (React Flow coordinates) */
   x: number
   y: number
-  /** Artboard width in pixels */
+  /** Diagram width in pixels */
   width: number
   mermaidTheme?: MermaidTheme
   configOverrides?: DiagramConfigOverrides
+  /** Runtime-only derived render state. Intentionally omitted from persisted/share state. */
+  render?: DiagramRenderState
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
-// A page is a named infinite canvas that contains multiple artboards.
+// A page is a named infinite canvas that contains multiple diagrams.
 
 export interface DiagramPage {
   id: string
   name: string
-  artboards: Artboard[]
-  activeArtboardId: string | null
+  diagrams: Diagram[]
+  activeDiagramId: string | null
 }
 
 // ── App state ─────────────────────────────────────────────────────────────────
@@ -61,20 +85,22 @@ export const MERMAID_THEMES: { value: MermaidTheme; label: string; group: 'built
 export const BUILTIN_THEMES = new Set<string>(['default', 'neutral', 'dark', 'forest', 'base'])
 
 export const DEFAULT_DIAGRAM = `flowchart TD
-    A[Start] --> B{Is it working?}
-    B -->|Yes| C[Great!]
-    B -->|No| D[Debug]
-    D --> A`
+    A([Start]) --> B[/Read input/]
+    B --> C{Valid?}
+    C -->|Yes| D[Process]
+    C -->|No| E[Show error]
+    E --> B
+    D --> F([Done])`
 
-// Grid layout constants for artboard placement
+// Grid layout constants for diagram placement
 export const ARTBOARD_COLS = 3
 export const ARTBOARD_GAP_X = 80
 export const ARTBOARD_GAP_Y = 100
 export const ARTBOARD_DEFAULT_WIDTH = 640
 export const ARTBOARD_DEFAULT_HEIGHT = 480 // approximate, actual height is dynamic
 
-export function nextArtboardPosition(artboards: Artboard[]): { x: number; y: number } {
-  const last = artboards[artboards.length - 1]
+export function nextDiagramPosition(diagrams: Diagram[]): { x: number; y: number } {
+  const last = diagrams[diagrams.length - 1]
   if (!last) {
     return { x: 0, y: 0 }
   }
@@ -85,11 +111,11 @@ export function nextArtboardPosition(artboards: Artboard[]): { x: number; y: num
   }
 }
 
-export function createArtboard(
+export function createDiagram(
   name: string,
   code: string = DEFAULT_DIAGRAM,
   position?: { x: number; y: number },
-): Artboard {
+): Diagram {
   return {
     id: crypto.randomUUID(),
     name,
@@ -103,13 +129,60 @@ export function createArtboard(
 }
 
 export function createPage(name: string, code?: string): DiagramPage {
-  const artboard = createArtboard('Diagram 1', code ?? '', { x: 0, y: 0 })
+  const diagram = createDiagram('Diagram 1', code ?? '', { x: 0, y: 0 })
   return {
     id: crypto.randomUUID(),
     name,
-    artboards: [artboard],
-    activeArtboardId: artboard.id,
+    diagrams: [diagram],
+    activeDiagramId: diagram.id,
   }
+}
+
+export function createEmptyRenderState(): DiagramRenderState {
+  return {
+    status: 'queued',
+    svg: '',
+    error: null,
+    svgWidth: null,
+    svgHeight: null,
+    inputHash: null,
+    outputHash: null,
+  }
+}
+
+export function withRuntimeDiagramState(diagram: Diagram): Diagram {
+  return {
+    ...diagram,
+    render: diagram.render ?? createEmptyRenderState(),
+  }
+}
+
+export function withRuntimePageState(page: DiagramPage): DiagramPage {
+  return {
+    ...page,
+    diagrams: page.diagrams.map(withRuntimeDiagramState),
+  }
+}
+
+export function withRuntimePagesState(pages: DiagramPage[]): DiagramPage[] {
+  return pages.map(withRuntimePageState)
+}
+
+export function stripRuntimeDiagramState(diagram: Diagram): Diagram {
+  const serializable = { ...diagram }
+  delete serializable.render
+  return serializable
+}
+
+export function stripRuntimePageState(page: DiagramPage): DiagramPage {
+  return {
+    ...page,
+    diagrams: page.diagrams.map(stripRuntimeDiagramState),
+  }
+}
+
+export function stripRuntimePagesState(pages: DiagramPage[]): DiagramPage[] {
+  return pages.map(stripRuntimePageState)
 }
 
 export function deepMergeConfig(base: DiagramConfig, overrides: DiagramConfigOverrides): DiagramConfig {

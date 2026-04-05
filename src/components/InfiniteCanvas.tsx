@@ -1,7 +1,7 @@
 /**
  * InfiniteCanvas — React Flow-based infinite canvas.
  *
- * Each artboard in the current page becomes a React Flow node.
+ * Each diagram in the current page becomes a React Flow node.
  * Supports pan, zoom, drag-to-reposition, click-to-select, minimap.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
@@ -20,47 +20,44 @@ import {
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 
-import { ArtboardNode } from './ArtboardNode'
-import type { ArtboardNodeData } from './ArtboardNode'
-import type { Artboard, DiagramPage } from '../types'
+import { DiagramNode } from './DiagramNode'
+import type { DiagramNodeData } from './DiagramNode'
+import type { Diagram, DiagramPage } from '../types'
 import type { AppMode } from '../types'
 import { pfDebug } from '../lib/debug'
 
 // ── Node types ────────────────────────────────────────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const nodeTypes = { artboard: ArtboardNode } as any
+const nodeTypes = { diagram: DiagramNode } as any
 
-// ── Helper: page artboards → RF nodes ────────────────────────────────────────
+// ── Helper: page diagrams → RF nodes ────────────────────────────────────────
 
-function artboardsToNodes(
-  artboards: Artboard[],
-  activeArtboardId: string | null,
+function diagramsToNodes(
+  diagrams: Diagram[],
+  activeDiagramId: string | null,
   mode: AppMode,
-  activeSvg: string,
-  activeError: ArtboardNodeData['activeError'],
   onSelect: (id: string) => void,
   onRename: (id: string, name: string) => void,
   onUpdateDesc: (id: string, description: string) => void,
   onDelete: (id: string) => void,
   onOpenContextMenu: (id: string, x: number, y: number) => void,
 ): Node[] {
-  return artboards.map((ab) => ({
+  return diagrams.map((ab) => ({
     id: ab.id,
-    type: 'artboard',
+    type: 'diagram',
     position: { x: ab.x, y: ab.y },
     data: {
-      artboard: ab,
-      isActive: ab.id === activeArtboardId,
+      diagram: ab,
+      isActive: ab.id === activeDiagramId,
       mode,
-      activeSvg: ab.id === activeArtboardId ? activeSvg : undefined,
-      activeError: ab.id === activeArtboardId ? activeError : undefined,
       onSelect,
       onRename,
       onUpdateDescription: onUpdateDesc,
       onDelete,
       onOpenContextMenu,
-    } satisfies ArtboardNodeData,
+    } satisfies DiagramNodeData,
+    selected: ab.id === activeDiagramId,
     // Provide initial measured dimensions so RF doesn't hide the node
     measured: { width: ab.width, height: 480 },
     selectable: true,
@@ -73,41 +70,37 @@ function artboardsToNodes(
 interface InnerCanvasProps {
   page: DiagramPage
   mode: AppMode
-  activeSvg: string
-  activeError: ArtboardNodeData['activeError']
-  onSelectArtboard: (id: string) => void
-  onRenameArtboard: (id: string, name: string) => void
-  onUpdateArtboardDescription: (id: string, description: string) => void
-  onDeleteArtboard: (id: string) => void
+  onSelectDiagram: (id: string) => void
+  onRenameDiagram: (id: string, name: string) => void
+  onUpdateDiagramDescription: (id: string, description: string) => void
+  onDeleteDiagram: (id: string) => void
   onOpenDiagramContextMenu: (id: string, x: number, y: number) => void
   onOpenCanvasContextMenu: (x: number, y: number) => void
-  onMoveArtboard: (id: string, x: number, y: number) => void
-  onResizeArtboard: (id: string, width: number) => void
+  onMoveDiagram: (id: string, x: number, y: number) => void
+  onResizeDiagram: (id: string, width: number) => void
   onRegisterFocus: (fn: (id: string) => void) => void
 }
 
 function InnerCanvas({
   page,
   mode,
-  activeSvg,
-  activeError,
-  onSelectArtboard,
-  onRenameArtboard,
-  onUpdateArtboardDescription,
-  onDeleteArtboard,
+  onSelectDiagram,
+  onRenameDiagram,
+  onUpdateDiagramDescription,
+  onDeleteDiagram,
   onOpenDiagramContextMenu,
   onOpenCanvasContextMenu,
-  onMoveArtboard,
-  onResizeArtboard,
+  onMoveDiagram,
+  onResizeDiagram,
   onRegisterFocus,
 }: InnerCanvasProps) {
   const prevPageId = useRef(page.id)
   const pageFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { setViewport } = useReactFlow()
 
-  const focusArtboardInViewport = useCallback((id: string) => {
+  const focusDiagramInViewport = useCallback((id: string) => {
     pfDebug('canvas', 'focusDiagramInViewport requested', { pageId: page.id, diagramId: id })
-    const ab = page.artboards.find(a => a.id === id)
+    const ab = page.diagrams.find(a => a.id === id)
     if (!ab) return
 
     const container = document.querySelector('.react-flow')
@@ -120,37 +113,37 @@ function InnerCanvas({
     const availableWidth = rect.width - sidebarWidth
     const availableHeight = rect.height
 
-    const artboardH = 480
+    const diagramH = 480
     const zoom = Math.min(1, Math.min(
       (availableWidth * 0.8) / ab.width,
-      (availableHeight * 0.8) / artboardH,
+      (availableHeight * 0.8) / diagramH,
     ))
 
     const centerX = sidebarWidth + availableWidth / 2
     const centerY = availableHeight / 2
     const x = centerX - (ab.x + ab.width / 2) * zoom
-    const y = centerY - (ab.y + artboardH / 2) * zoom
+    const y = centerY - (ab.y + diagramH / 2) * zoom
 
     setViewport({ x, y, zoom }, { duration: 300 })
-  }, [page.id, page.artboards, setViewport])
+  }, [page.id, page.diagrams, setViewport])
 
-  // Register the zoom-to-artboard function with the parent (rule 5.7 — narrow deps)
+  // Register the zoom-to-diagram function with the parent (rule 5.7 — narrow deps)
   useEffect(() => {
-    onRegisterFocus(focusArtboardInViewport)
-  }, [focusArtboardInViewport, onRegisterFocus])
+    onRegisterFocus(focusDiagramInViewport)
+  }, [focusDiagramInViewport, onRegisterFocus])
 
   // Stable callback refs — update synchronously to avoid stale closures
   // without adding callbacks to the node-sync effect deps (rule 8.3)
-  const selectRef = useRef(onSelectArtboard)
-  const renameRef = useRef(onRenameArtboard)
-  const updateDescRef = useRef(onUpdateArtboardDescription)
-  const deleteRef = useRef(onDeleteArtboard)
+  const selectRef = useRef(onSelectDiagram)
+  const renameRef = useRef(onRenameDiagram)
+  const updateDescRef = useRef(onUpdateDiagramDescription)
+  const deleteRef = useRef(onDeleteDiagram)
   const contextMenuRef = useRef(onOpenDiagramContextMenu)
   // Keep refs current — use useLayoutEffect to avoid react-compiler "ref during render" error
-  useLayoutEffect(() => { selectRef.current = onSelectArtboard }, [onSelectArtboard])
-  useLayoutEffect(() => { renameRef.current = onRenameArtboard }, [onRenameArtboard])
-  useLayoutEffect(() => { updateDescRef.current = onUpdateArtboardDescription }, [onUpdateArtboardDescription])
-  useLayoutEffect(() => { deleteRef.current = onDeleteArtboard }, [onDeleteArtboard])
+  useLayoutEffect(() => { selectRef.current = onSelectDiagram }, [onSelectDiagram])
+  useLayoutEffect(() => { renameRef.current = onRenameDiagram }, [onRenameDiagram])
+  useLayoutEffect(() => { updateDescRef.current = onUpdateDiagramDescription }, [onUpdateDiagramDescription])
+  useLayoutEffect(() => { deleteRef.current = onDeleteDiagram }, [onDeleteDiagram])
   useLayoutEffect(() => { contextMenuRef.current = onOpenDiagramContextMenu }, [onOpenDiagramContextMenu])
 
   const stableSelect = useCallback((id: string) => selectRef.current(id), [])
@@ -162,23 +155,20 @@ function InnerCanvas({
   const buildNodes = useCallback(() => {
     pfDebug('canvas', 'buildNodes', {
       pageId: page.id,
-      diagramCount: page.artboards.length,
-      activeDiagramId: page.activeArtboardId,
+      diagramCount: page.diagrams.length,
+      activeDiagramId: page.activeDiagramId,
     })
-    // activeSvg/activeError are patched separately in a lightweight effect below
-    return artboardsToNodes(
-      page.artboards,
-      page.activeArtboardId,
+    return diagramsToNodes(
+      page.diagrams,
+      page.activeDiagramId,
       mode,
-      '',   // activeSvg — patched separately
-      null, // activeError — patched separately
       stableSelect,
       stableRename,
       stableUpdateDesc,
       stableDelete,
       stableOpenContextMenu,
     )
-  }, [page.id, page.artboards, page.activeArtboardId, mode, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
+  }, [page.id, page.diagrams, page.activeDiagramId, mode, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]) // populated by sync effect below
 
@@ -201,27 +191,15 @@ function InnerCanvas({
           position: nextNode.position,
           data: nextNode.data,
           measured: prevNode.measured ?? nextNode.measured,
-          selected: prevNode.selected,
+          // Selection is controlled by document state: exactly one active diagram at a time.
+          selected: nextNode.selected,
           dragging: prevNode.dragging,
         }
       })
     })
   }, [buildNodes, page.id, setNodes])
 
-  // Lightweight update: only patch activeSvg/activeError on active node when SVG changes
-  // This avoids rebuilding all nodes on every render cycle
-  useEffect(() => {
-    const activeId = page.activeArtboardId
-    if (!activeId) return
-    setNodes(prev => prev.map(n => {
-      if (n.id !== activeId) return n
-      const prevData = n.data as ArtboardNodeData
-      if (prevData.activeSvg === activeSvg && prevData.activeError === activeError) return n
-      return { ...n, data: { ...prevData, activeSvg, activeError } }
-    }))
-  }, [activeSvg, activeError, page.activeArtboardId, setNodes])
-
-  // Gently focus the active artboard when switching pages
+  // Gently focus the active diagram when switching pages
   useEffect(() => {
     if (pageFocusTimerRef.current) {
       clearTimeout(pageFocusTimerRef.current)
@@ -230,10 +208,10 @@ function InnerCanvas({
 
     if (prevPageId.current !== page.id) {
       prevPageId.current = page.id
-      if (page.activeArtboardId) {
+      if (page.activeDiagramId) {
         pageFocusTimerRef.current = setTimeout(() => {
-          pfDebug('canvas', 'page switch focus fire', { pageId: page.id, diagramId: page.activeArtboardId })
-          const ab = page.artboards.find(a => a.id === page.activeArtboardId)
+          pfDebug('canvas', 'page switch focus fire', { pageId: page.id, diagramId: page.activeDiagramId })
+          const ab = page.diagrams.find(a => a.id === page.activeDiagramId)
           if (!ab) return
           const container = document.querySelector('.react-flow')
           if (!container) return
@@ -243,15 +221,15 @@ function InnerCanvas({
             : 0
           const availableWidth = rect.width - sidebarWidth
           const availableHeight = rect.height
-          const artboardH = 480
+          const diagramH = 480
           const zoom = Math.min(1, Math.min(
             (availableWidth * 0.8) / ab.width,
-            (availableHeight * 0.8) / artboardH,
+            (availableHeight * 0.8) / diagramH,
           ))
           const centerX = sidebarWidth + availableWidth / 2
           const centerY = availableHeight / 2
           const x = centerX - (ab.x + ab.width / 2) * zoom
-          const y = centerY - (ab.y + artboardH / 2) * zoom
+          const y = centerY - (ab.y + diagramH / 2) * zoom
           setViewport({ x, y, zoom })
         }, 50)
       }
@@ -263,7 +241,7 @@ function InnerCanvas({
         pageFocusTimerRef.current = null
       }
     }
-  }, [page.id, page.activeArtboardId, page.artboards, focusArtboardInViewport, setViewport])
+  }, [page.id, page.activeDiagramId, page.diagrams, focusDiagramInViewport, setViewport])
 
   // Handle node drag end → persist position
   const handleNodesChange: OnNodesChange = useCallback(
@@ -281,7 +259,7 @@ function InnerCanvas({
             x: change.position.x,
             y: change.position.y,
           })
-          onMoveArtboard(change.id, change.position.x, change.position.y)
+          onMoveDiagram(change.id, change.position.x, change.position.y)
         }
         if (change.type === 'dimensions' && change.dimensions) {
           if (change.resizing === false) {
@@ -290,7 +268,7 @@ function InnerCanvas({
               diagramId: change.id,
               width: change.dimensions.width,
             })
-            onResizeArtboard(change.id, change.dimensions.width)
+            onResizeDiagram(change.id, change.dimensions.width)
           } else {
             pfDebug('canvas', 'ignore measurement-only width change', {
               pageId: page.id,
@@ -302,7 +280,7 @@ function InnerCanvas({
         }
       }
     },
-    [onNodesChange, onMoveArtboard, onResizeArtboard, page.id],
+    [onNodesChange, onMoveDiagram, onResizeDiagram, page.id],
   )
 
   // Click on canvas background → deselect (handled by RF automatically)
@@ -336,6 +314,9 @@ function InnerCanvas({
       maxZoom={2.5}
       snapToGrid
       snapGrid={[20, 20]}
+      // Enforce single-selection semantics at the React Flow layer too.
+      selectionOnDrag={false}
+      multiSelectionKeyCode={null}
       style={{ background: bgColor }}
       deleteKeyCode={null} // We handle delete ourselves
       proOptions={{ hideAttribution: true }}
@@ -378,22 +359,20 @@ function InnerCanvas({
 interface InfiniteCanvasProps {
   page: DiagramPage
   mode: AppMode
-  activeSvg: string
-  activeError: ArtboardNodeData['activeError']
-  onSelectArtboard: (id: string) => void
-  onRenameArtboard: (id: string, name: string) => void
-  onUpdateArtboardDescription: (id: string, description: string) => void
-  onDeleteArtboard: (id: string) => void
+  onSelectDiagram: (id: string) => void
+  onRenameDiagram: (id: string, name: string) => void
+  onUpdateDiagramDescription: (id: string, description: string) => void
+  onDeleteDiagram: (id: string) => void
   onOpenDiagramContextMenu: (id: string, x: number, y: number) => void
   onOpenCanvasContextMenu: (x: number, y: number) => void
-  onMoveArtboard: (id: string, x: number, y: number) => void
-  onResizeArtboard: (id: string, width: number) => void
+  onMoveDiagram: (id: string, x: number, y: number) => void
+  onResizeDiagram: (id: string, width: number) => void
   onRegisterFocus: (fn: (id: string) => void) => void
 }
 
 export function InfiniteCanvas(props: InfiniteCanvasProps) {
   return (
-    <div style={{ width: '100%', height: '100%' }}>
+    <div data-testid="canvas-root" style={{ width: '100%', height: '100%' }}>
       <ReactFlowProvider>
         <InnerCanvas {...props} />
       </ReactFlowProvider>

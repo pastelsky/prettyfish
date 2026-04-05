@@ -1,84 +1,97 @@
-import { createArtboard, nextArtboardPosition } from '../types'
-import type { DiagramPage, Artboard } from '../types'
+import { createStore, del, get, set } from 'idb-keyval'
 
-const PREFIX = 'mermaid-renderer:'
+import { nextDiagramPosition } from '../types'
+import type { AppMode, DiagramPage } from '../types'
+import { normalizePages, normalizePersistedDocumentState } from './documentState'
 
-export const STORAGE_KEYS = {
-  pages: `${PREFIX}pages`,
-  activePageId: `${PREFIX}active-page-id`,
-  mode: `${PREFIX}mode`,
-  mermaidTheme: `${PREFIX}mermaid-theme`,
-  diagramConfig: `${PREFIX}diagram-config`,
-  editorLigatures: `${PREFIX}editor-ligatures`,
-  autoFormat: `${PREFIX}auto-format`,
-} as const
+const DB_NAME = 'prettyfish-db'
+const STORE_NAME = 'app-state'
+const SNAPSHOT_KEY = 'document-snapshot'
+const CHANNEL_NAME = 'prettyfish-state'
 
-export function loadFromStorage<T>(key: string, fallback: T): T {
+const idbStore = createStore(DB_NAME, STORE_NAME)
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(CHANNEL_NAME) : null
+const originId = typeof crypto !== 'undefined' && 'randomUUID' in crypto
+  ? crypto.randomUUID()
+  : `tab-${Math.random().toString(36).slice(2)}`
+
+export interface PersistedDocumentState {
+  pages: DiagramPage[]
+  activePageId: string
+  mode: AppMode
+  editorLigatures: boolean
+  autoFormat: boolean
+}
+
+export interface PersistedSnapshotMessage {
+  type: 'document-snapshot'
+  originId: string
+  snapshot: PersistedDocumentState
+}
+
+export async function loadPersistedDocumentState(): Promise<PersistedDocumentState | null> {
   try {
-    const raw = localStorage.getItem(key)
-    return raw !== null ? (JSON.parse(raw) as T) : fallback
+    const snapshot = await get<unknown>(SNAPSHOT_KEY, idbStore)
+    const normalized = normalizePersistedDocumentState(snapshot)
+    if (!normalized && snapshot != null) {
+      await del(SNAPSHOT_KEY, idbStore)
+    }
+    return normalized
   } catch {
-    return fallback
+    return null
   }
 }
 
-export function saveToStorage(key: string, value: unknown): void {
+export async function savePersistedDocumentState(snapshot: PersistedDocumentState): Promise<void> {
   try {
-    localStorage.setItem(key, JSON.stringify(value))
+    await set(SNAPSHOT_KEY, snapshot, idbStore)
   } catch {
-    // Ignore storage errors (e.g. private browsing quota)
+    // Ignore IndexedDB persistence failures
   }
+}
+
+export async function clearPersistedDocumentState(): Promise<void> {
+  try {
+    await del(SNAPSHOT_KEY, idbStore)
+  } catch {
+    // Ignore IndexedDB persistence failures
+  }
+}
+
+export function publishPersistedDocumentState(snapshot: PersistedDocumentState): void {
+  channel?.postMessage({
+    type: 'document-snapshot',
+    originId,
+    snapshot,
+  } satisfies PersistedSnapshotMessage)
+}
+
+export function subscribeToPersistedDocumentState(
+  onSnapshot: (snapshot: PersistedDocumentState) => void,
+): () => void {
+  if (!channel) return () => {}
+
+  const handler = (event: MessageEvent<PersistedSnapshotMessage>) => {
+    const message = event.data
+    if (!message || message.type !== 'document-snapshot') return
+    if (message.originId === originId) return
+    onSnapshot(message.snapshot)
+  }
+
+  channel.addEventListener('message', handler)
+  return () => channel.removeEventListener('message', handler)
 }
 
 /**
- * Migrates old-format pages (with `code` directly on the page, no artboards)
- * to the new format (pages contain artboards). Safe to call on already-migrated data.
+ * Migrates old-format pages (with `code` directly on the page, no diagrams)
+ * to the new format (pages contain diagrams). Safe to call on already-migrated data.
  */
 export function migratePages(raw: unknown[]): DiagramPage[] {
-  return raw.map((item) => {
-    const p = item as Record<string, unknown>
-
-    // Already new format
-    if (Array.isArray(p.artboards)) {
-      return p as unknown as DiagramPage
-    }
-
-    // Old format: { id, name, code, mermaidTheme, configOverrides, diagramConfig, folderId }
-    const position = { x: 0, y: 0 }
-    const artboard = createArtboard(
-      (p.name as string) ?? 'Diagram',
-      (p.code as string) ?? '',
-      position,
-    )
-    artboard.mermaidTheme = p.mermaidTheme as Artboard['mermaidTheme']
-    artboard.configOverrides = (p.configOverrides ?? {}) as Artboard['configOverrides']
-
-    return {
-      id: p.id as string,
-      name: p.name as string,
-      artboards: [artboard],
-      activeArtboardId: artboard.id,
-    } satisfies DiagramPage
-  })
+  return normalizePages(raw)
 }
 
 /**
- * Load pages from storage, applying migration if needed.
- */
-export function loadPages(fallback: DiagramPage[]): DiagramPage[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.pages)
-    if (!raw) return fallback
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed) || parsed.length === 0) return fallback
-    return migratePages(parsed)
-  } catch {
-    return fallback
-  }
-}
-
-/**
- * Returns the next grid position for a new artboard within a page.
+ * Returns the next grid position for a new diagram within a page.
  * Re-exported here for convenience so callers don't need to import from types.
  */
-export { nextArtboardPosition }
+export { nextDiagramPosition }

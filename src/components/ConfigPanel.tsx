@@ -24,7 +24,6 @@ interface ConfigPanelProps {
   onMermaidThemeChange: (theme: string) => void
   config: DiagramConfig
   code: string
-  mode: string
   onChange: (config: DiagramConfig) => void
 }
 
@@ -71,10 +70,10 @@ const FONTS: { value: string; label: string; preview: string; googleFamily?: str
   { value: '"Courier New", monospace', label: 'Courier', preview: 'Courier New' },
 ]
 
-export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMermaidThemeChange }: ConfigPanelProps) {
+export function ConfigPanel({ config, code, onChange, mermaidTheme, onMermaidThemeChange }: ConfigPanelProps) {
   const diagramType = detectDiagramType(code)
-  const isBaseTheme = mermaidTheme === 'base' || !(['default', 'neutral', 'dark', 'forest'] as string[]).includes(mermaidTheme)
-  const isDark = mode === 'dark'
+  const isBaseTheme = mermaidTheme === 'base'
+  const isDarkEditor = mermaidTheme === 'dark'
   const [viewMode, setViewMode] = useState<'visual' | 'json'>('visual')
   // In JSON mode: track user-edited text separately; in visual mode: derive from config
   const [jsonUserText, setJsonUserText] = useState<string | null>(null)
@@ -132,19 +131,18 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
     <div className="flex flex-col h-full">
 
       {/* ── Visual / JSON toggle ── */}
-      <div className={cn(
-        'flex gap-0.5 p-1 mx-3 my-2 rounded-lg shrink-0',
-        isDark ? 'bg-white/5' : 'bg-black/5',
-      )}>
+      <div className="flex gap-0.5 p-1 mx-3 my-2 rounded-lg shrink-0 border border-border/50 bg-muted/40">
         {(['visual', 'json'] as const).map((m) => (
           <button
             key={m}
+            data-testid={m === viewMode ? 'config-view-mode-active' : 'config-view-mode-button'}
+            data-view-mode={m}
             onClick={() => m === 'json' ? handleSwitchToJson() : handleSwitchToVisual()}
             className={cn(
               'flex-1 py-1 rounded-md text-xs font-medium transition-colors cursor-pointer capitalize',
               viewMode === m
-                ? (isDark ? 'bg-white/10 text-foreground' : 'bg-white text-foreground')
-                : 'text-muted-foreground hover:text-foreground',
+                ? 'bg-background text-foreground shadow-xs'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/60',
             )}
           >
             {m === 'visual' ? 'Visual' : 'JSON'}
@@ -159,7 +157,7 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
             value={jsonText}
             onChange={handleJsonChange}
             extensions={[json(), EditorView.lineWrapping]}
-            theme={isDark ? githubDark : githubLight}
+            theme={isDarkEditor ? githubDark : githubLight}
             height="100%"
             style={{ height: '100%', fontSize: '11.5px' }}
             basicSetup={{ lineNumbers: true, foldGutter: true, autocompletion: true, bracketMatching: true, closeBrackets: true }}
@@ -174,7 +172,7 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
 
       {/* ── Visual editor ── */}
       {viewMode === 'visual' && (
-      <div className="flex flex-col gap-0 text-sm overflow-y-auto flex-1 custom-scrollbar">
+      <div className="flex flex-col gap-0 text-sm overflow-y-auto flex-1">
 
       {/* ── Appearance ── */}
       <Section title="Appearance" first>
@@ -209,18 +207,19 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
         {!isBaseTheme ? (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-2.5 -mt-1 mb-1">
             <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
-              Color overrides require the <strong>Base</strong> theme.
+              Custom colors only work with the <strong>Base</strong> theme.
             </p>
             <button
+              data-testid="config-switch-to-base-button"
               onClick={() => onMermaidThemeChange('base')}
               className="mt-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 underline underline-offset-2 cursor-pointer hover:no-underline"
             >
-              Switch to Base theme →
+              Switch to Base →
             </button>
           </div>
         ) : (
           <p className="text-xs text-muted-foreground -mt-1 mb-1 leading-relaxed">
-            Using <strong className="text-foreground/70">Base</strong> theme — color overrides are active.
+            Using <strong className="text-foreground/70">Base</strong> theme — colors are customizable.
           </p>
         )}
         <div className={cn('flex flex-col gap-2', !isBaseTheme && 'opacity-50 pointer-events-none')}>
@@ -327,7 +326,7 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
           <Divider />
           <Section title={diagramType === 'classDiagram' ? 'Class Diagram' : 'ER Diagram'}>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Global settings above apply. Layout is controlled by diagram syntax.
+              Layout is controlled by the diagram syntax. Global settings above still apply.
             </p>
           </Section>
         </>
@@ -338,7 +337,7 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
           <Divider />
           <Section title="Options">
             <p className="text-xs text-muted-foreground leading-relaxed">
-              Global settings apply. No additional layout options for this type.
+              No additional layout options for this diagram type.
             </p>
           </Section>
         </>
@@ -348,14 +347,10 @@ export function ConfigPanel({ config, code, mode, onChange, mermaidTheme, onMerm
 
       <div className="px-4 py-3">
         <Button
+          data-testid="config-reset-defaults-button"
           variant="outline"
           size="sm"
-          className={cn(
-            'w-full text-xs h-8 rounded-md gap-1.5',
-            mode === 'dark'
-              ? 'bg-zinc-950 border-white/10 text-zinc-100 hover:bg-zinc-900 hover:text-zinc-100'
-              : 'bg-white border-black/10 text-zinc-900 hover:bg-zinc-50 hover:text-zinc-900',
-          )}
+          className="w-full text-xs h-8 rounded-md gap-1.5 bg-background"
           onClick={() => onChange(DEFAULT_DIAGRAM_CONFIG)}
         >
           <ArrowCounterClockwise className="w-3 h-3" /> Reset to Defaults
@@ -430,6 +425,7 @@ function FontSelect({ value, onChange }: { value: string; onChange: (v: string) 
   return (
     <div ref={ref} className="relative">
       <button
+        data-testid="config-font-select-trigger"
         onClick={toggleOpen}
         className={cn(
           'w-full flex items-center justify-between px-2.5 py-1.5 rounded-md border border-border/60',
@@ -450,6 +446,8 @@ function FontSelect({ value, onChange }: { value: string; onChange: (v: string) 
           {FONTS.map((f) => (
             <button
               key={f.value}
+              data-testid={value === f.value ? 'config-font-option-active' : 'config-font-option'}
+              data-font-label={f.label}
               onClick={() => { onChange(f.value); setOpen(false) }}
               className={cn(
                 'w-full text-left px-3 py-1.5 text-xs cursor-pointer transition-colors',
@@ -493,6 +491,8 @@ function ColorSwatch({ label, value, onChange }: { label: string; value: string;
   return (
     <div ref={ref} className="relative">
       <button
+        data-testid="config-color-swatch"
+        data-color-label={label}
         onClick={() => {
           if (!open) setLocalColor(value)
           toggleOpen()
@@ -630,6 +630,8 @@ function LookPicker({ value, onChange }: { value: string; onChange: (v: string) 
         return (
           <button
             key={opt.value}
+            data-testid={active ? 'config-look-option-active' : 'config-look-option'}
+            data-look-value={opt.value}
             onClick={() => onChange(opt.value)}
             className={cn(
               'flex-1 flex items-center gap-2.5 rounded-lg border px-2.5 py-1.5 transition-all cursor-pointer',

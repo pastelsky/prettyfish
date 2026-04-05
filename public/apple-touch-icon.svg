@@ -1,14 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <rect width="180" height="180" rx="40" fill="#F0FAF7" />
-  <g transform="translate(22, 28) scale(4.25)">
-    <!-- Fish body -->
-    <path d="M6 16c0-5 4-9 10-9s10 4 10 9-4 9-10 9S6 21 6 16Z" fill="#3ECFB4" />
-    <!-- Tail fin -->
-    <path d="M4 10c3 3 3 6 3 6s0 3-3 6c2-1 5-3 5-6s-3-5-5-6Z" fill="#F9A825" />
-    <!-- Eye -->
-    <circle cx="20.5" cy="14" r="2" fill="white" />
-    <circle cx="21" cy="13.7" r="0.9" fill="#1a1a2e" />
-    <!-- Scale lines -->
-    <path d="M12 13c2-.5 4 0 5 1M11 17c2 .5 4 0 5-1" stroke="#2BB99A" stroke-width="0.7" fill="none" stroke-linecap="round" />
+  <rect width="180" height="180" rx="40" fill="#faf5ff" />
+  <g transform="translate(22, 24) scale(4.25)">
+    <path d="M16 27 Q11 24 7 19 Q3 14 2 7 Q6 13 10 16 Q13 18.5 16 20Z" fill="#7c3aed"/>
+    <path d="M16 27 Q21 24 25 19 Q29 14 30 7 Q26 13 22 16 Q19 18.5 16 20Z" fill="#7c3aed"/>
+    <path d="M14 27 Q15 24 16 20 Q17 24 18 27Z" fill="#6d28d9"/>
+    <path d="M9 16 Q12.5 18.5 16 20 Q19.5 18.5 23 16" stroke="#a78bfa" stroke-width="0.8" fill="none" stroke-linecap="round" opacity="0.6"/>
   </g>
 </svg>

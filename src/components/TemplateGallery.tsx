@@ -372,7 +372,7 @@ export function TemplateGallery({ mode, onSelect }: TemplateGalleryProps) {
   const isDark = mode === 'dark'
 
   return (
-    <div className="flex flex-col h-full overflow-y-auto p-5 gap-5 custom-scrollbar">
+    <div data-testid="template-gallery" className="flex flex-col h-full overflow-y-auto p-5 gap-5">
       {/* Header */}
       <div className="flex flex-col gap-1.5">
         <h2 className={cn(
@@ -390,6 +390,9 @@ export function TemplateGallery({ mode, onSelect }: TemplateGalleryProps) {
           return (
             <button
               key={tmpl.id}
+              data-testid="template-card"
+              data-template-id={tmpl.id}
+              data-template-name={tmpl.name}
               onClick={() => onSelect(tmpl.code)}
               className={cn(
                 'group flex flex-col items-start gap-2.5 p-3 rounded-lg border text-left',

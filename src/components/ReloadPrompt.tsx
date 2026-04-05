@@ -44,8 +44,8 @@ export function ReloadPrompt() {
       )}>
         <div className="text-sm">
           {offlineReady
-            ? '✓ App ready to work offline'
-            : 'New version available'}
+            ? 'Ready to work offline'
+            : 'Update available'}
         </div>
         {needRefresh && (
           <button
@@ -55,7 +55,7 @@ export function ReloadPrompt() {
               'bg-primary/15 text-primary hover:bg-primary/25',
             )}
           >
-            Reload
+            Restart
           </button>
         )}
         <button

@@ -1,11 +1,11 @@
 import { useHotkeys } from 'react-hotkeys-hook'
 
 interface UseKeyboardShortcutsOptions {
-  // ── Artboards ───────────────────────────────────
+  // ── Diagrams ───────────────────────────────────
   onNewDiagram: () => void
-  onCopyArtboard: () => void
-  onPasteArtboard: () => void
-  onDeleteArtboard: () => void
+  onCopyDiagram: () => void
+  onPasteDiagram: () => void
+  onDeleteDiagram: () => void
 
   // ── Pages ───────────────────────────────────────
   onNewPage: () => void
@@ -35,9 +35,9 @@ const BrowserSafeMod = 'ctrl'
 export function useKeyboardShortcuts(opts: UseKeyboardShortcutsOptions) {
   // ── Diagrams ─────────────────────────────────────────
   useHotkeys(`${BrowserSafeMod}+t`, opts.onNewDiagram, BASE)
-  useHotkeys(`${StandardMod}+c`, opts.onCopyArtboard, GLOBAL)
-  useHotkeys(`${StandardMod}+v`, opts.onPasteArtboard, GLOBAL)
-  useHotkeys('backspace', opts.onDeleteArtboard, GLOBAL) // only when no input focused
+  useHotkeys(`${StandardMod}+c`, opts.onCopyDiagram, GLOBAL)
+  useHotkeys(`${StandardMod}+v`, opts.onPasteDiagram, GLOBAL)
+  useHotkeys('backspace', opts.onDeleteDiagram, GLOBAL) // only when no input focused
 
   // ── Pages ─────────────────────────────────────────────
   useHotkeys(`${BrowserSafeMod}+shift+t`, opts.onNewPage, BASE)

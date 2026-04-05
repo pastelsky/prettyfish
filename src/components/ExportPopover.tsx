@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
+import { ChromeTextButton, chromePopoverClass } from '@/components/ui/app-chrome'
 import { DownloadSimple } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { exportSvg, exportPng } from '@/lib/export'
@@ -25,11 +26,10 @@ interface ExportPopoverProps {
   svg: string
   code: string
   previewBg: string
-  isDark: boolean
   pageName: string
 }
 
-export function ExportPopover({ svg, code, previewBg, isDark, pageName }: ExportPopoverProps) {
+export function ExportPopover({ svg, code, previewBg, pageName }: ExportPopoverProps) {
   const [open, setOpen] = useState(false)
   const [filename, setFilename] = useState<string | null>(null)
   const [scale, setScale] = useState(2)
@@ -81,30 +81,25 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
   }, [])
 
   return (
-    <div ref={ref} className="relative">
-      <Button
+    <div ref={ref} className="relative" data-testid="export-popover">
+      <ChromeTextButton
+        data-testid="export-trigger"
         onClick={handleToggle}
-        variant="ghost"
-        size="sm"
-        className={cn(
-          'h-6 px-2 text-xs gap-1 rounded-lg font-medium',
-          open && (isDark ? 'bg-white/8' : 'bg-black/5'),
-        )}
+        className={cn(open && 'bg-black/5 text-zinc-900 dark:bg-white/8 dark:text-zinc-100')}
         disabled={!svg}
       >
         <DownloadSimple className="w-3 h-3" /> Export
-      </Button>
+      </ChromeTextButton>
 
       {open && (
-        <div className={cn(
-          'absolute top-full right-0 mt-2 z-50 rounded-xl border p-2.5 animate-fade-up',
-          isDark
-            ? 'bg-[oklch(0.18_0.015_260)] border-white/10'
-            : 'bg-white border-black/8',
+        <div data-testid="export-panel" className={cn(
+          'absolute top-full right-0 mt-2 z-50 p-2.5 animate-fade-up',
+          chromePopoverClass(),
         )} style={{ width: '270px' }}>
 
           {/* Filename */}
           <input
+            data-testid="export-filename-input"
             value={effectiveFilename}
             onChange={(e) => setFilename(e.target.value)}
             placeholder="filename"
@@ -119,20 +114,21 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
           <div className="flex items-center gap-1.5 mb-2.5">
             <span className="text-muted-foreground shrink-0" style={{ fontSize: '12px' }}>Scale</span>
             <div className={cn(
-              'flex flex-1 rounded-md overflow-hidden border',
-              isDark ? 'border-white/10' : 'border-black/8',
+              'flex flex-1 rounded-md overflow-hidden border border-black/8 dark:border-white/10',
             )}>
               {SCALES.map((s) => (
                 <button
                   key={s.value}
+                  data-testid={scale === s.value ? 'export-scale-button-active' : 'export-scale-button'}
+                  data-scale={String(s.value)}
                   onClick={() => setScale(s.value)}
                   style={{ fontSize: '12px' }}
                   className={cn(
                     'flex-1 py-1 font-medium cursor-pointer transition-colors border-r last:border-r-0',
-                    isDark ? 'border-white/10' : 'border-black/8',
+                    'border-black/8 dark:border-white/10',
                     scale === s.value
                       ? 'bg-primary text-primary-foreground'
-                      : (isDark ? 'text-muted-foreground hover:bg-white/5 hover:text-foreground' : 'text-muted-foreground hover:bg-black/3 hover:text-foreground'),
+                      : 'text-muted-foreground hover:bg-black/3 hover:text-foreground dark:hover:bg-white/5',
                   )}
                 >
                   {s.label}
@@ -144,6 +140,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
           {/* Export buttons — identical style */}
           <div className="flex gap-1.5">
             <Button
+              data-testid="export-mmd-button"
               variant="outline"
               size="sm"
               onClick={handleMmd}
@@ -153,6 +150,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
               <DownloadSimple className="w-3 h-3" /> MMD
             </Button>
             <Button
+              data-testid="export-svg-button"
               variant="outline"
               size="sm"
               onClick={handleSvg}
@@ -163,6 +161,7 @@ export function ExportPopover({ svg, code, previewBg, isDark, pageName }: Export
               <DownloadSimple className="w-3 h-3" /> SVG
             </Button>
             <Button
+              data-testid="export-png-button"
               variant="outline"
               size="sm"
               onClick={handlePng}

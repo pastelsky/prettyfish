@@ -71,7 +71,7 @@ interface RefTypePickerProps {
 function RefTypePicker({ selectedType, isDark, onSelect }: RefTypePickerProps) {
   const { muted } = useTheme(isDark)
   return (
-    <div className="px-3 pt-3 pb-2 shrink-0">
+    <div data-testid="reference-type-picker" className="px-3 pt-3 pb-2 shrink-0">
       <p className={cn('text-[10px] font-semibold uppercase tracking-widest mb-2', muted)}>
         Reference
       </p>
@@ -81,6 +81,8 @@ function RefTypePicker({ selectedType, isDark, onSelect }: RefTypePickerProps) {
           return (
             <button
               key={key}
+              data-testid={isActive ? 'reference-type-button-active' : 'reference-type-button'}
+              data-reference-type={key}
               onClick={() => onSelect(key)}
               className={cn(
                 'px-1.5 py-0.5 rounded text-[9px] font-medium cursor-pointer transition-colors',
@@ -206,6 +208,8 @@ function RefExampleCard({ label, code, isDark, isInserted, onInsert }: RefExampl
       <div className={cn('flex items-center justify-between px-2 py-1', isDark ? 'bg-white/4' : 'bg-black/3')}>
         <span className={cn('text-[10px] font-medium', muted)}>{label}</span>
         <button
+          data-testid={isInserted ? 'reference-insert-button-inserted' : 'reference-insert-button'}
+          data-reference-label={label}
           onClick={() => onInsert(code)}
           className={cn(
             'flex items-center gap-0.5 text-[10px] font-medium px-1.5 py-0.5 rounded transition-colors cursor-pointer',
@@ -246,6 +250,8 @@ function RefElementRow({
     <div ref={elementRef} style={{ borderBottom: `1px solid ${border}` }}>
       {/* Header */}
       <button
+        data-testid="reference-element-toggle"
+        data-reference-name={el.name}
         onClick={onToggle}
         className={cn('w-full flex items-center gap-2 px-3 py-2 text-left cursor-pointer transition-colors', hoverBg)}
       >
@@ -306,7 +312,7 @@ function RefElementList({
   getElementRef, onToggleElement, onInsert,
 }: RefElementListProps) {
   return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 overflow-y-auto">
       {elements.map((el) => (
         <RefElementRow
           key={el.name}
@@ -416,6 +422,7 @@ export const ReferenceDocs = forwardRef<ReferenceDocsHandle, ReferenceDocsProps>
           {/* Search */}
           <div className="px-3 pb-2">
             <input
+              data-testid="reference-search-input"
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}

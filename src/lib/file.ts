@@ -5,7 +5,7 @@
  * for future-proofing migrations.
  */
 import type { AppState } from '../types'
-import { migratePages } from './storage'
+import { normalizeAppState } from './documentState'
 
 const FILE_EXTENSION = '.prettyfish.json'
 const MIME_TYPE = 'application/json'
@@ -42,7 +42,7 @@ export async function loadProjectFile(): Promise<AppState | null> {
       try {
         const text = await file.text()
         const raw = JSON.parse(text)
-        const state = validateAndMigrate(raw)
+        const state = normalizeAppState(raw)
         resolve(state)
       } catch (err) {
         console.error('[File] Failed to load project file:', err)
@@ -57,29 +57,3 @@ export async function loadProjectFile(): Promise<AppState | null> {
   })
 }
 
-/**
- * Validate and migrate a raw JSON object into a valid AppState.
- * Handles both current format and older formats gracefully.
- */
-function validateAndMigrate(raw: Record<string, unknown>): AppState {
-  // Must have pages
-  if (!Array.isArray(raw.pages) || raw.pages.length === 0) {
-    throw new Error('Invalid project file: missing pages')
-  }
-
-  // Migrate pages (handles old format → new artboard format)
-  const pages = migratePages(raw.pages)
-
-  // Determine active page
-  const activePageId = typeof raw.activePageId === 'string' && pages.some(p => p.id === raw.activePageId)
-    ? (raw.activePageId as string)
-    : pages[0]!.id
-
-  return {
-    version: 1,
-    pages,
-    activePageId,
-    mode: (raw.mode === 'dark' || raw.mode === 'light') ? raw.mode : 'light',
-    editorLigatures: typeof raw.editorLigatures === 'boolean' ? raw.editorLigatures : true,
-  }
-}

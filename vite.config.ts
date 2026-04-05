@@ -3,6 +3,7 @@ import { defineConfig } from 'vitest/config'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
+import istanbul from 'vite-plugin-istanbul'
 
 import { cloudflare } from "@cloudflare/vite-plugin";
 
@@ -12,6 +13,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     cloudflare(),
+    process.env.PLAYWRIGHT_COVERAGE
+      ? istanbul({
+          include: 'src/*',
+          extension: ['.ts', '.tsx'],
+          requireEnv: false,
+          cypress: false,
+        })
+      : null,
     VitePWA({
       registerType: 'autoUpdate',
       // Include all built assets + public files for precaching
@@ -93,7 +102,7 @@ export default defineConfig({
         enabled: false,
       },
     }),
-  ],
+  ].filter(Boolean),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -102,5 +111,12 @@ export default defineConfig({
   test: {
     // Only pick up vitest tests under src/ — the tests/ dir is for Playwright
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/*.d.ts', 'src/main.tsx'],
+    },
   },
 })

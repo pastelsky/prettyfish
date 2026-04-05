@@ -1,5 +1,19 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
+import {
+  chromePillClass,
+  chromePopoverClass,
+  ChromeIconButton,
+  ChromeTextButton,
+} from '@/components/ui/app-chrome'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
   SidebarSimple,
@@ -16,6 +30,7 @@ import {
   FloppyDisk,
   FolderOpen,
   PencilSimple,
+  Trash,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { copyShareUrl } from '../lib/share'
@@ -63,6 +78,7 @@ interface HeaderProps {
   onDeletePage: (id: string) => void
   onSaveProject: () => void
   onLoadProject: () => void
+  onResetWorkspace: () => Promise<void>
   onModeChange: (mode: AppMode) => void
   onMermaidThemeChange: (theme: MermaidTheme) => void
   onToggleSidebar: () => void
@@ -91,6 +107,7 @@ export function Header({
   onDeletePage,
   onSaveProject,
   onLoadProject,
+  onResetWorkspace,
   onModeChange,
   onMermaidThemeChange,
   onToggleSidebar,
@@ -100,6 +117,8 @@ export function Header({
 }: HeaderProps) {
   const isDark = mode === 'dark'
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
+  const [resetOpen, setResetOpen] = useState(false)
+  const [resetting, setResetting] = useState(false)
   // Use ref for timer to avoid stale closure issues (rule 5.15 — useRef for transient values)
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -115,39 +134,44 @@ export function Header({
     }
   }, [getShareState])
 
-  // Build a fast O(1) lookup map for artboards (rule 7.2 — build index maps)
-  const artboardById = useMemo(
-    () => new Map(activePage.artboards.map(a => [a.id, a])),
-    [activePage.artboards],
+  const handleResetConfirm = useCallback(async () => {
+    setResetting(true)
+    try {
+      await onResetWorkspace()
+      setResetOpen(false)
+    } finally {
+      setResetting(false)
+    }
+  }, [onResetWorkspace])
+
+  // Build a fast O(1) lookup map for diagrams (rule 7.2 — build index maps)
+  const diagramById = useMemo(
+    () => new Map(activePage.diagrams.map(a => [a.id, a])),
+    [activePage.diagrams],
   )
   // Export filename: derive directly during render (rule 5.1)
-  const activeArtboard = activePage.activeArtboardId ? artboardById.get(activePage.activeArtboardId) : undefined
-  const exportName = activeArtboard?.name ?? activePage.name
+  const activeDiagram = activePage.activeDiagramId ? diagramById.get(activePage.activeDiagramId) : undefined
+  const exportName = activeDiagram?.name ?? activePage.name
 
-  const pillClass = cn(
-    'pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-xl border backdrop-blur-sm',
-    isDark
-      ? 'bg-[oklch(0.16_0.015_260)]/82 border-white/8'
-      : 'bg-white/82 border-black/6',
-  )
+  const pillClass = chromePillClass()
 
   return (
     <div className={cn(
       'absolute top-0 left-0 right-0 z-30 flex items-start pointer-events-none',
-      isMobile ? 'justify-between px-2 pt-2 gap-1' : 'justify-between px-4 pt-4',
+      isMobile ? 'flex-col px-2 pt-2 gap-1' : 'justify-between px-4 pt-4',
     )}>
 
       {/* Left pill: Logo + file actions + app label + pages */}
       <div
-        className={cn(pillClass, 'gap-1')}
-        style={sidebarWidth ? { width: `${sidebarWidth}px` } : { width: 'clamp(320px, 34vw, 480px)' }}
+        className={cn(pillClass, 'gap-1', isMobile && 'w-full')}
+        style={!isMobile ? (sidebarWidth ? { width: `${sidebarWidth}px` } : { width: 'clamp(320px, 34vw, 480px)' }) : undefined}
         data-testid="header-logo-pill"
       >
         <div className="flex items-center justify-center w-5 h-5 rounded-md bg-primary/15 shrink-0">
           <img src="/favicon.svg" alt="" className="w-4 h-4" />
         </div>
         <span className="text-sm tracking-tight pl-0.5 shrink-0">
-          <span className="font-semibold">Pretty</span><span className="italic font-medium text-primary ml-0.5">Fish</span>
+          <span className="font-semibold">Pretty</span><span className="font-medium text-primary ml-0.5">Fish</span>
         </span>
 
         <div className={cn(
@@ -162,32 +186,30 @@ export function Header({
         <div className="flex items-center gap-1 shrink-0">
           <Tooltip>
             <TooltipTrigger>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={onLoadProject}
-                className={cn(isDark ? 'text-zinc-300 hover:text-zinc-100 hover:bg-white/8' : 'text-zinc-500 hover:text-zinc-900 hover:bg-black/5')}
-              >
+              <ChromeIconButton type="button" data-testid="open-project-button" onClick={onLoadProject}>
                 <FolderOpen className="w-3.5 h-3.5" />
-              </Button>
+              </ChromeIconButton>
             </TooltipTrigger>
             <TooltipContent side="bottom">Open project</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                onClick={onSaveProject}
-                className={cn(isDark ? 'text-zinc-300 hover:text-zinc-100 hover:bg-white/8' : 'text-zinc-500 hover:text-zinc-900 hover:bg-black/5')}
-              >
+              <ChromeIconButton type="button" data-testid="save-project-button" onClick={onSaveProject}>
                 <FloppyDisk className="w-3.5 h-3.5" />
-              </Button>
+              </ChromeIconButton>
             </TooltipTrigger>
             <TooltipContent side="bottom">Save project</TooltipContent>
           </Tooltip>
+          {!isMobile && (
+          <Tooltip>
+            <TooltipTrigger>
+              <ChromeIconButton type="button" data-testid="reset-workspace-button" onClick={() => setResetOpen(true)}>
+                <Trash className="w-3.5 h-3.5" />
+              </ChromeIconButton>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Reset workspace</TooltipContent>
+          </Tooltip>
+          )}
         </div>
 
         <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
@@ -201,50 +223,90 @@ export function Header({
           onDeletePage={onDeletePage}
           isDark={isDark}
         />
+
+        {/* On mobile, merge toolbar items into the same pill */}
+        {isMobile && (
+          <>
+            <div className="flex-1" />
+            <ChromeIconButton
+              data-testid="toggle-sidebar-button"
+              onClick={onToggleSidebar}
+              active={sidebarOpen}
+            >
+              <CodeSimple className="w-3.5 h-3.5" />
+            </ChromeIconButton>
+            <ChromeIconButton
+              data-testid="toggle-mode-button"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+              onClick={() => onModeChange(isDark ? 'light' : 'dark')}
+            >
+              {isDark ? <SunHorizon className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </ChromeIconButton>
+            <ChromeIconButton
+              data-testid="toggle-docs-button"
+              onClick={onToggleDocs}
+              active={docsOpen}
+            >
+              <Books className="w-3.5 h-3.5" />
+            </ChromeIconButton>
+          </>
+        )}
       </div>
 
-      {/* Center pill: Toolbar */}
+      <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Reset workspace?</DialogTitle>
+            <DialogDescription>
+              All pages and diagrams will be deleted and the workspace will be reset to its default state. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setResetOpen(false)} disabled={resetting}>Cancel</Button>
+            <Button data-testid="reset-workspace-confirm-button" variant="destructive" onClick={() => void handleResetConfirm()} disabled={resetting}>
+              {resetting ? 'Resetting…' : 'Reset workspace'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Center pill: Toolbar — desktop only */}
+      {!isMobile && (
       <div className={pillClass}>
         {/* Sidebar toggle */}
         <Tooltip>
           <TooltipTrigger>
-            <Button
+            <ChromeIconButton
+              data-testid="toggle-sidebar-button"
               onClick={onToggleSidebar}
-              variant="ghost"
-              size="icon-sm"
-              className={cn('rounded-lg', sidebarOpen && (isDark ? 'bg-white/8' : 'bg-black/5'))}
+              active={sidebarOpen}
             >
-              {isMobile
-                ? <CodeSimple className="w-3.5 h-3.5" />
-                : <SidebarSimple className="w-3.5 h-3.5" />
-              }
-            </Button>
+              <SidebarSimple className="w-3.5 h-3.5" />
+            </ChromeIconButton>
           </TooltipTrigger>
-          <TooltipContent side="bottom">{sidebarOpen ? 'Hide' : 'Show'} editor{!isMobile && ' (⌘\\)'}</TooltipContent>
+          <TooltipContent side="bottom">{sidebarOpen ? 'Hide' : 'Show'} editor (⌘\)</TooltipContent>
         </Tooltip>
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
         {/* Export */}
-        <ExportPopover svg={svg} code={code} previewBg={previewBg} isDark={isDark} pageName={exportName} />
+        <ExportPopover svg={svg} code={code} previewBg={previewBg} pageName={exportName} />
 
         {/* Share */}
         <Tooltip>
           <TooltipTrigger>
-            <Button
+            <ChromeTextButton
+              data-testid="share-button"
               onClick={handleShare}
-              variant="ghost"
-              size="sm"
               className={cn(
-                'h-6 px-2 text-xs gap-1 rounded-lg font-medium',
-                copyState === 'copied' && 'text-emerald-500',
-                copyState === 'error' && 'text-red-500',
+                copyState === 'copied' && 'text-emerald-500 hover:text-emerald-400',
+                copyState === 'error' && 'text-red-500 hover:text-red-400',
               )}
             >
-              {copyState === 'copied' ? <><Check className="w-3 h-3" /> Hooked!</> :
+              {copyState === 'copied' ? <><Check className="w-3 h-3" /> Copied!</> :
                copyState === 'error' ? <><X className="w-3 h-3" /> Failed</> :
                <><ShareNetwork className="w-3 h-3" /> Share</>}
-            </Button>
+            </ChromeTextButton>
           </TooltipTrigger>
           <TooltipContent side="bottom">Copy shareable diagram link</TooltipContent>
         </Tooltip>
@@ -255,14 +317,13 @@ export function Header({
 
         <Tooltip>
           <TooltipTrigger>
-            <Button
+            <ChromeIconButton
+              data-testid="toggle-mode-button"
+              aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
               onClick={() => onModeChange(isDark ? 'light' : 'dark')}
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-lg"
             >
               {isDark ? <SunHorizon className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </Button>
+            </ChromeIconButton>
           </TooltipTrigger>
           <TooltipContent side="bottom">{isDark ? 'Light mode' : 'Dark mode'} (Ctrl⇧D)</TooltipContent>
         </Tooltip>
@@ -272,33 +333,31 @@ export function Header({
         {/* Docs toggle */}
         <Tooltip>
           <TooltipTrigger>
-            <Button
+            <ChromeIconButton
+              data-testid="toggle-docs-button"
               onClick={onToggleDocs}
-              variant="ghost"
-              size="icon-sm"
-              className={cn('rounded-lg', docsOpen && (isDark ? 'bg-white/8' : 'bg-black/5'))}
+              active={docsOpen}
             >
               <Books className="w-3.5 h-3.5" />
-            </Button>
+            </ChromeIconButton>
           </TooltipTrigger>
           <TooltipContent side="bottom">Reference docs</TooltipContent>
         </Tooltip>
 
         {/* Help */}
-        {!isMobile && <Tooltip>
+        <Tooltip>
           <TooltipTrigger>
-            <Button
+            <ChromeIconButton
+              data-testid="open-help-button"
               onClick={onOpenHelp}
-              variant="ghost"
-              size="icon-sm"
-              className="rounded-lg"
             >
               <Question className="w-3.5 h-3.5" />
-            </Button>
+            </ChromeIconButton>
           </TooltipTrigger>
           <TooltipContent side="bottom">Shortcuts (?)</TooltipContent>
-        </Tooltip>}
+        </Tooltip>
       </div>
+      )}
 
       {/* Right spacer to balance logo */}
       {!isMobile && <div className="w-[100px]" />}
@@ -362,6 +421,7 @@ function PagesDropdown({
   return (
     <div ref={ref} className="relative">
       <button
+        data-testid="pages-dropdown-trigger"
         onClick={() => setOpen(o => !o)}
         className={cn(
           'flex items-center gap-1 h-6 px-2 rounded-lg text-xs font-medium cursor-pointer transition-colors',
@@ -374,8 +434,11 @@ function PagesDropdown({
       </button>
 
       {open && (
-        <div className={cn(
-          'absolute top-full left-0 mt-2 z-50 min-w-[200px] rounded-xl border overflow-hidden',
+        <div
+          data-testid="pages-dropdown-list"
+          className={cn(
+          'absolute top-full mt-2 z-50 min-w-[200px] max-w-[calc(100vw-2rem)] rounded-xl border overflow-hidden',
+          'left-0 sm:left-0 right-auto',
           isDark ? 'bg-[oklch(0.17_0.018_260)] border-white/12' : 'bg-white border-black/10',
         )} style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
           <div className="py-1">
@@ -385,6 +448,8 @@ function PagesDropdown({
               return (
                 <div
                   key={page.id}
+                  data-testid={isActive ? 'page-item-active' : 'page-item'}
+                  data-page-id={page.id}
                   className={cn(
                     'group px-3 py-1.5 cursor-pointer transition-colors',
                     isActive
@@ -412,6 +477,7 @@ function PagesDropdown({
                     {!isRenaming && (
                       <button
                         type="button"
+                        data-testid="page-rename-button"
                         aria-label={`Rename ${page.name}`}
                         onClick={e => startRename(page.id, page.name, e)}
                         className={cn(
@@ -427,6 +493,7 @@ function PagesDropdown({
                     {!isRenaming && pages.length > 1 && (
                       <button
                         type="button"
+                        data-testid="page-delete-button"
                         aria-label={`Delete ${page.name}`}
                         onClick={e => { e.stopPropagation(); onDeletePage(page.id) }}
                         className={cn(
@@ -445,6 +512,7 @@ function PagesDropdown({
             })}
             <div className={cn('mx-2 my-1 h-px', isDark ? 'bg-white/8' : 'bg-black/6')} />
             <button
+              data-testid="page-add-button"
               onClick={() => { onAddPage(); setOpen(false) }}
               className={cn(
                 'flex items-center gap-1.5 w-full px-3 py-1.5 text-xs cursor-pointer transition-colors',
@@ -482,17 +550,18 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
     <div ref={ref} className="relative">
       <button
         type="button"
+        data-testid="theme-dropdown-trigger"
         onClick={() => setOpen(o => !o)}
         className={cn(
           'flex items-center gap-1.5 h-7 px-2 rounded-lg border text-xs cursor-pointer transition-colors',
-          isDark ? 'bg-zinc-950 border-white/10 text-zinc-100 hover:bg-white/6' : 'bg-white border-black/10 text-zinc-800 hover:bg-black/4',
+          isDark ? 'bg-zinc-950 border-white/10 text-zinc-100 hover:bg-white/8 hover:text-white' : 'bg-white border-black/10 text-zinc-800 hover:bg-black/4 hover:text-zinc-900',
           open && (isDark ? 'bg-white/8' : 'bg-black/5'),
         )}
       >
         {currentSw && (
           <span className="flex items-center gap-0.5 shrink-0">
             {currentSw.map((c, i) => (
-              <span key={i} className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: c }} />
+              <span key={i} className={cn('w-2.5 h-2.5 rounded-full border', isDark ? 'border-white/10' : 'border-black/10')} style={{ background: c }} />
             ))}
           </span>
         )}
@@ -501,9 +570,11 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
       </button>
 
       {open && (
-        <div className={cn(
-          'absolute top-full left-0 mt-2 z-50 min-w-[190px] rounded-xl border overflow-hidden',
-          isDark ? 'bg-[oklch(0.17_0.018_260)] border-white/12' : 'bg-white border-black/10',
+        <div
+          data-testid="theme-dropdown-list"
+          className={cn(
+          'absolute top-full left-0 mt-2 z-50 min-w-[190px] overflow-hidden',
+          chromePopoverClass(),
         )} style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
           <div className="py-1">
             {MERMAID_THEMES.map((t, idx) => {
@@ -517,6 +588,8 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
                   )}
                   <button
                     type="button"
+                    data-testid={active ? 'theme-option-active' : 'theme-option'}
+                    data-theme-value={String(t.value)}
                     onClick={() => { onChange(t.value as MermaidTheme); setOpen(false) }}
                     className={cn(
                       'w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer transition-colors',
@@ -528,7 +601,7 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
                     {sw && (
                       <span className="flex items-center gap-0.5 shrink-0">
                         {sw.map((c, i) => (
-                          <span key={i} className="w-2.5 h-2.5 rounded-full border border-black/10" style={{ background: c }} />
+                          <span key={i} className={cn('w-2.5 h-2.5 rounded-full border', isDark ? 'border-white/10' : 'border-black/10')} style={{ background: c }} />
                         ))}
                       </span>
                     )}

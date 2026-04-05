@@ -55,8 +55,7 @@ import { cn } from '@/lib/utils'
 import { pfDebug } from '@/lib/debug'
 import { ConfigPanel } from '@/components/ConfigPanel'
 import { TemplateGallery } from '@/components/TemplateGallery'
-import type { AppMode, DiagramConfig } from '../types'
-import { useMermaidRenderer } from '../hooks/useMermaidRenderer'
+import type { AppMode, DiagramConfig, MermaidRenderError } from '../types'
 
 
 // ── CodeMirror error line highlighting ──
@@ -66,14 +65,17 @@ const EXTENSIONS_BASE = [EditorView.lineWrapping]
 
 type SidebarTab = 'code'
 
-import type { Artboard } from '../types'
+import type { Diagram } from '../types'
 
 interface SidebarProps {
-  artboard: Artboard | null
+  diagram: Diagram | null
   onInsertReady?: (fn: (text: string) => void) => void
   onAltClick?: (ref: TokenRef) => void
   mode: AppMode
   diagramConfig: DiagramConfig
+  renderError?: MermaidRenderError | null
+  autoFormat?: boolean
+  editorLigatures?: boolean
   onFocusReady?: (focusFn: () => void) => void
   onChange: (value: string) => void
   mermaidTheme: string
@@ -82,14 +84,16 @@ interface SidebarProps {
 }
 
 export function Sidebar({
-  artboard, mode, diagramConfig, mermaidTheme,
+  diagram, mode, diagramConfig, mermaidTheme,
+  renderError = null,
+  autoFormat = true,
+  editorLigatures = true,
   onFocusReady,
   onChange, onConfigChange, onMermaidThemeChange, onInsertReady, onAltClick,
 }: SidebarProps) {
-  const code = artboard?.code ?? ''
-  const activePageId = artboard?.id ?? ''
-  // Get error state for the active artboard (for inline error display in editor)
-  const { error } = useMermaidRenderer(code, mermaidTheme as import('../types').MermaidTheme, diagramConfig)
+  const code = diagram?.code ?? ''
+  const activePageId = diagram?.id ?? ''
+  const error = renderError
   const [activeTab, setActiveTab] = useState<SidebarTab>('code')
   const [collapsed, setCollapsed] = useState(false)
   // Stable toggle using functional updater (rule 5.11)
@@ -99,8 +103,6 @@ export function Sidebar({
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const editorViewRef = useRef<EditorView | null>(null)
   const isDark = mode === 'dark'
-  const editorLigatures = true
-  const autoFormat = true
 
   const langExtension = useMemo(
     () => [mermaidFallbackLanguage, syntaxHighlighting(defaultHighlightStyle)],
@@ -187,12 +189,12 @@ export function Sidebar({
   }, [activePageId, autoFormat, handleFormat, onChange])
 
   // Placeholder when no diagram is selected
-  if (!artboard) {
+  if (!diagram) {
     return (
       <div className={cn(
         'flex flex-col h-full rounded-xl border overflow-hidden items-center justify-center gap-3 text-center p-8',
         isDark
-          ? 'bg-[oklch(0.16_0.015_260)]/95 backdrop-blur-sm border-white/8'
+          ? 'bg-[oklch(0.16_0.015_280)] border-white/8'
           : 'bg-white/95 backdrop-blur-sm border-black/6',
       )}>
         <div className={cn('text-3xl mb-1', isDark ? 'opacity-30' : 'opacity-20')}>⬡</div>
@@ -212,20 +214,20 @@ export function Sidebar({
       isDark ? '[box-shadow:0_4px_24px_rgba(0,0,0,0.35)]' : '[box-shadow:0_4px_24px_rgba(0,0,0,0.08)]',
       // testid is on the outer wrapper in App.tsx data-sidebar-panel attr
       isDark
-        ? 'bg-[oklch(0.16_0.015_260)]/95 border-white/8'
+        ? 'bg-[oklch(0.16_0.015_280)] border-white/8'
         : 'bg-white/95 border-black/6',
       collapsed && 'h-auto',
     )}>
 
       {/* Title bar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border/40 shrink-0">
+      <div data-testid="editor-header" className="flex items-center gap-1 px-2 py-1.5 border-b border-border/40 shrink-0">
         <div className="min-w-0 flex-1 px-1 flex items-center gap-2 overflow-hidden">
           <span className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground shrink-0">
             Editor
           </span>
           <span className="text-muted-foreground/60 shrink-0">•</span>
           <span className="text-sm font-medium text-foreground truncate">
-            {artboard?.name ?? 'Diagram'}
+            {diagram?.name ?? 'Diagram'}
           </span>
         </div>
 
@@ -243,6 +245,7 @@ export function Sidebar({
           <Tooltip>
             <TooltipTrigger>
               <Button
+                data-testid="copy-code-button"
                 variant="ghost"
                 size="icon-sm"
                 onClick={() => {
@@ -366,6 +369,7 @@ export function Sidebar({
               <Accordion.Item value="config">
                 <Accordion.Header>
                   <Accordion.Trigger
+                    data-testid="configuration-trigger"
                     className={cn(
                       'group w-full flex items-center justify-between px-3 py-2 text-left font-sans transition-colors cursor-pointer',
                       isDark ? 'text-zinc-200 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4',
@@ -384,7 +388,7 @@ export function Sidebar({
                     </span>
                   </Accordion.Trigger>
                 </Accordion.Header>
-                <Accordion.Panel className="overflow-hidden">
+                <Accordion.Panel data-testid="configuration-panel" className="overflow-hidden">
                   <div className="px-3 pb-3 pt-1">
                     <div className={cn(
                       'rounded-lg border max-h-[58vh] overflow-y-auto bg-background',
@@ -394,7 +398,6 @@ export function Sidebar({
                         <ConfigPanel
                           config={diagramConfig}
                           code={code}
-                          mode={mode}
                           onChange={onConfigChange}
                           mermaidTheme={mermaidTheme}
                           onMermaidThemeChange={onMermaidThemeChange}

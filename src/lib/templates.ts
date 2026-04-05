@@ -345,11 +345,12 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     description: 'Flow diagrams showing quantities',
     icon: '🌊',
     code: `sankey-beta
-Agricultural,Prod A,10
-Agricultural,Prod B,25
-Prod A,Consumer X,10
-Prod B,Consumer X,15
-Prod B,Consumer Y,10`,
+Solar,Grid,45
+Solar,Battery,20
+Wind,Grid,30
+Grid,Homes,55
+Grid,Industry,20
+Battery,Homes,18`,
   },
   {
     id: 'block',
