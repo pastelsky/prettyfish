@@ -169,7 +169,7 @@ function InnerCanvas({
     )
   }, [page.id, page.artboards, page.activeArtboardId, mode, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
 
-  const [nodes, setNodes, onNodesChange] = useNodesState(buildNodes())
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]) // populated by sync effect below
 
   // Sync nodes while preserving existing node identity/measurement where possible.
   // Replacing the whole node array on every selection change can cause visible flicker.
