@@ -29,3 +29,8 @@ dist-ssr
 !.dev.vars.example
 .env*
 !.env.example
+
+# Test artifacts
+test-results/
+tests/screenshots/
+tmp_chaos_logs/
