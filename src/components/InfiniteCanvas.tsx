@@ -165,19 +165,20 @@ function InnerCanvas({
       diagramCount: page.artboards.length,
       activeDiagramId: page.activeArtboardId,
     })
+    // activeSvg/activeError are patched separately in a lightweight effect below
     return artboardsToNodes(
       page.artboards,
       page.activeArtboardId,
       mode,
-      activeSvg,
-      activeError,
+      '',   // activeSvg — patched separately
+      null, // activeError — patched separately
       stableSelect,
       stableRename,
       stableUpdateDesc,
       stableDelete,
       stableOpenContextMenu,
     )
-  }, [page.id, page.artboards, page.activeArtboardId, mode, activeSvg, activeError, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
+  }, [page.id, page.artboards, page.activeArtboardId, mode, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]) // populated by sync effect below
 
@@ -206,6 +207,19 @@ function InnerCanvas({
       })
     })
   }, [buildNodes, page.id, setNodes])
+
+  // Lightweight update: only patch activeSvg/activeError on active node when SVG changes
+  // This avoids rebuilding all nodes on every render cycle
+  useEffect(() => {
+    const activeId = page.activeArtboardId
+    if (!activeId) return
+    setNodes(prev => prev.map(n => {
+      if (n.id !== activeId) return n
+      const prevData = n.data as ArtboardNodeData
+      if (prevData.activeSvg === activeSvg && prevData.activeError === activeError) return n
+      return { ...n, data: { ...prevData, activeSvg, activeError } }
+    }))
+  }, [activeSvg, activeError, page.activeArtboardId, setNodes])
 
   // Gently focus the active artboard when switching pages
   useEffect(() => {

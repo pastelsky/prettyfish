@@ -100,6 +100,7 @@ export function useMermaidRenderer(
   const diagramConfigRef = useRef(diagramConfig)
   diagramConfigRef.current = diagramConfig
 
+
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current)
 
