@@ -128,7 +128,7 @@ export function Sidebar({
     const line = view.state.doc.line(lineNum)
     view.dispatch({ selection: { anchor: line.from }, scrollIntoView: true })
     view.focus()
-  }, [error?.line])
+  }, [error])
 
   const handleFormat = useCallback((src?: string) => {
     const target = src ?? code

@@ -4,7 +4,7 @@
  * Each artboard is a draggable, named panel on the infinite canvas.
  * Clicking it selects it (opens the sidebar editor).
  */
-import { memo, useCallback, useRef, useState, useEffect } from 'react'
+import { memo, useCallback, useRef } from 'react'
 import { NodeResizer, type Node } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import { useMermaidRenderer } from '../hooks/useMermaidRenderer'
@@ -54,18 +54,8 @@ export const ArtboardNode = memo(function ArtboardNode({
     diagramConfig,
   )
 
-  // Cache last valid SVG for inactive artboards so switching away doesn't blank it
-  const cachedSvgRef = useRef<string>('')
-  const [cachedSvg, setCachedSvg] = useState<string>('')
-  useEffect(() => {
-    if (!isActive && ownSvg) {
-      cachedSvgRef.current = ownSvg
-      setCachedSvg(ownSvg)
-    }
-  }, [isActive, ownSvg])
-
-  // Use active svg from parent for active artboard, cached svg for inactive
-  const svg = isActive ? (activeSvg ?? '') : (ownSvg || cachedSvg)
+  // Use active svg from parent for active artboard, own rendered svg for inactive
+  const svg = isActive ? (activeSvg ?? '') : ownSvg
   const mermaidError = isActive ? (activeError ?? null) : ownError
 
   const handleClick = useCallback(() => {

@@ -1,0 +1,6 @@
+=== 07_undo_redo_stress ===
+Total events: 0
+[COUNTS] renders:0 scheduled:0 buildNodes:0 syncNodes:0 widthPersist:0
+✅ No significant rendering issues detected
+
+--- Log sequence ---

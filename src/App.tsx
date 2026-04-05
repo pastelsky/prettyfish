@@ -195,8 +195,8 @@ export default function App() {
     activeArtboard?.configOverrides,
   )
 
-  // Render the active artboard's SVG for export
-  const { svg: activeSvg } = useMermaidRenderer(activeArtboard?.code ?? '', mermaidTheme, diagramConfig)
+  // Render the active artboard's SVG for export and to pass into canvas node
+  const { svg: activeSvg, error: activeError } = useMermaidRenderer(activeArtboard?.code ?? '', mermaidTheme, diagramConfig)
 
   // ── Page mutations ──────────────────────────────────────────────────────────
 
@@ -604,6 +604,8 @@ export default function App() {
         <InfiniteCanvas
           page={activePage}
           mode={mode}
+          activeSvg={activeSvg}
+          activeError={activeError}
           onSelectArtboard={selectArtboard}
           onRenameArtboard={renameArtboard}
           onUpdateArtboardDescription={updateArtboardDescription}

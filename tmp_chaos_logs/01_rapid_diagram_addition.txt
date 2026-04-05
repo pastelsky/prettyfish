@@ -1,0 +1,46 @@
+=== 01_rapid_diagram_addition ===
+Total events: 40
+[COUNTS] renders:0 scheduled:5 buildNodes:5 syncNodes:5 widthPersist:0
+⚠️  Excessive scheduled vs actual renders: 5 scheduled, 0 actual
+
+--- Log sequence ---
+#15 [canvas] buildNodes
+#16 [canvas] syncNodes effect
+#17 [app] pages state changed
+#18 [canvas] handleNodesChange
+#19 [canvas] ignore measurement-only width change
+#20 [canvas] buildNodes
+#21 [canvas] syncNodes effect
+#22 [app] pages state changed
+#23 [canvas] handleNodesChange
+#24 [canvas] ignore measurement-only width change
+#25 [mermaid-render] render scheduled fired
+#26 [mermaid-render] render skipped empty code
+#27 [canvas] focusDiagramInViewport requested
+#28 [canvas] buildNodes
+#29 [canvas] syncNodes effect
+#30 [app] pages state changed
+#31 [canvas] handleNodesChange
+#32 [canvas] ignore measurement-only width change
+#33 [mermaid-render] render scheduled fired
+#34 [mermaid-render] render skipped empty code
+#35 [canvas] focusDiagramInViewport requested
+#36 [canvas] buildNodes
+#37 [canvas] syncNodes effect
+#38 [app] pages state changed
+#39 [canvas] handleNodesChange
+#40 [canvas] ignore measurement-only width change
+#41 [mermaid-render] render scheduled fired
+#42 [mermaid-render] render skipped empty code
+#43 [canvas] focusDiagramInViewport requested
+#44 [canvas] buildNodes
+#45 [canvas] syncNodes effect
+#46 [app] pages state changed
+#47 [canvas] handleNodesChange
+#48 [canvas] ignore measurement-only width change
+#49 [mermaid-render] render scheduled fired
+#50 [mermaid-render] render skipped empty code
+#51 [canvas] focusDiagramInViewport requested
+#52 [mermaid-render] render scheduled fired
+#53 [mermaid-render] render skipped empty code
+#54 [canvas] focusDiagramInViewport requested

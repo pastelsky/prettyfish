@@ -403,7 +403,6 @@ export const ReferenceDocs = forwardRef<ReferenceDocsHandle, ReferenceDocsProps>
         el.syntax?.toLowerCase().includes(q) ||
         el.examples?.some(ex => ex.code.toLowerCase().includes(q) || ex.label.toLowerCase().includes(q))
       )
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [q, docRef.elements])
 
     return (

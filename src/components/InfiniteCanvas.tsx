@@ -4,7 +4,7 @@
  * Each artboard in the current page becomes a React Flow node.
  * Supports pan, zoom, drag-to-reposition, click-to-select, minimap.
  */
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react'
 import {
   ReactFlow,
   Background,
@@ -53,6 +53,8 @@ function artboardsToNodes(
       artboard: ab,
       isActive: ab.id === activeArtboardId,
       mode,
+      activeSvg: ab.id === activeArtboardId ? activeSvg : undefined,
+      activeError: ab.id === activeArtboardId ? activeError : undefined,
       onSelect,
       onRename,
       onUpdateDescription: onUpdateDesc,
@@ -71,6 +73,8 @@ function artboardsToNodes(
 interface InnerCanvasProps {
   page: DiagramPage
   mode: AppMode
+  activeSvg: string
+  activeError: ArtboardNodeData['activeError']
   onSelectArtboard: (id: string) => void
   onRenameArtboard: (id: string, name: string) => void
   onUpdateArtboardDescription: (id: string, description: string) => void
@@ -85,6 +89,8 @@ interface InnerCanvasProps {
 function InnerCanvas({
   page,
   mode,
+  activeSvg,
+  activeError,
   onSelectArtboard,
   onRenameArtboard,
   onUpdateArtboardDescription,
@@ -140,12 +146,12 @@ function InnerCanvas({
   const updateDescRef = useRef(onUpdateArtboardDescription)
   const deleteRef = useRef(onDeleteArtboard)
   const contextMenuRef = useRef(onOpenDiagramContextMenu)
-  // Keep refs current without separate effects — assign during render (safe: refs are mutation-only)
-  selectRef.current = onSelectArtboard
-  renameRef.current = onRenameArtboard
-  updateDescRef.current = onUpdateArtboardDescription
-  deleteRef.current = onDeleteArtboard
-  contextMenuRef.current = onOpenDiagramContextMenu
+  // Keep refs current — use useLayoutEffect to avoid react-compiler "ref during render" error
+  useLayoutEffect(() => { selectRef.current = onSelectArtboard }, [onSelectArtboard])
+  useLayoutEffect(() => { renameRef.current = onRenameArtboard }, [onRenameArtboard])
+  useLayoutEffect(() => { updateDescRef.current = onUpdateArtboardDescription }, [onUpdateArtboardDescription])
+  useLayoutEffect(() => { deleteRef.current = onDeleteArtboard }, [onDeleteArtboard])
+  useLayoutEffect(() => { contextMenuRef.current = onOpenDiagramContextMenu }, [onOpenDiagramContextMenu])
 
   const stableSelect = useCallback((id: string) => selectRef.current(id), [])
   const stableRename = useCallback((id: string, name: string) => renameRef.current(id, name), [])
@@ -163,13 +169,15 @@ function InnerCanvas({
       page.artboards,
       page.activeArtboardId,
       mode,
+      activeSvg,
+      activeError,
       stableSelect,
       stableRename,
       stableUpdateDesc,
       stableDelete,
       stableOpenContextMenu,
     )
-  }, [page.id, page.artboards, page.activeArtboardId, mode, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
+  }, [page.id, page.artboards, page.activeArtboardId, mode, activeSvg, activeError, stableSelect, stableRename, stableUpdateDesc, stableDelete, stableOpenContextMenu])
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]) // populated by sync effect below
 
@@ -356,6 +364,8 @@ function InnerCanvas({
 interface InfiniteCanvasProps {
   page: DiagramPage
   mode: AppMode
+  activeSvg: string
+  activeError: ArtboardNodeData['activeError']
   onSelectArtboard: (id: string) => void
   onRenameArtboard: (id: string, name: string) => void
   onUpdateArtboardDescription: (id: string, description: string) => void
