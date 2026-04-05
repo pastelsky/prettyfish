@@ -32,6 +32,7 @@ import {
   FolderOpen,
   PencilSimple,
   Trash,
+  Heart,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
 import { copyShareUrl } from '../lib/share'
@@ -356,6 +357,26 @@ export function Header({
             </ChromeIconButton>
           </TooltipTrigger>
           <TooltipContent side="bottom">Shortcuts (?)</TooltipContent>
+        </Tooltip>
+
+        <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
+
+        {/* Sponsor */}
+        <Tooltip>
+          <TooltipTrigger>
+            <a
+              href="https://github.com/sponsors/pastelsky"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(
+                'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
+                isDark ? 'hover:bg-white/8 text-pink-400' : 'hover:bg-black/5 text-pink-500',
+              )}
+            >
+              <Heart className="w-3.5 h-3.5" weight="fill" />
+            </a>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Sponsor</TooltipContent>
         </Tooltip>
       </div>
       )}
