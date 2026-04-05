@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 import { Copy, CopySimple, Plus, ShareNetwork, Trash } from '@phosphor-icons/react'
+import posthog from 'posthog-js'
 
 import { Header } from './components/Header'
 import { Sidebar } from './components/Sidebar'
@@ -88,6 +89,7 @@ export default function App() {
 
   const handleDeleteActiveDiagram = useCallback(() => {
     if (!activeDiagram || activePage.diagrams.length === 0) return
+    posthog.capture('diagram_deleted', { source: 'keyboard' })
     deleteDiagram(activeDiagram.id)
   }, [activeDiagram, activePage.diagrams.length, deleteDiagram])
 
@@ -171,12 +173,14 @@ export default function App() {
     if (!contextMenu || contextMenu.type !== 'diagram' || !contextMenu.id) return
     const source = activePage.diagrams.find(diagram => diagram.id === contextMenu.id)
     if (!source) return
+    posthog.capture('diagram_duplicated', { source: 'context_menu' })
     duplicateDiagram(source)
     dispatch({ type: 'ui/set-context-menu', menu: null })
   }, [activePage.diagrams, contextMenu, dispatch, duplicateDiagram])
 
   const handleContextMenuDelete = useCallback(() => {
     if (!contextMenu || contextMenu.type !== 'diagram' || !contextMenu.id) return
+    posthog.capture('diagram_deleted', { source: 'context_menu' })
     deleteDiagram(contextMenu.id)
     dispatch({ type: 'ui/set-context-menu', menu: null })
   }, [contextMenu, deleteDiagram, dispatch])
@@ -193,6 +197,7 @@ export default function App() {
   }, [dispatch, pasteDiagram])
 
   const handleCanvasContextMenuNewDiagram = useCallback(() => {
+    posthog.capture('diagram_created', { source: 'context_menu' })
     addDiagram()
     dispatch({ type: 'ui/set-context-menu', menu: null })
   }, [addDiagram, dispatch])
@@ -332,7 +337,7 @@ export default function App() {
         >
           <Button
             data-testid="add-diagram-button"
-            onClick={addDiagram}
+            onClick={() => { posthog.capture('diagram_created', { source: 'toolbar' }); addDiagram() }}
             variant="outline"
             size="default"
             className={cn(

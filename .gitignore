@@ -34,3 +34,4 @@ dist-ssr
 test-results/
 tests/screenshots/
 tmp_chaos_logs/
+.env

@@ -39,6 +39,7 @@
     "lucide-react": "^1.7.0",
     "mermaid": "^11.14.0",
     "mermaid-formatter": "^0.3.0",
+    "posthog-js": "^1.364.7",
     "react": "^19.2.4",
     "react-colorful": "^5.6.1",
     "react-dom": "^19.2.4",

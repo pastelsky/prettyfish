@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
+import posthog from 'posthog-js'
 import { Button } from '@/components/ui/button'
 import { ChromeTextButton, chromePopoverClass } from '@/components/ui/app-chrome'
 import { DownloadSimple } from '@phosphor-icons/react'
@@ -50,6 +51,7 @@ export function ExportPopover({ svg, code, previewBg, pageName }: ExportPopoverP
   }, [open])
 
   const handleMmd = useCallback(() => {
+    posthog.capture('diagram_exported', { format: 'mmd' })
     const blob = new Blob([code], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -61,12 +63,14 @@ export function ExportPopover({ svg, code, previewBg, pageName }: ExportPopoverP
   }, [code, effectiveFilename])
 
   const handleSvg = useCallback(async () => {
+    posthog.capture('diagram_exported', { format: 'svg' })
     setExporting(true)
     try { await exportSvg(svg, effectiveFilename || 'diagram') }
     finally { setExporting(false); setOpen(false) }
   }, [svg, effectiveFilename])
 
   const handlePng = useCallback(async () => {
+    posthog.capture('diagram_exported', { format: 'png', scale })
     setExporting(true)
     try { await exportPng(svg, previewBg, effectiveFilename || 'diagram', scale) }
     finally { setExporting(false); setOpen(false) }

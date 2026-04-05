@@ -297,7 +297,7 @@ function InnerCanvas({
 
   const isDark = mode === 'dark'
   const isMobile = useIsMobile()
-  const bgColor = isDark ? 'oklch(0.13 0.015 260)' : '#f1f0f5'
+  const bgColor = isDark ? 'oklch(0.13 0.015 260)' : '#f3f3f4'
   const dotColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
   const minimapBg = isDark ? 'oklch(0.18 0.015 260)' : '#e8e7ef'
   const minimapMask = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)'

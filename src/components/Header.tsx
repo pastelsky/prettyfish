@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import posthog from 'posthog-js'
 import { Button } from '@/components/ui/button'
 import {
   chromePillClass,
@@ -48,11 +49,9 @@ const THEME_SWATCHES: Record<string, [string, string, string]> = {
 }
 for (const [key, preset] of Object.entries(CUSTOM_THEME_PRESETS)) {
   const tv = preset.themeVariables
-  const primary = (tv.primaryBorderColor && tv.primaryBorderColor !== tv.primaryColor)
-    ? tv.primaryBorderColor
-    : (tv.primaryColor ?? '#4f46e5')
-  const secondary = tv.secondaryBorderColor ?? tv.secondaryColor ?? tv.mainBkg ?? '#eee'
-  const tertiary = tv.tertiaryBorderColor ?? tv.lineColor ?? '#888'
+  const primary = tv.primaryColor ?? '#4f46e5'
+  const secondary = tv.secondaryColor ?? tv.mainBkg as string ?? '#eee'
+  const tertiary = tv.tertiaryColor ?? tv.lineColor ?? '#888'
   THEME_SWATCHES[key] = [primary, secondary, tertiary]
 }
 
@@ -126,6 +125,7 @@ export function Header({
     if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
     try {
       await copyShareUrl(getShareState())
+      posthog.capture('share_link_copied')
       setCopyState('copied')
       copyTimerRef.current = setTimeout(() => setCopyState('idle'), 2000)
     } catch {
@@ -138,6 +138,7 @@ export function Header({
     setResetting(true)
     try {
       await onResetWorkspace()
+      posthog.capture('workspace_reset')
       setResetOpen(false)
     } finally {
       setResetting(false)
@@ -186,7 +187,7 @@ export function Header({
         <div className="flex items-center gap-1 shrink-0">
           <Tooltip>
             <TooltipTrigger>
-              <ChromeIconButton type="button" data-testid="open-project-button" onClick={onLoadProject}>
+              <ChromeIconButton type="button" data-testid="open-project-button" onClick={() => { posthog.capture('project_loaded'); onLoadProject() }}>
                 <FolderOpen className="w-3.5 h-3.5" />
               </ChromeIconButton>
             </TooltipTrigger>
@@ -194,7 +195,7 @@ export function Header({
           </Tooltip>
           <Tooltip>
             <TooltipTrigger>
-              <ChromeIconButton type="button" data-testid="save-project-button" onClick={onSaveProject}>
+              <ChromeIconButton type="button" data-testid="save-project-button" onClick={() => { posthog.capture('project_saved'); onSaveProject() }}>
                 <FloppyDisk className="w-3.5 h-3.5" />
               </ChromeIconButton>
             </TooltipTrigger>
@@ -513,7 +514,7 @@ function PagesDropdown({
             <div className={cn('mx-2 my-1 h-px', isDark ? 'bg-white/8' : 'bg-black/6')} />
             <button
               data-testid="page-add-button"
-              onClick={() => { onAddPage(); setOpen(false) }}
+              onClick={() => { posthog.capture('page_added'); onAddPage(); setOpen(false) }}
               className={cn(
                 'flex items-center gap-1.5 w-full px-3 py-1.5 text-xs cursor-pointer transition-colors',
                 isDark ? 'text-zinc-400 hover:text-zinc-100 hover:bg-white/6' : 'text-zinc-500 hover:text-zinc-700 hover:bg-black/4',
@@ -590,7 +591,7 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
                     type="button"
                     data-testid={active ? 'theme-option-active' : 'theme-option'}
                     data-theme-value={String(t.value)}
-                    onClick={() => { onChange(t.value as MermaidTheme); setOpen(false) }}
+                    onClick={() => { posthog.capture('theme_changed', { theme: t.value }); onChange(t.value as MermaidTheme); setOpen(false) }}
                     className={cn(
                       'w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer transition-colors',
                       active

@@ -129,7 +129,27 @@ export async function renderDiagramDiagram(diagram: Diagram): Promise<MermaidRen
 
   try {
     const id = `mermaid-render-${++renderCounter}`
-    const { svg } = await mermaid.render(id, trimmed)
+    let { svg } = await mermaid.render(id, trimmed)
+
+    // Fix ER diagram alternating row backgrounds:
+    // Mermaid computes lighten(background, N) for attribute rows, which
+    // produces white-on-white when background is '#ffffff'. Replace with
+    // the theme's explicit ER attribute colors if provided.
+    if (customPreset && svg.includes('erDiagram')) {
+      const vars = customPreset.themeVariables
+      const odd = vars.attributeBackgroundColorOdd
+      const even = vars.attributeBackgroundColorEven
+      if (odd && even) {
+        // The "lightened" white rows are hsl(H, S%, 100%) — replace them
+        let isOdd = true
+        svg = svg.replace(/fill="hsl\([^)]*,\s*100%\)"/g, () => {
+          const color = isOdd ? odd : even
+          isOdd = !isOdd
+          return `fill="${color}"`
+        })
+      }
+    }
+
     const dimensions = extractSvgDimensions(svg)
     return { svg, error: null, ...dimensions }
   } catch (err) {

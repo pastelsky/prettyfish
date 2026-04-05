@@ -1,3 +1,4 @@
+import posthog from 'posthog-js'
 import { cn } from '@/lib/utils'
 import { DIAGRAM_TEMPLATES } from '@/lib/templates'
 import type { AppMode } from '@/types'
@@ -393,7 +394,7 @@ export function TemplateGallery({ mode, onSelect }: TemplateGalleryProps) {
               data-testid="template-card"
               data-template-id={tmpl.id}
               data-template-name={tmpl.name}
-              onClick={() => onSelect(tmpl.code)}
+              onClick={() => { posthog.capture('template_selected', { template_id: tmpl.id, template_name: tmpl.name }); onSelect(tmpl.code) }}
               className={cn(
                 'group flex flex-col items-start gap-2.5 p-3 rounded-lg border text-left',
                 'transition-all duration-200 cursor-pointer',
