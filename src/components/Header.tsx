@@ -419,17 +419,17 @@ function PagesDropdown({
   }, [commitRename])
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative flex-1 min-w-0">
       <button
         data-testid="pages-dropdown-trigger"
         onClick={() => setOpen(o => !o)}
         className={cn(
-          'flex items-center gap-1 h-6 px-2 rounded-lg text-xs font-medium cursor-pointer transition-colors',
+          'flex items-center gap-1 h-6 px-2 rounded-lg text-xs font-medium cursor-pointer transition-colors w-full',
           isDark ? 'hover:bg-white/8 text-zinc-200' : 'hover:bg-black/5 text-zinc-700',
           open && (isDark ? 'bg-white/8' : 'bg-black/5'),
         )}
       >
-        <span className="max-w-[100px] truncate">{activePage?.name ?? 'Untitled'}</span>
+        <span className="truncate">{activePage?.name ?? 'Untitled'}</span>
         <CaretDown className={cn('w-3 h-3 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
 

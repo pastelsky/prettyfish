@@ -6,8 +6,9 @@ import { cn } from '@/lib/utils'
 
 export function chromePillClass(): string {
   return cn(
-    'pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-xl border backdrop-blur-sm',
-    'bg-white/82 border-black/6 dark:bg-[oklch(0.16_0.015_260)]/82 dark:border-white/8',
+    'pointer-events-auto flex items-center gap-1 px-2 py-1.5 rounded-xl border backdrop-blur-md shadow-sm',
+    'bg-background/88 border-primary/12 supports-[backdrop-filter]:bg-background/72',
+    'dark:bg-background/82 dark:border-primary/18 dark:shadow-[0_8px_24px_rgba(0,0,0,0.28)]',
   )
 }
 

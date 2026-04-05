@@ -124,6 +124,9 @@
   * {
     @apply border-border outline-ring/50;
   }
+  button, [role="button"], a, select, label[for], input[type="checkbox"], input[type="radio"], summary, [tabindex]:not([tabindex="-1"]) {
+    cursor: pointer;
+  }
   html {
     position: fixed;
     width: 100%;

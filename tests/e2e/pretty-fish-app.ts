@@ -381,9 +381,32 @@ export class PrettyFishApp {
   async openFresh() {
     await this.page.goto('/', { waitUntil: 'domcontentloaded' })
     await this.page.waitForLoadState('networkidle')
-    await this.page.evaluate(() => {
+    await this.page.evaluate(async () => {
       localStorage.clear()
       sessionStorage.clear()
+      await new Promise<void>((resolve) => {
+        const request = indexedDB.open('prettyfish-db')
+        request.onerror = () => resolve()
+        request.onupgradeneeded = () => resolve()
+        request.onsuccess = () => {
+          const db = request.result
+          if (!db.objectStoreNames.contains('app-state')) {
+            db.close()
+            resolve()
+            return
+          }
+          const tx = db.transaction('app-state', 'readwrite')
+          tx.objectStore('app-state').clear()
+          tx.oncomplete = () => {
+            db.close()
+            resolve()
+          }
+          tx.onerror = () => {
+            db.close()
+            resolve()
+          }
+        }
+      })
     })
     await this.page.reload({ waitUntil: 'domcontentloaded' })
     await this.page.waitForLoadState('networkidle')

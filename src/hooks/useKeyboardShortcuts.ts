@@ -42,13 +42,19 @@ export function useKeyboardShortcuts(opts: UseKeyboardShortcutsOptions) {
   // ── Pages ─────────────────────────────────────────────
   useHotkeys(`${BrowserSafeMod}+shift+t`, opts.onNewPage, BASE)
   useHotkeys(`${BrowserSafeMod}+shift+]`, opts.onNextPage, BASE)
+  useHotkeys(`${BrowserSafeMod}+shift+}`, opts.onNextPage, BASE)
+  useHotkeys(`${BrowserSafeMod}+shift+bracketright`, opts.onNextPage, BASE)
   useHotkeys(`${BrowserSafeMod}+shift+[`, opts.onPrevPage, BASE)
+  useHotkeys(`${BrowserSafeMod}+shift+{`, opts.onPrevPage, BASE)
+  useHotkeys(`${BrowserSafeMod}+shift+bracketleft`, opts.onPrevPage, BASE)
 
   // ── Panels ────────────────────────────────────────────
   useHotkeys(`${StandardMod}+\\`, opts.onToggleSidebar, BASE)
+  useHotkeys(`${StandardMod}+backslash`, opts.onToggleSidebar, BASE)
   useHotkeys(`${BrowserSafeMod}+shift+e`, opts.onToggleSidebar, BASE)
   useHotkeys(`${BrowserSafeMod}+shift+r`, opts.onToggleDocs, BASE)
   useHotkeys(`${StandardMod}+/`, opts.onFocusEditor, BASE)
+  useHotkeys(`${StandardMod}+slash`, opts.onFocusEditor, BASE)
 
   // ── Actions ───────────────────────────────────────────
   useHotkeys(`${StandardMod}+z`, opts.onUndo, GLOBAL)
@@ -58,4 +64,6 @@ export function useKeyboardShortcuts(opts: UseKeyboardShortcutsOptions) {
   useHotkeys(`${BrowserSafeMod}+s`, opts.onSaveProject, BASE)
   useHotkeys(`${BrowserSafeMod}+o`, opts.onLoadProject, BASE)
   useHotkeys('shift+/', opts.onOpenHelp, GLOBAL) // "?"
+  useHotkeys('shift+slash', opts.onOpenHelp, GLOBAL)
+  useHotkeys('?', opts.onOpenHelp, GLOBAL)
 }

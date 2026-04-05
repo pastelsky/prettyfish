@@ -51,6 +51,7 @@ const SECTIONS: ShortcutSection[] = [
     title: 'Panels',
     shortcuts: [
       { keys: [Mod, '\\'], description: 'Toggle editor sidebar' },
+      { keys: [BrowserMod, Shift, 'E'], description: 'Toggle editor sidebar (alt)' },
       { keys: [BrowserMod, Shift, 'R'], description: 'Toggle reference docs' },
       { keys: [Mod, '/'], description: 'Focus editor' },
       { keys: ['Esc'], description: 'Blur / dismiss' },
@@ -61,6 +62,7 @@ const SECTIONS: ShortcutSection[] = [
     shortcuts: [
       { keys: [Mod, 'Z'], description: 'Undo canvas/page operation' },
       { keys: [Mod, Shift, 'Z'], description: 'Redo canvas/page operation' },
+      { keys: [BrowserMod, 'Y'], description: 'Redo canvas/page operation (alt)' },
       { keys: [BrowserMod, 'S'], description: 'Save project' },
       { keys: [BrowserMod, 'O'], description: 'Open project' },
       { keys: [BrowserMod, Shift, 'D'], description: 'Toggle dark mode' },

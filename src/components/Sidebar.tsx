@@ -11,6 +11,7 @@ import { EditorView } from '@codemirror/view'
 import { Button } from '@/components/ui/button'
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import {
+  GearSix,
   CaretUp,
   CaretDown,
   WarningCircle,
@@ -375,10 +376,13 @@ export function Sidebar({
                       isDark ? 'text-zinc-200 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4',
                     )}
                   >
-                    <span className="min-w-0 flex flex-col">
-                      <span className="text-[11px] font-semibold tracking-wide uppercase">Configuration</span>
-                      <span className={cn('text-[11px] truncate', isDark ? 'text-zinc-400' : 'text-muted-foreground')}>
-                        Theme, layout, and chart options
+                    <span className="min-w-0 flex items-start gap-1.5">
+                      <GearSix className="w-3.5 h-3.5 shrink-0 opacity-60 mt-0.5" />
+                      <span className="flex flex-col">
+                        <span className="text-[11px] font-semibold tracking-wide uppercase">Configuration</span>
+                        <span className={cn('text-[11px] truncate', isDark ? 'text-zinc-400' : 'text-muted-foreground')}>
+                          Theme, layout, and chart options
+                        </span>
                       </span>
                     </span>
                     <span className="flex items-center shrink-0 ml-3">

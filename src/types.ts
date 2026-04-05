@@ -85,12 +85,12 @@ export const MERMAID_THEMES: { value: MermaidTheme; label: string; group: 'built
 export const BUILTIN_THEMES = new Set<string>(['default', 'neutral', 'dark', 'forest', 'base'])
 
 export const DEFAULT_DIAGRAM = `flowchart TD
-    A([Start]) --> B[/Read input/]
+    A[Start] --> B[Read input]
     B --> C{Valid?}
     C -->|Yes| D[Process]
     C -->|No| E[Show error]
     E --> B
-    D --> F([Done])`
+    D --> F[Done]`
 
 // Grid layout constants for diagram placement
 export const ARTBOARD_COLS = 3
@@ -123,7 +123,7 @@ export function createDiagram(
     x: position?.x ?? 0,
     y: position?.y ?? 0,
     width: ARTBOARD_DEFAULT_WIDTH,
-    mermaidTheme: 'default',
+    mermaidTheme: 'blueprint',
     configOverrides: {},
   }
 }
