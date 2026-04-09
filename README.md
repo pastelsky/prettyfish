@@ -22,41 +22,14 @@ It is built for a workflow that sits somewhere between a text editor and a diagr
 - Share diagrams through URL-encoded state.
 - Run as a PWA with offline support.
 
-## Why This README Is Short
-
-This project changes quickly. The README aims to stay useful over time, so it focuses on the product, the development workflow, and the major architectural ideas instead of mirroring every file or every feature toggle in the codebase.
-
-For contributor-specific guidance, see [CONTRIBUTING.md](CONTRIBUTING.md).
-
 ## Getting Started
-
-### Requirements
-
-- Node.js 20+
-- npm 10+
-
-### Install
 
 ```bash
 npm install
-```
-
-### Run locally
-
-```bash
 npm run dev
 ```
 
-### Optional analytics configuration
-
-If you want PostHog enabled during development, create `.env.local` from `.env.example`:
-
-```env
-VITE_POSTHOG_KEY=your_posthog_project_api_key
-VITE_POSTHOG_HOST=https://us.i.posthog.com
-```
-
-If `VITE_POSTHOG_KEY` is not set, analytics stay off.
+Requires Node.js 20+ and npm 10+.
 
 ## Common Commands
 
