@@ -419,8 +419,8 @@ class MobileShell {
   get addDiagramButton() { return this.page.getByTestId('mobile-add-diagram-button') }
 
   async shouldShowPrimaryControls() {
-    await expect(this.page.getByTestId('open-project-button')).toBeVisible()
-    await expect(this.page.getByTestId('save-project-button')).toBeVisible()
+    // On mobile, file buttons (open/save) are hidden to save header space.
+    // The essential controls are: editor toggle, docs toggle, mode toggle, and the FAB.
     await expect(this.page.getByTestId('toggle-sidebar-button')).toBeVisible()
     await expect(this.page.getByTestId('toggle-docs-button')).toBeVisible()
     await expect(this.page.getByTestId('toggle-mode-button')).toBeVisible()

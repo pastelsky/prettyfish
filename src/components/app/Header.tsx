@@ -193,41 +193,41 @@ export function Header({
         </div>
         )}
 
-        <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
-
-        <div className="flex items-center gap-1 shrink-0">
-          <ChromeIconButton
-            type="button"
-            data-testid="open-project-button"
-            aria-label="Open project"
-            title="Open project"
-            onClick={() => { captureEvent('project_loaded'); onLoadProject() }}
-          >
-            <FolderOpen className="w-3.5 h-3.5" />
-          </ChromeIconButton>
-          <ChromeIconButton
-            type="button"
-            data-testid="save-project-button"
-            aria-label="Save project"
-            title="Save project"
-            onClick={() => { captureEvent('project_saved'); onSaveProject() }}
-          >
-            <FloppyDisk className="w-3.5 h-3.5" />
-          </ChromeIconButton>
-          {!isMobile && (
-          <ChromeIconButton
-            type="button"
-            data-testid="reset-workspace-button"
-            aria-label="Reset workspace"
-            title="Reset workspace"
-            onClick={() => setResetOpen(true)}
-          >
-            <Trash className="w-3.5 h-3.5" />
-          </ChromeIconButton>
-          )}
-        </div>
-
-        <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
+        {!isMobile && (
+          <>
+            <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
+            <div className="flex items-center gap-1 shrink-0">
+              <ChromeIconButton
+                type="button"
+                data-testid="open-project-button"
+                aria-label="Open project"
+                title="Open project"
+                onClick={() => { captureEvent('project_loaded'); onLoadProject() }}
+              >
+                <FolderOpen className="w-3.5 h-3.5" />
+              </ChromeIconButton>
+              <ChromeIconButton
+                type="button"
+                data-testid="save-project-button"
+                aria-label="Save project"
+                title="Save project"
+                onClick={() => { captureEvent('project_saved'); onSaveProject() }}
+              >
+                <FloppyDisk className="w-3.5 h-3.5" />
+              </ChromeIconButton>
+              <ChromeIconButton
+                type="button"
+                data-testid="reset-workspace-button"
+                aria-label="Reset workspace"
+                title="Reset workspace"
+                onClick={() => setResetOpen(true)}
+              >
+                <Trash className="w-3.5 h-3.5" />
+              </ChromeIconButton>
+            </div>
+            <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
+          </>
+        )}
 
         <PagesDropdown
           pages={pages}

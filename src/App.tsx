@@ -474,7 +474,11 @@ export default function App() {
                 ? 'bg-[oklch(0.16_0.015_260)]/98 border-white/10 text-zinc-100'
                 : 'bg-white/98 border-black/8 text-zinc-800',
             )}
-            style={{ left: contextMenu.x, top: contextMenu.y }}
+            style={{
+              // Clamp to screen so menu never clips off right or bottom edge
+              left: Math.min(contextMenu.x, window.innerWidth - 192),
+              top: Math.min(contextMenu.y, window.innerHeight - 180),
+            }}
             onMouseDown={(event) => event.stopPropagation()}
             onContextMenu={(event) => event.preventDefault()}
           >
