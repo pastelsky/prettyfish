@@ -26,7 +26,7 @@ const rosepine: ThemePresetDef = {
       tertiaryBorderColor: '#9893a5',
       lineColor: '#797593',
       titleColor: '#575279',
-      fontFamily: '"Fraunces", "Georgia", serif',
+      fontFamily: '"Inter", system-ui, sans-serif',
     },
     flowchart: {
       mainBkg: '#fffaf3',

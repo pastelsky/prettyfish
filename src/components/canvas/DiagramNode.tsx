@@ -4,7 +4,7 @@
  * Each diagram is a draggable, named panel on the infinite canvas.
  * Clicking it selects it (opens the sidebar editor).
  */
-import { memo, useCallback, useRef } from 'react'
+import { memo, useCallback, useEffect, useRef } from 'react'
 import { NodeResizer, type Node } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { Diagram } from '@/types'
