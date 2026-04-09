@@ -53,7 +53,11 @@ export async function loadProjectFile(): Promise<AppState | null> {
     // User cancelled the picker
     input.oncancel = () => resolve(null)
 
+    document.body.appendChild(input)
     input.click()
+    // Clean up after the picker closes (either via selection or cancel)
+    input.addEventListener('cancel', () => input.remove(), { once: true })
+    input.addEventListener('change', () => input.remove(), { once: true })
   })
 }
 

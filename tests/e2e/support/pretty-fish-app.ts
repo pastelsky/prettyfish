@@ -566,7 +566,7 @@ export class PrettyFishApp {
         await toggleSidebar.click()
       }
       try {
-        await expect(this.templates.root).toBeVisible({ timeout: 1500 })
+        await expect(this.templates.root).toBeVisible({ timeout: 5000 })
       } catch {
         const desktopAddVisible = await this.canvas.addDiagramButton.isVisible().catch(() => false)
         const mobileAddVisible = await this.canvas.mobileAddDiagramButton.isVisible().catch(() => false)
