@@ -47,7 +47,7 @@ async function installMutationProbe(page: import('@playwright/test').Page) {
   })
 }
 
-test('does not rerender diagrams continuously across tabs when the document is unchanged', { timeout: 60000 }, async ({ browser }) => {
+test('does not rerender diagrams continuously across tabs when the document is unchanged', async ({ browser }) => {
   const context = await browser.newContext()
   const page1 = await context.newPage()
   const page2 = await context.newPage()

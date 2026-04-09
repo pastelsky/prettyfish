@@ -12,6 +12,8 @@ export default defineConfig({
     trace: 'on-first-retry',
     screenshot: 'on',
     video: 'off',
+    // Disable all CSS animations/transitions so tests don't need to wait for them
+    reducedMotion: 'reduce',
   },
   projects: [
     {

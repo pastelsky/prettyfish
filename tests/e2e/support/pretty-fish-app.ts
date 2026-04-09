@@ -37,7 +37,8 @@ class HeaderBar {
   async createPage() {
     await this.openPagesMenu()
     await this.page.getByTestId('page-add-button').click()
-    await this.page.waitForTimeout(250)
+    // New page opens in template-picker state; wait for it to appear
+    await expect(this.page.getByTestId('template-gallery')).toBeVisible()
   }
 
   async renameLastPage(name: string) {
@@ -51,13 +52,15 @@ class HeaderBar {
   async selectPage(number: number) {
     await this.openPagesMenu()
     await this.page.getByTestId('page-item').nth(number - 1).click()
-    await this.page.waitForTimeout(250)
+    // Dropdown closes; wait for the canvas to show content for the selected page
+    await expect(this.page.getByTestId('canvas-root')).toBeVisible()
   }
 
   async deleteLastPage() {
     await this.openPagesMenu()
     await this.page.getByTestId('page-delete-button').last().click()
-    await this.page.waitForTimeout(300)
+    // Dropdown closes after deletion; wait for canvas-root to confirm app is stable
+    await expect(this.page.getByTestId('canvas-root')).toBeVisible()
   }
 
   async toggleDocs() {
@@ -65,15 +68,19 @@ class HeaderBar {
   }
 
   async toggleColorMode() {
+    const wasDark = await this.page.evaluate(() => document.documentElement.classList.contains('dark'))
     await this.modeToggle.click()
-    await this.page.waitForTimeout(250)
+    // Wait for the color mode class to flip
+    await expect.poll(() => this.page.evaluate(() => document.documentElement.classList.contains('dark'))).toBe(!wasDark)
   }
 
   async chooseTheme(themeValue: string) {
     await this.themeTrigger.click()
-    await expect(this.page.getByTestId('theme-dropdown-list')).toBeVisible()
+    const list = this.page.getByTestId('theme-dropdown-list')
+    await expect(list).toBeVisible()
     await this.page.locator(`[data-theme-value="${themeValue}"]`).click()
-    await this.page.waitForTimeout(300)
+    // Wait for the dropdown to close
+    await expect(list).toBeHidden()
   }
 
   async saveProject() {
@@ -90,12 +97,13 @@ class HeaderBar {
       this.openButton.click(),
     ])
     await chooser.setFiles(filePath)
-    await this.page.waitForTimeout(800)
+    // Wait for the restored state: a diagram node must exist
+    await expect(this.page.getByTestId('diagram-node').first()).toBeVisible({ timeout: 10000 })
   }
 
   async copyShareLink() {
     await this.shareButton.click()
-    await this.page.waitForTimeout(300)
+    // clipboard write is synchronous on the JS side; read immediately
     return this.page.evaluate(() => navigator.clipboard.readText())
   }
 
@@ -103,7 +111,8 @@ class HeaderBar {
     await this.resetButton.click()
     await expect(this.page.getByTestId('reset-workspace-confirm-button')).toBeVisible()
     await this.page.getByTestId('reset-workspace-confirm-button').click()
-    await this.page.waitForTimeout(800)
+    // Wait for the workspace to reset to the fresh template-gallery state
+    await expect(this.page.getByTestId('template-gallery')).toBeVisible({ timeout: 10000 })
   }
 
   async openResetWorkspaceDialog() {
@@ -140,7 +149,8 @@ class TemplatePicker {
   async choose(templateId: string) {
     await this.shouldBeVisible()
     await this.page.locator(`[data-testid="template-card"][data-template-id="${templateId}"]`).click()
-    await this.page.waitForTimeout(700)
+    // Wait for the diagram node's SVG to appear (template applied and rendered)
+    await expect(this.page.locator('[data-testid="diagram-node"] svg').first()).toBeVisible({ timeout: 10000 })
   }
 }
 
@@ -165,12 +175,14 @@ class CanvasSurface {
 
   async createDiagram() {
     await this.addDiagramButton.click()
-    await this.page.waitForTimeout(250)
+    // Wait for the template gallery to appear for the new diagram slot
+    await expect(this.page.getByTestId('template-gallery')).toBeVisible()
   }
 
   async createDiagramOnMobile() {
     await this.mobileAddDiagramButton.click()
-    await this.page.waitForTimeout(250)
+    // Wait for the template gallery to appear for the new diagram slot
+    await expect(this.page.getByTestId('template-gallery')).toBeVisible()
   }
 
   async shouldShowDiagramCount(count: number) {
@@ -229,8 +241,10 @@ class CanvasSurface {
   }
 
   async addDiagramWithShortcut() {
+    const countBefore = await this.nodes.count()
     await this.page.keyboard.press('Control+t')
-    await this.page.waitForTimeout(250)
+    // Wait for the new diagram node to appear
+    await expect(this.nodes).toHaveCount(countBefore + 1)
   }
 
   async copyFromContextMenu() {
@@ -238,19 +252,23 @@ class CanvasSurface {
   }
 
   async duplicateFromContextMenu() {
+    const countBefore = await this.nodes.count()
     await this.page.getByTestId('context-duplicate-button').click()
-    await this.page.waitForTimeout(250)
+    // Wait for the duplicated diagram node to appear
+    await expect(this.nodes).toHaveCount(countBefore + 1)
   }
 
   async copyShareLinkFromContextMenu() {
     await this.page.getByRole('button', { name: 'Share link' }).click()
-    await this.page.waitForTimeout(300)
+    // clipboard write is synchronous on the JS side; read immediately
     return this.page.evaluate(() => navigator.clipboard.readText())
   }
 
   async deleteFromContextMenu() {
+    const countBefore = await this.nodes.count()
     await this.page.getByTestId('context-delete-button').click()
-    await this.page.waitForTimeout(250)
+    // Wait for the diagram node to be removed
+    await expect(this.nodes).toHaveCount(countBefore - 1)
   }
 
   async shouldShowDiagramActions() {
@@ -335,7 +353,8 @@ class EditorSidebar {
     await this.editor.click()
     await this.page.keyboard.press('Control+a')
     await this.page.keyboard.type(text, { delay: 10 })
-    await this.page.waitForTimeout(900)
+    // Wait for Mermaid to re-render the SVG after code change
+    await expect(this.svgPreview).toBeVisible({ timeout: 10000 })
   }
 
   async shouldRenderDiagramPreview() {
@@ -486,17 +505,22 @@ class ReferenceDocsPanel {
 
   async expandFirstElement() {
     await this.page.getByTestId('reference-element-toggle').first().click()
-    await this.page.waitForTimeout(200)
+    // Wait for insert buttons to appear after expanding
+    await expect(this.page.getByTestId('reference-insert-button').first()).toBeVisible()
   }
 
   async insertExample(label: string) {
-    await this.page.locator(`[data-testid="reference-insert-button"][data-reference-label="${label}"]`).first().click()
-    await this.page.waitForTimeout(400)
+    const btn = this.page.locator(`[data-testid="reference-insert-button"][data-reference-label="${label}"]`).first()
+    await btn.click()
+    // Wait for the button to flip to "inserted" state confirming the code was applied
+    await expect(this.page.locator(`[data-testid="reference-insert-button-inserted"][data-reference-label="${label}"]`).first()).toBeVisible()
   }
 
   async insertFirstVisibleExample() {
-    await this.page.getByTestId('reference-insert-button').first().click()
-    await this.page.waitForTimeout(400)
+    const btn = this.page.getByTestId('reference-insert-button').first()
+    await btn.click()
+    // Wait for the editor to become visible, confirming the code was injected
+    await expect(this.page.locator('.cm-editor')).toBeVisible()
   }
 }
 
@@ -559,9 +583,11 @@ export class PrettyFishApp {
     // (fresh empty diagram with no code). On mobile the sidebar is hidden by default so we skip this.
     const isMobile = await this.page.evaluate(() => window.innerWidth < 768)
     if (!isMobile) {
+      // Desktop: sidebar is open by default showing template-gallery for the empty diagram
       await expect(this.templates.root).toBeVisible({ timeout: 10000 })
     } else {
-      await this.page.waitForTimeout(300)
+      // Mobile: sidebar is hidden; wait for the canvas root to be interactive
+      await expect(this.canvas.root).toBeVisible()
     }
   }
 
@@ -610,12 +636,10 @@ export class PrettyFishApp {
 
   async undo() {
     await this.page.keyboard.press('Control+z')
-    await this.page.waitForTimeout(250)
   }
 
   async redo() {
     await this.page.keyboard.press('Control+Shift+z')
-    await this.page.waitForTimeout(250)
   }
 
   async resetWorkspace() {

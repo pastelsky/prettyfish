@@ -22,7 +22,7 @@ test.describe('Keyboard shortcuts', () => {
     await createApp(page).openFresh()
   })
 
-  test('supports all documented keyboard shortcuts end-to-end', { timeout: 60000 }, async ({ page }) => {
+  test('supports all documented keyboard shortcuts end-to-end', async ({ page }) => {
     const app = createApp(page)
 
     await app.createFlowchartDiagram()

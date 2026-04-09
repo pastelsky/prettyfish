@@ -6,7 +6,7 @@ test.describe('Project save and load', () => {
     await createApp(page).openFresh()
   })
 
-  test('restores a saved multi-page project from disk', { timeout: 60000 }, async ({ page }) => {
+  test('restores a saved multi-page project from disk', async ({ page }) => {
     const app = createApp(page)
 
     await app.createFlowchartDiagram()
