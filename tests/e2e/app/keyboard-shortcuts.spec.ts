@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 async function dispatchShortcut(page: Page, init: {
   key: string

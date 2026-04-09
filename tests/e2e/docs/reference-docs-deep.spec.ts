@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 test.describe('Reference docs navigation', () => {
   test.beforeEach(async ({ page }) => {

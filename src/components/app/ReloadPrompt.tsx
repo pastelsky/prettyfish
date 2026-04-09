@@ -7,6 +7,7 @@
  */
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { cn } from '@/lib/utils'
+import { chromeGlassPanelClass } from '@/components/ui/app-chrome'
 
 const INTERVAL_MS = 60 * 60 * 1000 // check for updates every 60 minutes
 
@@ -42,9 +43,9 @@ export function ReloadPrompt() {
   return (
     <div className="fixed bottom-4 right-4 z-50 animate-fade-up">
       <div className={cn(
-        'flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg backdrop-blur-sm',
-        'bg-white/95 border-black/8 text-zinc-800',
-        'dark:bg-[oklch(0.16_0.015_260)]/95 dark:border-white/8 dark:text-zinc-200',
+        'flex items-center gap-3 px-4 py-3 text-zinc-800 dark:text-zinc-200',
+        chromeGlassPanelClass('light'),
+        'dark:bg-[oklch(0.16_0.015_260/.95)] dark:border-white/8',
       )}>
         <div className="text-sm">
           {offlineReady

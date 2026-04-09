@@ -1,10 +1,10 @@
-import { Suspense, lazy, useCallback, useEffect, useRef } from 'react'
-import { Copy, CopySimple, Plus, ShareNetwork, Trash } from '@phosphor-icons/react'
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { CaretDown, Copy, CopySimple, Plus, ShareNetwork, Trash } from '@phosphor-icons/react'
 
-import { Header } from './components/Header'
-import { KeyboardHelp } from './components/KeyboardHelp'
-import type { ReferenceDocsHandle } from './components/ReferenceDocs'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { Header } from './components/app/Header'
+import { KeyboardHelp } from './components/app/KeyboardHelp'
+import type { ReferenceDocsHandle } from './components/docs/ReferenceDocs'
+import { ErrorBoundary } from './components/app/ErrorBoundary'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useAppController } from './hooks/useAppController'
@@ -12,26 +12,33 @@ import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
 import { cn } from './lib/utils'
 import { Button } from '@/components/ui/button'
+import {
+  chromeFloatingActionClass,
+  chromeGlassPanelClass,
+  chromeMenuItemClass,
+  chromePopoverClass,
+} from '@/components/ui/app-chrome'
 
 const SIDEBAR_MIN = 300
 const SIDEBAR_MAX = 600
 
 const InfiniteCanvas = lazy(() =>
-  import('./components/InfiniteCanvas').then((module) => ({ default: module.InfiniteCanvas })),
+  import('./components/canvas/InfiniteCanvas').then((module) => ({ default: module.InfiniteCanvas })),
 )
 
 const Sidebar = lazy(() =>
-  import('./components/Sidebar').then((module) => ({ default: module.Sidebar })),
+  import('./components/editor/Sidebar').then((module) => ({ default: module.Sidebar })),
 )
 
 const ReferenceDocs = lazy(() =>
-  import('./components/ReferenceDocs').then((module) => ({ default: module.ReferenceDocs })),
+  import('./components/docs/ReferenceDocs').then((module) => ({ default: module.ReferenceDocs })),
 )
 
 export default function App() {
   const isMobile = useIsMobile()
   const controller = useAppController(isMobile)
   const referenceDocsRef = useRef<ReferenceDocsHandle>(null)
+  const [mobileSidebarCollapsed, setMobileSidebarCollapsed] = useState(true)
 
   const {
     state,
@@ -51,6 +58,7 @@ export default function App() {
     renamePage,
     addDiagram,
     selectDiagram,
+    focusDiagram,
     renameDiagram,
     updateDiagramDescription,
     copyDiagram,
@@ -82,9 +90,7 @@ export default function App() {
   } = state
 
   const activeSvg = activeDiagram?.render?.svg ?? ''
-  const panelSurfaceClass = mode === 'dark'
-    ? 'bg-[oklch(0.16_0.015_280)] border-white/8'
-    : 'bg-white/95 border-black/6'
+  const panelSurfaceClass = chromeGlassPanelClass(mode)
 
   const handleInsertReady = useCallback((fn: (text: string) => void) => {
     registerInsertHandler(fn)
@@ -159,6 +165,16 @@ export default function App() {
     root.classList.toggle('dark', mode === 'dark')
     root.dataset.theme = mode
   }, [mode])
+
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileSidebarCollapsed(false)
+      return
+    }
+    if (sidebarOpen) {
+      setMobileSidebarCollapsed(Boolean(activeDiagram?.code?.trim()))
+    }
+  }, [isMobile, sidebarOpen, activeDiagram?.id, activeDiagram?.code, activePageId])
 
   useEffect(() => {
     if (!contextMenu) return
@@ -268,8 +284,9 @@ export default function App() {
         sidebarWidth={sidebarOpen ? sidebarWidth : null}
       />
 
-      {isMobile && (sidebarOpen || docsOpen) && (
+      {isMobile && (docsOpen || (sidebarOpen && !mobileSidebarCollapsed)) && (
         <div
+          data-testid="mobile-overlay-backdrop"
           className="absolute inset-0 z-20 bg-black/40 backdrop-blur-[2px] animate-fade-in"
           onClick={() => {
             dispatch({ type: 'ui/set-sidebar-open', open: false })
@@ -284,7 +301,9 @@ export default function App() {
           data-sidebar-panel
           aria-label="Diagram editor"
           className={isMobile ? 'absolute left-0 right-0 bottom-0 z-30 rounded-t-2xl overflow-hidden' : 'absolute top-16 bottom-4 left-4 z-20'}
-          style={isMobile ? { height: '80vh', maxHeight: '80vh' } : { width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }}
+          style={isMobile
+            ? (mobileSidebarCollapsed ? { height: 'auto', maxHeight: 'none' } : { height: '80vh', maxHeight: '80vh' })
+            : { width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }}
         >
           {!isMobile && (
             <div
@@ -299,6 +318,8 @@ export default function App() {
             <Suspense fallback={<div className={cn('h-full rounded-xl border animate-pulse', panelSurfaceClass)} />}>
               <Sidebar
                 diagram={activeDiagram}
+                collapsed={isMobile ? mobileSidebarCollapsed : undefined}
+                onCollapsedChange={isMobile ? setMobileSidebarCollapsed : undefined}
                 mode={mode}
                 diagramConfig={diagramConfig}
                 renderError={activeDiagram?.render?.error ?? null}
@@ -356,20 +377,49 @@ export default function App() {
             transform: 'translateX(-50%)',
           }}
         >
+          <div className="pointer-events-auto flex items-center gap-2">
+            <Button
+              data-testid="add-diagram-button"
+              onClick={() => { captureEvent('diagram_created', { source: 'toolbar' }); addDiagram() }}
+              variant="ghost"
+              size="default"
+              className={cn(
+                chromeFloatingActionClass(mode),
+                'text-xs font-semibold hover:scale-[1.01] focus-visible:ring-2 focus-visible:ring-primary/30',
+              )}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Diagram
+            </Button>
+
+            <DiagramDropdown
+              diagrams={activePage.diagrams}
+              activeDiagramId={activePage.activeDiagramId}
+              onSelectDiagram={selectDiagram}
+              onFocusDiagram={focusDiagram}
+              isDark={mode === 'dark'}
+            />
+          </div>
+        </div>
+      )}
+
+      {isMobile && !docsOpen && (
+        <div className="absolute bottom-4 right-4 z-30 pointer-events-none">
           <Button
-            data-testid="add-diagram-button"
-            onClick={() => { captureEvent('diagram_created', { source: 'toolbar' }); addDiagram() }}
-            variant="outline"
+            data-testid="mobile-add-diagram-button"
+            onClick={() => {
+              captureEvent('diagram_created', { source: 'mobile_fab' })
+              addDiagram()
+            }}
+            variant="ghost"
             size="default"
             className={cn(
-              'pointer-events-auto rounded-xl text-xs font-semibold backdrop-blur-sm shadow-lg transition-colors',
-              mode === 'dark'
-                ? 'bg-[oklch(0.16_0.015_260)]/82 border-white/10 text-zinc-100 hover:bg-[oklch(0.19_0.015_260)]/88 hover:border-white/16 hover:text-zinc-100'
-                : 'bg-background/95 border-border text-foreground ring-1 ring-border/70 shadow-[0_8px_24px_rgba(0,0,0,0.08)] hover:bg-background hover:border-border hover:text-foreground',
+              chromeFloatingActionClass(mode),
+              'pointer-events-auto text-xs font-semibold focus-visible:ring-2 focus-visible:ring-primary/30',
             )}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Diagram
+            Add
           </Button>
         </div>
       )}
@@ -398,26 +448,26 @@ export default function App() {
           >
             {contextMenu.type === 'diagram' ? (
               <>
-                <button data-testid="context-copy-button" type="button" onClick={handleContextMenuCopy} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors hover:bg-black/4 dark:hover:bg-white/6">
+                <button data-testid="context-copy-button" type="button" onClick={handleContextMenuCopy} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', chromeMenuItemClass(mode))}>
                   <Copy className="w-3.5 h-3.5" /> Copy
                 </button>
-                <button data-testid="context-duplicate-button" type="button" onClick={handleContextMenuDuplicate} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors hover:bg-black/4 dark:hover:bg-white/6">
+                <button data-testid="context-duplicate-button" type="button" onClick={handleContextMenuDuplicate} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', chromeMenuItemClass(mode))}>
                   <CopySimple className="w-3.5 h-3.5" /> Duplicate
                 </button>
-                <button type="button" onClick={() => void handleContextMenuShare()} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors hover:bg-black/4 dark:hover:bg-white/6">
+                <button type="button" onClick={() => void handleContextMenuShare()} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', chromeMenuItemClass(mode))}>
                   <ShareNetwork className="w-3.5 h-3.5" /> Share link
                 </button>
                 <div className="my-1 h-px bg-black/8 dark:bg-white/8" />
-                <button data-testid="context-delete-button" type="button" onClick={handleContextMenuDelete} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10">
+                <button data-testid="context-delete-button" type="button" onClick={handleContextMenuDelete} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', chromeMenuItemClass(mode, { danger: true }))}>
                   <Trash className="w-3.5 h-3.5" /> Delete
                 </button>
               </>
             ) : (
               <>
-                <button data-testid="context-paste-button" type="button" onClick={handleCanvasContextMenuPaste} disabled={!hasCopied} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors', hasCopied ? 'hover:bg-black/4 dark:hover:bg-white/6' : 'opacity-40 cursor-not-allowed')}>
+                <button data-testid="context-paste-button" type="button" onClick={handleCanvasContextMenuPaste} disabled={!hasCopied} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', hasCopied ? chromeMenuItemClass(mode) : 'opacity-40 cursor-not-allowed')}>
                   <Copy className="w-3.5 h-3.5" /> Paste
                 </button>
-                <button data-testid="context-new-diagram-button" type="button" onClick={handleCanvasContextMenuNewDiagram} className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors hover:bg-black/4 dark:hover:bg-white/6">
+                <button data-testid="context-new-diagram-button" type="button" onClick={handleCanvasContextMenuNewDiagram} className={cn('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left', chromeMenuItemClass(mode))}>
                   <Plus className="w-3.5 h-3.5" /> New diagram
                 </button>
               </>
@@ -427,6 +477,99 @@ export default function App() {
       )}
 
       <KeyboardHelp open={helpOpen} onOpenChange={(open) => dispatch({ type: 'ui/set-help-open', open })} />
+    </div>
+  )
+}
+
+function DiagramDropdown({
+  diagrams,
+  activeDiagramId,
+  onSelectDiagram,
+  onFocusDiagram,
+  isDark,
+}: {
+  diagrams: { id: string; name: string }[]
+  activeDiagramId: string | null
+  onSelectDiagram: (diagramId: string) => void
+  onFocusDiagram: (diagramId: string) => void
+  isDark: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const handler = (event: MouseEvent) => {
+      if (ref.current && !ref.current.contains(event.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handler, { passive: true })
+    return () => document.removeEventListener('mousedown', handler)
+  }, [open])
+
+  const activeDiagram = useMemo(
+    () => diagrams.find((diagram) => diagram.id === activeDiagramId) ?? diagrams[0] ?? null,
+    [activeDiagramId, diagrams],
+  )
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        data-testid="diagram-selector-trigger"
+        aria-label="Select active diagram"
+        title="Select active diagram"
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          chromeFloatingActionClass(isDark ? 'dark' : 'light'),
+          'flex items-center gap-1 h-8 max-w-36 px-2 rounded-lg text-xs font-medium cursor-pointer',
+          isDark
+            ? 'text-zinc-300'
+            : 'text-zinc-700',
+          open && (isDark ? 'bg-white/10 text-zinc-100 border-white/14' : 'bg-background/94 text-zinc-900 border-border'),
+        )}
+      >
+        <span className="truncate flex-1 text-left">
+          {activeDiagram?.name?.trim() || 'Select diagram'}
+        </span>
+        <CaretDown className={cn('w-3 h-3 text-muted-foreground transition-transform shrink-0', open && 'rotate-180')} />
+      </button>
+
+      {open && (
+        <div
+          data-testid="diagram-selector-list"
+          className={cn(
+            'absolute right-0 bottom-full mb-2 z-50 min-w-[160px] max-w-[220px] overflow-hidden',
+            chromePopoverClass(),
+          )}
+          style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}
+        >
+          <div className="py-1">
+            {diagrams.map((diagram, index) => {
+              const active = diagram.id === activeDiagramId
+              return (
+                <button
+                  key={diagram.id}
+                  type="button"
+                  data-testid={active ? 'diagram-selector-item-active' : `diagram-selector-item-${index + 1}`}
+                  onClick={() => {
+                    onSelectDiagram(diagram.id)
+                    onFocusDiagram(diagram.id)
+                    setOpen(false)
+                  }}
+                  className={cn(
+                    'w-full flex items-center px-3 py-1.5 text-xs cursor-pointer transition-colors',
+                    active ? chromeMenuItemClass(isDark ? 'dark' : 'light', { active: true }) : chromeMenuItemClass(isDark ? 'dark' : 'light'),
+                  )}
+                >
+                  <span className="truncate text-left font-medium">
+                    {diagram.name?.trim() || `Diagram ${index + 1}`}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

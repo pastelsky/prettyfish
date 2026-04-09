@@ -1,5 +1,5 @@
 import { test } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 test.describe('Editor and rendering', () => {
   test.beforeEach(async ({ page }) => {

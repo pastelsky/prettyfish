@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 function encodePresentationState(payload: { svg: string; bg: string; title: string }) {
   return Buffer.from(unescape(encodeURIComponent(JSON.stringify(payload))), 'binary').toString('base64')

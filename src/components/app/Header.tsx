@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button'
 import {
   chromePillClass,
   chromePopoverClass,
+  chromeMenuItemClass,
   ChromeIconButton,
   ChromeTextButton,
 } from '@/components/ui/app-chrome'
@@ -31,13 +32,12 @@ import {
   PencilSimple,
   Trash,
   Heart,
-  GithubLogo,
 } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
-import { copyShareUrl } from '../lib/share'
-import { ExportPopover } from './ExportPopover'
-import type { AppMode, AppState, MermaidTheme, DiagramPage } from '../types'
-import { MERMAID_THEMES } from '../types'
+import { copyShareUrl } from '@/lib/share'
+import { ExportPopover } from '@/components/app/ExportPopover'
+import type { AppMode, AppState, MermaidTheme, DiagramPage } from '@/types'
+import { MERMAID_THEMES } from '@/types'
 import { captureEvent } from '@/lib/analytics'
 import { CUSTOM_THEME_PRESETS } from '@/lib/themePresets'
 
@@ -55,8 +55,6 @@ for (const [key, preset] of Object.entries(CUSTOM_THEME_PRESETS)) {
   const tertiary = tv.tertiaryColor ?? tv.lineColor ?? '#888'
   THEME_SWATCHES[key] = [primary, secondary, tertiary]
 }
-
-const GITHUB_REPO_URL = 'https://github.com/pastelsky/prettyfish'
 
 // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -258,20 +256,6 @@ export function Header({
             >
               <Books className="w-3.5 h-3.5" />
             </ChromeIconButton>
-            <a
-              href={GITHUB_REPO_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Open Pretty Fish on GitHub"
-              title="GitHub repository"
-              className={cn(
-                'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
-                'text-foreground/70 hover:text-foreground hover:bg-black/5',
-                'dark:hover:bg-white/8',
-              )}
-            >
-              <GithubLogo className="w-3.5 h-3.5" />
-            </a>
           </>
         )}
       </div>
@@ -362,21 +346,6 @@ export function Header({
         >
           <Question className="w-3.5 h-3.5" />
         </ChromeIconButton>
-
-        <a
-          href={GITHUB_REPO_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="Open Pretty Fish on GitHub"
-          title="GitHub repository"
-          className={cn(
-            'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
-            'text-foreground/70 hover:text-foreground hover:bg-black/5',
-            'dark:hover:bg-white/8',
-          )}
-        >
-          <GithubLogo className="w-3.5 h-3.5" />
-        </a>
 
         <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
 
@@ -490,8 +459,8 @@ function PagesDropdown({
                   className={cn(
                     'group px-3 py-1.5 cursor-pointer transition-colors',
                     isActive
-                      ? (isDark ? 'bg-primary/15 text-primary' : 'bg-primary/8 text-primary')
-                      : (isDark ? 'text-zinc-100 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4'),
+                      ? chromeMenuItemClass(isDark ? 'dark' : 'light', { active: true })
+                      : chromeMenuItemClass(isDark ? 'dark' : 'light'),
                   )}
                   onClick={() => { if (!isRenaming) { onSelectPage(page.id); setOpen(false) } }}
                 >
@@ -553,7 +522,7 @@ function PagesDropdown({
               onClick={() => { captureEvent('page_added'); onAddPage(); setOpen(false) }}
               className={cn(
                 'flex items-center gap-1.5 w-full px-3 py-1.5 text-xs cursor-pointer transition-colors',
-                isDark ? 'text-zinc-400 hover:text-zinc-100 hover:bg-white/6' : 'text-zinc-500 hover:text-zinc-700 hover:bg-black/4',
+                chromeMenuItemClass(isDark ? 'dark' : 'light', { muted: true }),
               )}
             >
               <Plus className="w-3 h-3" /> New page
@@ -630,8 +599,8 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
                     className={cn(
                       'w-full flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer transition-colors',
                       active
-                        ? (isDark ? 'bg-primary/15 text-primary' : 'bg-primary/8 text-primary')
-                        : (isDark ? 'text-zinc-100 hover:bg-white/6' : 'text-zinc-700 hover:bg-black/4'),
+                        ? chromeMenuItemClass(isDark ? 'dark' : 'light', { active: true })
+                        : chromeMenuItemClass(isDark ? 'dark' : 'light'),
                     )}
                   >
                     {sw && (

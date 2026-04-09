@@ -1,8 +1,8 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
-import { PresentationMode } from './components/PresentationMode.tsx'
-import { ReloadPrompt } from './components/ReloadPrompt.tsx'
+import { PresentationMode } from './components/app/PresentationMode.tsx'
+import { ReloadPrompt } from './components/app/ReloadPrompt.tsx'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './index.css'
 

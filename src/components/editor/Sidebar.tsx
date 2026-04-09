@@ -26,6 +26,7 @@ const RE_ARROW_LABEL_PRE = /(\S)(--+>|--+x|--+o|==+>|-\.+-?>|<--+|<==+|<-\.+-?)(
 const RE_PIPE_SPACE = /(\|)(\S)/g
 const RE_ARROW_NODE = /(\]|\)|\}|[a-zA-Z0-9_"])(\s*)(--+>|--+x|--+o|==+>|-\.+-?>|<--+|<==+|<-\.+-?)(\s*)(\[|\(|\{|[a-zA-Z0-9_"])/g
 const RE_SEQ_ARROW = /(\S)(\s*)(--?>>?|--?>|--?x|--?\))([\s:])/
+const ENABLE_EDITOR_AUTO_FORMAT = false
 
 /** Add spaces around arrows and operators in mermaid code */
 function spacifyMermaid(code: string): string {
@@ -52,9 +53,10 @@ function spacifyMermaid(code: string): string {
 }
 import { cn } from '@/lib/utils'
 import { pfDebug } from '@/lib/debug'
-import { ConfigPanel } from '@/components/ConfigPanel'
-import { TemplateGallery } from '@/components/TemplateGallery'
-import type { AppMode, DiagramConfig, MermaidRenderError } from '../types'
+import { ConfigPanel } from '@/components/editor/ConfigPanel'
+import { TemplateGallery } from '@/components/editor/TemplateGallery'
+import { chromeGlassPanelClass } from '@/components/ui/app-chrome'
+import type { AppMode, Diagram, DiagramConfig, MermaidRenderError } from '@/types'
 
 
 // ── CodeMirror error line highlighting ──
@@ -67,10 +69,10 @@ const EXTENSIONS_BASE = [
   }),
 ]
 
-import type { Diagram } from '../types'
-
 interface SidebarProps {
   diagram: Diagram | null
+  collapsed?: boolean
+  onCollapsedChange?: (collapsed: boolean) => void
   onInsertReady?: (fn: (text: string) => void) => void
   onAltClick?: (ref: TokenRef) => void
   mode: AppMode
@@ -86,7 +88,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({
-  diagram, mode, diagramConfig, mermaidTheme,
+  diagram, collapsed: controlledCollapsed, onCollapsedChange, mode, diagramConfig, mermaidTheme,
   renderError = null,
   autoFormat = true,
   editorLigatures = true,
@@ -96,8 +98,16 @@ export function Sidebar({
   const code = diagram?.code ?? ''
   const activePageId = diagram?.id ?? ''
   const error = renderError
-  const [collapsed, setCollapsed] = useState(false)
-  const toggleCollapsed = useCallback(() => setCollapsed(c => !c), [])
+  const [uncontrolledCollapsed, setUncontrolledCollapsed] = useState(false)
+  const collapsed = controlledCollapsed ?? uncontrolledCollapsed
+  const setCollapsed = useCallback((next: boolean | ((prev: boolean) => boolean)) => {
+    const resolved = typeof next === 'function' ? next(collapsed) : next
+    if (controlledCollapsed === undefined) {
+      setUncontrolledCollapsed(resolved)
+    }
+    onCollapsedChange?.(resolved)
+  }, [collapsed, controlledCollapsed, onCollapsedChange])
+  const toggleCollapsed = useCallback(() => setCollapsed(current => !current), [setCollapsed])
   const [settingsOpen, setSettingsOpen] = useState<string[]>([])
   const [codeCopied, setCodeCopied] = useState(false)
   const copyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -156,7 +166,7 @@ export function Sidebar({
     })
     view.focus()
     setCollapsed(false)
-  }, [onChange])
+  }, [onChange, setCollapsed])
 
   // Register insertAtCursor with parent whenever it changes
   useEffect(() => {
@@ -173,8 +183,11 @@ export function Sidebar({
       diagramId: activePageId,
       incomingLength: value.length,
       autoFormat,
+      autoFormatEnabled: ENABLE_EDITOR_AUTO_FORMAT,
     })
-    if (autoFormat) {
+    // Temporary kill switch: current auto-format behavior is buggy and should stay off
+    // until it is fixed properly.
+    if (ENABLE_EDITOR_AUTO_FORMAT && autoFormat) {
       const formatted = handleFormat(value)
       pfDebug('editor', 'handleCodeChange formatted', {
         diagramId: activePageId,
@@ -192,9 +205,7 @@ export function Sidebar({
     return (
       <div className={cn(
         'flex flex-col h-full rounded-xl border overflow-hidden items-center justify-center gap-3 text-center p-8',
-        isDark
-          ? 'bg-[oklch(0.16_0.015_280)] border-white/8'
-          : 'bg-white/95 backdrop-blur-sm border-black/6',
+        chromeGlassPanelClass(isDark ? 'dark' : 'light'),
       )}>
         <div className={cn('text-3xl mb-1', isDark ? 'opacity-30' : 'opacity-20')}>⬡</div>
         <p className={cn('text-sm font-medium', isDark ? 'text-zinc-400' : 'text-zinc-500')}>
@@ -209,12 +220,8 @@ export function Sidebar({
 
   return (
     <div className={cn(
-      'flex flex-col h-full rounded-xl border overflow-hidden animate-sidebar-in',
-      isDark ? '[box-shadow:0_4px_24px_rgba(0,0,0,0.35)]' : '[box-shadow:0_4px_24px_rgba(0,0,0,0.08)]',
-      // testid is on the outer wrapper in App.tsx data-sidebar-panel attr
-      isDark
-        ? 'bg-[oklch(0.16_0.015_280)] border-white/8'
-        : 'bg-white/95 border-black/6',
+      'flex flex-col h-full overflow-hidden animate-sidebar-in',
+      chromeGlassPanelClass(isDark ? 'dark' : 'light'),
       collapsed && 'h-auto',
     )}>
 

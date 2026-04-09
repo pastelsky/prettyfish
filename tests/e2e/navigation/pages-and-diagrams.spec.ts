@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 test.describe('Pages and diagrams', () => {
   test.beforeEach(async ({ page }) => {
@@ -10,8 +10,7 @@ test.describe('Pages and diagrams', () => {
     const app = createApp(page)
 
     await app.createEmptyPage()
-    await app.header.openPagesMenu()
-    await expect(page.getByTestId('page-item-active')).toContainText('Page 2')
+    await app.header.shouldShowActivePageNamed('Page 2')
   })
 
   test('starts a new diagram in the diagram picker state', async ({ page }) => {
@@ -36,9 +35,8 @@ test.describe('Pages and diagrams', () => {
     await app.canvas.shouldShowDiagramCount(3)
 
     await app.createEmptyPage()
-    await app.header.openPagesMenu()
-    await expect(page.getByTestId('page-item')).toHaveCount(1)
-    await expect(page.getByTestId('page-item-active')).toContainText('Page 2')
+    await app.header.shouldShowInactivePageCount(1)
+    await app.header.shouldShowActivePageNamed('Page 2')
   })
 
   test('lets the author rename a page from the pages menu', async ({ page }) => {
@@ -48,5 +46,18 @@ test.describe('Pages and diagrams', () => {
     await app.header.renameLastPage('Architecture')
 
     await expect(app.header.pagesTrigger).toContainText('Architecture')
+  })
+
+  test('lets the author switch back to an earlier page from the pages menu', async ({ page }) => {
+    const app = createApp(page)
+
+    await app.createFlowchartDiagram()
+    await app.header.createPage()
+    await app.startFlowchartDiagram()
+    await app.header.renameLastPage('Second Page')
+
+    await app.header.selectPage(1)
+    await app.header.shouldShowActivePageNamed('Page 1')
+    await app.canvas.shouldShowDiagramCount(1)
   })
 })

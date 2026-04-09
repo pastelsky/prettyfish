@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 test.describe('Export', () => {
   test.beforeEach(async ({ page }) => {

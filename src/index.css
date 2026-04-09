@@ -306,12 +306,82 @@
 .react-flow__node {
   border-radius: 12px;
 }
+
 .react-flow__node-diagram {
   border: none !important;
   background: transparent !important;
   box-shadow: none !important;
   padding: 0 !important;
 }
+
 .react-flow__node.selected > * {
   outline: none;
+}
+
+.react-flow__resize-control.diagram-resize-handle {
+  border-radius: 9999px;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.18);
+}
+
+.react-flow__resize-control.diagram-resize-line {
+  background: transparent;
+}
+
+.react-flow__resize-control.diagram-resize-line.left,
+.react-flow__resize-control.diagram-resize-line.right {
+  width: 10px !important;
+}
+
+.react-flow__resize-control.diagram-resize-line.top,
+.react-flow__resize-control.diagram-resize-line.bottom {
+  height: 10px !important;
+}
+
+/* Keep the top edge mostly available for dragging via the title area. */
+.react-flow__resize-control.diagram-resize-line.top,
+.react-flow__resize-control.diagram-resize-handle.top,
+.react-flow__resize-control.diagram-resize-handle.top.left,
+.react-flow__resize-control.diagram-resize-handle.top.right {
+  opacity: 0.35;
+}
+
+.react-flow__resize-control.diagram-resize-line.bottom,
+.react-flow__resize-control.diagram-resize-line.left,
+.react-flow__resize-control.diagram-resize-line.right,
+.react-flow__resize-control.diagram-resize-handle {
+  pointer-events: all;
+}
+
+.react-flow__controls {
+  backdrop-filter: blur(8px);
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  color: rgba(24, 24, 27, 0.8) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  color: rgba(24, 24, 27, 1) !important;
+}
+
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+}
+
+.dark .react-flow__controls-button {
+  color: rgba(244, 244, 245, 0.82) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .react-flow__controls-button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(244, 244, 245, 1) !important;
 }

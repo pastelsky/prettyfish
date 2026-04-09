@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 test.describe('History and navigation', () => {
   test.beforeEach(async ({ page }) => {
@@ -27,12 +27,9 @@ test.describe('History and navigation', () => {
     const app = createApp(page)
 
     await app.header.createPage()
-    await app.header.openPagesMenu()
-    await page.getByTestId('page-delete-button').last().click()
-    await page.waitForTimeout(300)
+    await app.header.deleteLastPage()
 
-    await app.header.openPagesMenu()
-    await expect(page.getByTestId('page-item-active')).toContainText('Page 1')
-    await expect(page.getByTestId('page-item')).toHaveCount(0)
+    await app.header.shouldShowActivePageNamed('Page 1')
+    await app.header.shouldShowInactivePageCount(0)
   })
 })

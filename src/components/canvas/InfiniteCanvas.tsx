@@ -10,7 +10,6 @@ import {
   Background,
   BackgroundVariant,
   Controls,
-  MiniMap,
   useNodesState,
   useReactFlow,
   ReactFlowProvider,
@@ -23,9 +22,8 @@ import { useIsMobile } from '@/hooks/useIsMobile'
 
 import { DiagramNode } from './DiagramNode'
 import type { DiagramNodeData } from './DiagramNode'
-import type { Diagram, DiagramPage } from '../types'
-import type { AppMode } from '../types'
-import { pfDebug } from '../lib/debug'
+import type { Diagram, DiagramPage, AppMode } from '@/types'
+import { pfDebug } from '@/lib/debug'
 
 // ── Node types ────────────────────────────────────────────────────────────────
 
@@ -99,11 +97,7 @@ function InnerCanvas({
   const pageFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const { setViewport } = useReactFlow()
 
-  const focusDiagramInViewport = useCallback((id: string) => {
-    pfDebug('canvas', 'focusDiagramInViewport requested', { pageId: page.id, diagramId: id })
-    const ab = page.diagrams.find(a => a.id === id)
-    if (!ab) return
-
+  const focusDiagramViewport = useCallback((diagram: Diagram, options?: { duration?: number }) => {
     const container = document.querySelector('.react-flow')
     if (!container) return
     const rect = container.getBoundingClientRect()
@@ -114,19 +108,28 @@ function InnerCanvas({
     const availableWidth = rect.width - sidebarWidth
     const availableHeight = rect.height
 
-    const diagramH = 480
+    const escapedId = typeof CSS !== 'undefined' && 'escape' in CSS ? CSS.escape(diagram.id) : diagram.id
+    const nodeEl = document.querySelector(`[data-diagram-id="${escapedId}"]`) as HTMLElement | null
+    const diagramHeight = nodeEl?.offsetHeight ?? 480
     const zoom = Math.min(1, Math.min(
-      (availableWidth * 0.8) / ab.width,
-      (availableHeight * 0.8) / diagramH,
+      (availableWidth * 0.8) / diagram.width,
+      (availableHeight * 0.8) / diagramHeight,
     ))
 
     const centerX = sidebarWidth + availableWidth / 2
     const centerY = availableHeight / 2
-    const x = centerX - (ab.x + ab.width / 2) * zoom
-    const y = centerY - (ab.y + diagramH / 2) * zoom
+    const x = centerX - (diagram.x + diagram.width / 2) * zoom
+    const y = centerY - (diagram.y + diagramHeight / 2) * zoom
 
-    setViewport({ x, y, zoom }, { duration: 300 })
-  }, [page.id, page.diagrams, setViewport])
+    setViewport({ x, y, zoom }, options?.duration ? { duration: options.duration } : undefined)
+  }, [setViewport])
+
+  const focusDiagramInViewport = useCallback((id: string) => {
+    pfDebug('canvas', 'focusDiagramInViewport requested', { pageId: page.id, diagramId: id })
+    const ab = page.diagrams.find(a => a.id === id)
+    if (!ab) return
+    focusDiagramViewport(ab, { duration: 300 })
+  }, [focusDiagramViewport, page.id, page.diagrams])
 
   useEffect(() => {
     onRegisterFocus(focusDiagramInViewport)
@@ -212,24 +215,7 @@ function InnerCanvas({
           pfDebug('canvas', 'page switch focus fire', { pageId: page.id, diagramId: page.activeDiagramId })
           const ab = page.diagrams.find(a => a.id === page.activeDiagramId)
           if (!ab) return
-          const container = document.querySelector('.react-flow')
-          if (!container) return
-          const rect = container.getBoundingClientRect()
-          const sidebarWidth = document.querySelector('[data-sidebar-panel]')
-            ? Math.min(480, rect.width * 0.35)
-            : 0
-          const availableWidth = rect.width - sidebarWidth
-          const availableHeight = rect.height
-          const diagramH = 480
-          const zoom = Math.min(1, Math.min(
-            (availableWidth * 0.8) / ab.width,
-            (availableHeight * 0.8) / diagramH,
-          ))
-          const centerX = sidebarWidth + availableWidth / 2
-          const centerY = availableHeight / 2
-          const x = centerX - (ab.x + ab.width / 2) * zoom
-          const y = centerY - (ab.y + diagramH / 2) * zoom
-          setViewport({ x, y, zoom })
+          focusDiagramViewport(ab)
         }, 50)
       }
     }
@@ -240,7 +226,7 @@ function InnerCanvas({
         pageFocusTimerRef.current = null
       }
     }
-  }, [page.id, page.activeDiagramId, page.diagrams, focusDiagramInViewport, setViewport])
+  }, [focusDiagramViewport, page.id, page.activeDiagramId, page.diagrams, focusDiagramInViewport])
 
   // Handle node drag end → persist position
   const handleNodesChange: OnNodesChange = useCallback(
@@ -297,8 +283,6 @@ function InnerCanvas({
   const isMobile = useIsMobile()
   const bgColor = isDark ? 'oklch(0.13 0.015 260)' : '#f3f3f4'
   const dotColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
-  const minimapBg = isDark ? 'oklch(0.18 0.015 260)' : '#e8e7ef'
-  const minimapMask = isDark ? 'rgba(0,0,0,0.6)' : 'rgba(255,255,255,0.6)'
 
   return (
     <ReactFlow
@@ -337,20 +321,8 @@ function InnerCanvas({
             borderRadius: 10,
             overflow: 'hidden',
             boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-            marginBottom: 112,
-          }}
-        />
-      )}
-      {!isMobile && (
-        <MiniMap
-          nodeColor={isDark ? 'oklch(0.30 0.02 260)' : '#ddd8f8'}
-          maskColor={minimapMask}
-          style={{
-            width: 132,
-            height: 88,
-            background: minimapBg,
-            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
-            borderRadius: 10,
+            marginBottom: 20,
+            marginRight: 16,
           }}
         />
       )}

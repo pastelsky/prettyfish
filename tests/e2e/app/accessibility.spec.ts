@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Page } from '@playwright/test'
-import { createApp } from './pretty-fish-app'
+import { createApp } from '../support/pretty-fish-app'
 
 async function expectNoA11yViolations(page: Page, label: string) {
   const results = await new AxeBuilder({ page }).analyze()

@@ -7,7 +7,7 @@
 import { memo, useCallback, useRef } from 'react'
 import { NodeResizer, type Node } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
-import type { Diagram } from '../types'
+import type { Diagram } from '@/types'
 
 // ── Data passed via React Flow node.data ─────────────────────────────────────
 

@@ -17,7 +17,13 @@ class HeaderBar {
     await expect(this.logoPill).toBeVisible()
     await expect(this.pagesTrigger).toBeVisible()
     await expect(this.modeToggle).toBeVisible()
-    await expect(this.themeTrigger).toBeVisible()
+    const themeVisible = await this.themeTrigger.isVisible().catch(() => false)
+    if (themeVisible) {
+      await expect(this.themeTrigger).toBeVisible()
+    } else {
+      await expect(this.docsToggle).toBeVisible()
+      await expect(this.page.getByTestId('toggle-sidebar-button')).toBeVisible()
+    }
   }
 
   async openPagesMenu() {
@@ -40,6 +46,18 @@ class HeaderBar {
     const input = this.page.locator('[data-testid="pages-dropdown-list"] input').last()
     await input.fill(name)
     await input.press('Enter')
+  }
+
+  async selectPage(number: number) {
+    await this.openPagesMenu()
+    await this.page.getByTestId('page-item').nth(number - 1).click()
+    await this.page.waitForTimeout(250)
+  }
+
+  async deleteLastPage() {
+    await this.openPagesMenu()
+    await this.page.getByTestId('page-delete-button').last().click()
+    await this.page.waitForTimeout(300)
   }
 
   async toggleDocs() {
@@ -87,6 +105,26 @@ class HeaderBar {
     await this.page.getByTestId('reset-workspace-confirm-button').click()
     await this.page.waitForTimeout(800)
   }
+
+  async openResetWorkspaceDialog() {
+    await this.resetButton.click()
+    await expect(this.page.getByRole('dialog')).toContainText('Reset workspace?')
+  }
+
+  async cancelResetWorkspace() {
+    await this.page.getByRole('button', { name: 'Cancel' }).click()
+    await expect(this.page.getByRole('dialog')).toHaveCount(0)
+  }
+
+  async shouldShowActivePageNamed(name: string) {
+    await this.openPagesMenu()
+    await expect(this.page.getByTestId('page-item-active')).toContainText(name)
+  }
+
+  async shouldShowInactivePageCount(count: number) {
+    await this.openPagesMenu()
+    await expect(this.page.getByTestId('page-item')).toHaveCount(count)
+  }
 }
 
 class TemplatePicker {
@@ -111,12 +149,18 @@ class CanvasSurface {
 
   get root() { return this.page.getByTestId('canvas-root') }
   get addDiagramButton() { return this.page.getByTestId('add-diagram-button') }
+  get mobileAddDiagramButton() { return this.page.getByTestId('mobile-add-diagram-button') }
   get nodes() { return this.page.getByTestId('diagram-node') }
   get firstNode() { return this.nodes.first() }
 
   async shouldBeVisible() {
     await expect(this.root).toBeVisible()
-    await expect(this.addDiagramButton).toBeVisible()
+    const desktopAddVisible = await this.addDiagramButton.isVisible().catch(() => false)
+    if (desktopAddVisible) {
+      await expect(this.addDiagramButton).toBeVisible()
+    } else {
+      await expect(this.mobileAddDiagramButton).toBeVisible()
+    }
   }
 
   async createDiagram() {
@@ -124,8 +168,33 @@ class CanvasSurface {
     await this.page.waitForTimeout(250)
   }
 
+  async createDiagramOnMobile() {
+    await this.mobileAddDiagramButton.click()
+    await this.page.waitForTimeout(250)
+  }
+
   async shouldShowDiagramCount(count: number) {
     await expect(this.nodes).toHaveCount(count)
+  }
+
+  async selectDiagram(number: number) {
+    await this.nodes.nth(number - 1).click()
+  }
+
+  async renameDiagram(number: number, name: string) {
+    const input = this.page.getByTestId('diagram-name-input').nth(number - 1)
+    await input.fill(name)
+    await input.press('Enter')
+  }
+
+  async shouldBringDiagramIntoView(number: number) {
+    const viewport = this.page.viewportSize()
+    expect(viewport).toBeTruthy()
+    await expect.poll(async () => {
+      const box = await this.nodes.nth(number - 1).boundingBox()
+      if (!box || !viewport) return false
+      return box.x >= 0 && box.y >= 0 && box.x + box.width <= viewport.width && box.y + box.height <= viewport.height
+    }).toBe(true)
   }
 
   async openDiagramContextMenu(node?: Locator) {
@@ -173,6 +242,12 @@ class CanvasSurface {
     await this.page.waitForTimeout(250)
   }
 
+  async copyShareLinkFromContextMenu() {
+    await this.page.getByRole('button', { name: 'Share link' }).click()
+    await this.page.waitForTimeout(300)
+    return this.page.evaluate(() => navigator.clipboard.readText())
+  }
+
   async deleteFromContextMenu() {
     await this.page.getByTestId('context-delete-button').click()
     await this.page.waitForTimeout(250)
@@ -201,6 +276,8 @@ class EditorSidebar {
   get editor() { return this.page.locator('.cm-editor').first() }
   get svgPreview() { return this.page.locator('.diagram-svg-container').first() }
   get resetDefaultsButton() { return this.page.getByTestId('config-reset-defaults-button') }
+  get diagramNames() { return this.page.getByTestId('diagram-name-input') }
+  get diagramDescriptions() { return this.page.getByTestId('diagram-description-input') }
 
   async shouldBeVisible() {
     await expect(this.root).toBeVisible()
@@ -271,6 +348,68 @@ class EditorSidebar {
 
   async shouldAllowCopyingCode() {
     await expect(this.copyCodeButton).toBeVisible()
+  }
+
+  async renameDiagram(number: number, name: string) {
+    const input = this.diagramNames.nth(number - 1)
+    await input.fill(name)
+    await input.press('Enter')
+  }
+
+  async describeDiagram(number: number, description: string) {
+    const input = this.diagramDescriptions.nth(number - 1)
+    await input.fill(description)
+    await input.press('Enter')
+  }
+
+  async shouldRememberDiagramDetails(number: number, details: { name: string; description: string }) {
+    await expect(this.diagramNames.nth(number - 1)).toHaveValue(details.name)
+    await expect(this.diagramDescriptions.nth(number - 1)).toHaveValue(details.description)
+  }
+
+  async collapse() {
+    await this.page.getByRole('button', { name: 'Collapse editor panel' }).click()
+    await expect(this.page.getByRole('button', { name: 'Expand editor panel' })).toBeVisible()
+  }
+
+  async expand() {
+    await this.page.getByRole('button', { name: 'Expand editor panel' }).click()
+    await expect(this.page.getByRole('button', { name: 'Collapse editor panel' })).toBeVisible()
+  }
+}
+
+class DiagramPicker {
+  constructor(private readonly page: Page) {}
+
+  get trigger() { return this.page.getByTestId('diagram-selector-trigger') }
+
+  async chooseDiagram(number: number) {
+    await this.trigger.click()
+    await this.page.getByTestId(`diagram-selector-item-${number}`).click()
+  }
+
+  async shouldShowCurrentDiagramNamed(name: string) {
+    await expect(this.trigger).toContainText(name)
+  }
+}
+
+class MobileShell {
+  constructor(private readonly page: Page) {}
+
+  get backdrop() { return this.page.getByTestId('mobile-overlay-backdrop') }
+  get addDiagramButton() { return this.page.getByTestId('mobile-add-diagram-button') }
+
+  async shouldShowPrimaryControls() {
+    await expect(this.page.getByTestId('open-project-button')).toBeVisible()
+    await expect(this.page.getByTestId('save-project-button')).toBeVisible()
+    await expect(this.page.getByTestId('toggle-sidebar-button')).toBeVisible()
+    await expect(this.page.getByTestId('toggle-docs-button')).toBeVisible()
+    await expect(this.page.getByTestId('toggle-mode-button')).toBeVisible()
+    await expect(this.addDiagramButton).toBeVisible()
+  }
+
+  async shouldKeepCanvasClear() {
+    await expect(this.backdrop).toHaveCount(0)
   }
 }
 
@@ -368,6 +507,8 @@ export class PrettyFishApp {
   readonly editor: EditorSidebar
   readonly export: ExportPopoverPanel
   readonly docs: ReferenceDocsPanel
+  readonly diagramPicker: DiagramPicker
+  readonly mobile: MobileShell
 
   constructor(readonly page: Page) {
     this.header = new HeaderBar(page)
@@ -376,11 +517,13 @@ export class PrettyFishApp {
     this.editor = new EditorSidebar(page)
     this.export = new ExportPopoverPanel(page)
     this.docs = new ReferenceDocsPanel(page)
+    this.diagramPicker = new DiagramPicker(page)
+    this.mobile = new MobileShell(page)
   }
 
   async openFresh() {
     await this.page.goto('/', { waitUntil: 'domcontentloaded' })
-    await this.page.waitForLoadState('networkidle')
+    await expect(this.page.getByTestId('app-root')).toBeVisible({ timeout: 15000 })
     await this.page.evaluate(async () => {
       localStorage.clear()
       sessionStorage.clear()
@@ -408,8 +551,7 @@ export class PrettyFishApp {
         }
       })
     })
-    await this.page.reload({ waitUntil: 'domcontentloaded' })
-    await this.page.waitForLoadState('networkidle')
+    await this.page.goto('/', { waitUntil: 'domcontentloaded' })
     await expect(this.page.getByTestId('app-root')).toBeVisible({ timeout: 15000 })
     await this.header.shouldBeVisible()
     await this.canvas.shouldBeVisible()
@@ -417,6 +559,14 @@ export class PrettyFishApp {
   }
 
   async startFlowchartDiagram() {
+    const templateVisible = await this.templates.root.isVisible().catch(() => false)
+    if (!templateVisible) {
+      const toggleSidebar = this.page.getByTestId('toggle-sidebar-button')
+      if (await toggleSidebar.isVisible().catch(() => false)) {
+        await toggleSidebar.click()
+      }
+      await this.templates.shouldBeVisible()
+    }
     await this.templates.choose('flowchart')
   }
 

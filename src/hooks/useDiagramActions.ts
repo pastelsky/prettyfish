@@ -27,6 +27,7 @@ export interface UseDiagramActionsOptions {
 export interface DiagramActions {
   addDiagram: () => string
   selectDiagram: (diagramId: string) => void
+  focusDiagram: (diagramId: string) => void
   renameDiagram: (diagramId: string, name: string) => void
   updateDiagramDescription: (diagramId: string, description: string) => void
   duplicateDiagram: (source: Diagram) => string | undefined
@@ -62,6 +63,10 @@ export function useDiagramActions({
   const selectDiagram = useCallback((diagramId: string) => {
     dispatch({ type: 'diagram/select', pageId: activePage.id, diagramId })
   }, [activePage.id, dispatch])
+
+  const focusDiagram = useCallback((diagramId: string) => {
+    setTimeout(() => focusDiagramRef.current?.(diagramId), 50)
+  }, [focusDiagramRef])
 
   const renameDiagram = useCallback((diagramId: string, name: string) => {
     const diagram = findDiagramById(pages, diagramId)?.diagram
@@ -132,6 +137,7 @@ export function useDiagramActions({
   return {
     addDiagram,
     selectDiagram,
+    focusDiagram,
     renameDiagram,
     updateDiagramDescription,
     duplicateDiagram,

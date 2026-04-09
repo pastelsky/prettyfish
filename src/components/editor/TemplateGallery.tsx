@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils'
 import { captureEvent } from '@/lib/analytics'
-import { FALLBACK_TEMPLATE_ICON, TEMPLATE_ICONS } from '@/components/templateIcons'
+import { FALLBACK_TEMPLATE_ICON, TEMPLATE_ICONS } from '@/components/editor/templateIcons'
 import { DIAGRAM_TEMPLATES } from '@/lib/templates'
 import type { AppMode } from '@/types'
 

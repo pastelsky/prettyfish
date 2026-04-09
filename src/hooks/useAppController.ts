@@ -72,6 +72,7 @@ export interface AppController {
   renamePage: (pageId: string, name: string) => void
   addDiagram: () => string
   selectDiagram: (diagramId: string) => void
+  focusDiagram: (diagramId: string) => void
   renameDiagram: (diagramId: string, name: string) => void
   updateDiagramDescription: (diagramId: string, description: string) => void
   copyDiagram: (diagramId: string) => void
