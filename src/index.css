@@ -9,6 +9,21 @@
     --font-serif: 'Instrument Serif', Georgia, serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
     --font-heading: var(--font-serif);
+    --color-ui-surface-soft: var(--ui-surface-soft);
+    --color-ui-surface-elevated: var(--ui-surface-elevated);
+    --color-ui-surface-hover: var(--ui-surface-hover);
+    --color-ui-border-soft: var(--ui-border-soft);
+    --color-ui-border-strong: var(--ui-border-strong);
+    --color-ui-ink-strong: var(--ui-ink-strong);
+    --color-ui-ink-soft: var(--ui-ink-soft);
+    --color-ui-ink-muted: var(--ui-ink-muted);
+    --color-ui-ink-faint: var(--ui-ink-faint);
+    --color-ui-success: var(--ui-success);
+    --color-ui-success-soft: var(--ui-success-soft);
+    --color-ui-danger: var(--ui-danger);
+    --color-ui-danger-soft: var(--ui-danger-soft);
+    --color-ui-warning: var(--ui-warning);
+    --color-ui-warning-soft: var(--ui-warning-soft);
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -53,6 +68,21 @@
 :root {
     --background: oklch(0.975 0.002 270);
     --foreground: oklch(0.18 0.02 280);
+    --ui-surface-soft: oklch(0.985 0.002 270);
+    --ui-surface-elevated: oklch(1 0 0 / 92%);
+    --ui-surface-hover: oklch(0.955 0.003 270);
+    --ui-border-soft: oklch(0.92 0.004 270);
+    --ui-border-strong: oklch(0.86 0.006 270);
+    --ui-ink-strong: oklch(0.21 0.018 280);
+    --ui-ink-soft: oklch(0.40 0.012 280);
+    --ui-ink-muted: oklch(0.46 0.01 280);
+    --ui-ink-faint: oklch(0.42 0.01 280);
+    --ui-success: oklch(0.52 0.13 155);
+    --ui-success-soft: oklch(0.95 0.03 155);
+    --ui-danger: oklch(0.57 0.19 25);
+    --ui-danger-soft: oklch(0.95 0.02 25);
+    --ui-warning: oklch(0.62 0.14 80);
+    --ui-warning-soft: oklch(0.97 0.03 85);
     --card: oklch(0.99 0.001 270);
     --card-foreground: oklch(0.18 0.02 280);
     --popover: oklch(0.99 0.001 270);
@@ -89,6 +119,21 @@
 .dark {
     --background: oklch(0.14 0.015 280);
     --foreground: oklch(0.93 0.005 270);
+    --ui-surface-soft: oklch(0.19 0.014 280);
+    --ui-surface-elevated: oklch(0.17 0.015 280 / 94%);
+    --ui-surface-hover: oklch(0.23 0.015 280);
+    --ui-border-soft: oklch(1 0 0 / 8%);
+    --ui-border-strong: oklch(1 0 0 / 14%);
+    --ui-ink-strong: oklch(0.94 0.004 270);
+    --ui-ink-soft: oklch(0.83 0.006 270);
+    --ui-ink-muted: oklch(0.74 0.008 270);
+    --ui-ink-faint: oklch(0.68 0.01 270);
+    --ui-success: oklch(0.76 0.11 155);
+    --ui-success-soft: oklch(0.28 0.05 155);
+    --ui-danger: oklch(0.78 0.11 25);
+    --ui-danger-soft: oklch(0.28 0.04 25);
+    --ui-warning: oklch(0.82 0.12 85);
+    --ui-warning-soft: oklch(0.30 0.04 85);
     --card: oklch(0.18 0.015 280);
     --card-foreground: oklch(0.93 0.005 270);
     --popover: oklch(0.18 0.015 280);
@@ -178,28 +223,28 @@
 .cm-editor .cm-gutters {
   background: transparent !important;
   border-right: none !important;
-  color: oklch(0.54 0.01 260 / 68%) !important;
+  color: oklch(0.42 0.01 260 / 78%) !important;
 }
 
 .cm-editor .cm-lineNumbers .cm-gutterElement {
-  color: oklch(0.6 0.01 260 / 52%) !important;
+  color: oklch(0.38 0.01 260 / 84%) !important;
 }
 
 .dark .cm-editor .cm-gutters {
-  color: oklch(0.74 0.01 260 / 45%) !important;
+  color: oklch(0.78 0.01 260 / 72%) !important;
 }
 
 .dark .cm-editor .cm-lineNumbers .cm-gutterElement {
-  color: oklch(0.76 0.01 260 / 34%) !important;
+  color: oklch(0.82 0.01 260 / 78%) !important;
 }
 
 .cm-editor .cm-activeLineGutter,
 .cm-editor .cm-activeLine {
-  background: oklch(0.5 0.05 250 / 6%) !important;
+  background: oklch(0.5 0.05 250 / 3%) !important;
 }
 .dark .cm-editor .cm-activeLineGutter,
 .dark .cm-editor .cm-activeLine {
-  background: oklch(0.8 0.05 250 / 6%) !important;
+  background: oklch(0.8 0.05 250 / 4%) !important;
 }
 
 /* ─── Panel resize handle ─── */

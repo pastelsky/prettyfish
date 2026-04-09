@@ -565,6 +565,17 @@ export class PrettyFishApp {
       if (await toggleSidebar.isVisible().catch(() => false)) {
         await toggleSidebar.click()
       }
+      try {
+        await expect(this.templates.root).toBeVisible({ timeout: 1500 })
+      } catch {
+        const desktopAddVisible = await this.canvas.addDiagramButton.isVisible().catch(() => false)
+        const mobileAddVisible = await this.canvas.mobileAddDiagramButton.isVisible().catch(() => false)
+        if (desktopAddVisible) {
+          await this.canvas.createDiagram()
+        } else if (mobileAddVisible) {
+          await this.canvas.createDiagramOnMobile()
+        }
+      }
       await this.templates.shouldBeVisible()
     }
     await this.templates.choose('flowchart')

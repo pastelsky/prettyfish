@@ -4,6 +4,8 @@ import {
   chromePillClass,
   chromePopoverClass,
   chromeMenuItemClass,
+  chromeDividerClass,
+  chromeStatusClass,
   ChromeIconButton,
   ChromeTextButton,
 } from '@/components/ui/app-chrome'
@@ -291,7 +293,7 @@ export function Header({
           <SidebarSimple className="w-3.5 h-3.5" />
         </ChromeIconButton>
 
-        <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
+        <div className={chromeDividerClass()} />
 
         {/* Export */}
         <ExportPopover svg={svg} code={code} previewBg={previewBg} pageName={exportName} />
@@ -302,8 +304,8 @@ export function Header({
           title="Copy shareable diagram link"
           onClick={handleShare}
           className={cn(
-            copyState === 'copied' && 'text-emerald-600 hover:text-emerald-500 dark:text-emerald-500 dark:hover:text-emerald-400',
-            copyState === 'error' && 'text-red-600 hover:text-red-500 dark:text-red-500 dark:hover:text-red-400',
+            copyState === 'copied' && chromeStatusClass('success'),
+            copyState === 'error' && chromeStatusClass('danger'),
           )}
         >
           {copyState === 'copied' ? <><Check className="w-3 h-3" /> Copied!</> :
@@ -311,7 +313,7 @@ export function Header({
            <><ShareNetwork className="w-3 h-3" /> Share</>}
         </ChromeTextButton>
 
-        <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
+        <div className={chromeDividerClass()} />
 
         <ThemeDropdown value={mermaidTheme} onChange={onMermaidThemeChange} isDark={isDark} />
 
@@ -324,7 +326,7 @@ export function Header({
           {isDark ? <SunHorizon className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
         </ChromeIconButton>
 
-        <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
+        <div className={chromeDividerClass()} />
 
         {/* Docs toggle */}
         <ChromeIconButton
@@ -347,7 +349,7 @@ export function Header({
           <Question className="w-3.5 h-3.5" />
         </ChromeIconButton>
 
-        <div className={cn('w-px h-4 mx-0.5', isDark ? 'bg-white/8' : 'bg-black/6')} />
+        <div className={chromeDividerClass()} />
 
         {/* Sponsor */}
         <a
@@ -358,8 +360,7 @@ export function Header({
           title="Sponsor"
           className={cn(
             'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
-            'text-pink-500 hover:bg-black/5',
-            'dark:text-pink-400 dark:hover:bg-white/8',
+            'text-pink-500 dark:text-pink-400 hover:bg-ui-surface-hover',
           )}
         >
           <Heart className="w-3.5 h-3.5" weight="fill" />
@@ -431,8 +432,8 @@ function PagesDropdown({
         onClick={() => setOpen(o => !o)}
         className={cn(
           'flex items-center gap-1 h-6 px-2 rounded-lg text-xs font-medium cursor-pointer transition-colors w-full',
-          'hover:bg-black/5 text-zinc-700 dark:hover:bg-white/8 dark:text-zinc-200',
-          open && 'bg-black/5 dark:bg-white/8',
+          'hover:bg-ui-surface-hover text-ui-ink-soft dark:text-ui-ink-strong',
+          open && 'bg-ui-surface-hover',
         )}
       >
         <span className="truncate">{activePage?.name ?? 'Untitled'}</span>
@@ -445,7 +446,7 @@ function PagesDropdown({
           className={cn(
           'absolute top-full mt-2 z-50 min-w-[200px] max-w-[calc(100vw-2rem)] rounded-xl border overflow-hidden',
           'left-0 sm:left-0 right-auto',
-          'bg-white border-black/10 dark:bg-[oklch(0.17_0.018_260)] dark:border-white/12',
+          'bg-ui-surface-elevated border-ui-border-soft',
         )} style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
           <div className="py-1">
             {pages.map((page) => {
@@ -488,7 +489,7 @@ function PagesDropdown({
                         onClick={e => startRename(page.id, page.name, e)}
                         className={cn(
                           'opacity-0 group-hover:opacity-100 inline-flex h-5 w-5 items-center justify-center rounded-md transition-all',
-                          'text-zinc-400 hover:text-zinc-700 hover:bg-black/5 dark:text-zinc-500 dark:hover:text-zinc-200 dark:hover:bg-white/8',
+                          'text-ui-ink-muted hover:text-ui-ink-soft hover:bg-ui-surface-hover dark:hover:text-ui-ink-strong',
                         )}
                       >
                         <PencilSimple className="w-3 h-3" />
@@ -502,7 +503,7 @@ function PagesDropdown({
                         onClick={e => { e.stopPropagation(); onDeletePage(page.id) }}
                         className={cn(
                           'opacity-0 group-hover:opacity-100 inline-flex h-5 w-5 items-center justify-center rounded-md transition-all',
-                          'text-zinc-400 hover:text-red-600 hover:bg-black/5 dark:text-zinc-500 dark:hover:text-red-300 dark:hover:bg-white/8',
+                          'text-ui-ink-muted hover:text-ui-danger hover:bg-ui-surface-hover dark:hover:text-ui-danger',
                         )}
                       >
                         <X weight="bold" className="w-3 h-3" />
@@ -512,7 +513,7 @@ function PagesDropdown({
                 </div>
               )
             })}
-            <div className={cn('mx-2 my-1 h-px', isDark ? 'bg-white/8' : 'bg-black/6')} />
+            <div className={cn('mx-2 my-1 h-px', chromeDividerClass())} />
             <button
               data-testid="page-add-button"
               onClick={() => { captureEvent('page_added'); onAddPage(); setOpen(false) }}
@@ -555,8 +556,8 @@ function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onCha
         onClick={() => setOpen(o => !o)}
         className={cn(
           'flex items-center gap-1.5 h-7 px-2 rounded-lg border text-xs cursor-pointer transition-colors',
-          'bg-white border-black/10 text-zinc-800 hover:bg-black/4 hover:text-zinc-900 dark:bg-zinc-950 dark:border-white/10 dark:text-zinc-100 dark:hover:bg-white/8 dark:hover:text-white',
-          open && 'bg-black/5 dark:bg-white/8',
+          'bg-ui-surface-elevated border-ui-border-soft text-ui-ink-strong hover:bg-ui-surface-hover',
+          open && 'bg-ui-surface-hover',
         )}
       >
         {currentSw && (

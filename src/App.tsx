@@ -362,6 +362,7 @@ export default function App() {
                 mermaidTheme={mermaidTheme}
                 onConfigChange={setDiagramConfig}
                 onMermaidThemeChange={(theme) => setMermaidTheme(theme as MermaidTheme)}
+                onTemplateSelect={isMobile ? () => setMobileSidebarCollapsed(true) : undefined}
               />
             </Suspense>
           </ErrorBoundary>
@@ -548,8 +549,8 @@ function DiagramDropdown({
         onClick={() => setOpen((current) => !current)}
         className={cn(
           chromeFloatingActionClass(isDark ? 'dark' : 'light'),
-          'flex items-center gap-1 h-8 max-w-36 px-2 rounded-lg text-xs font-medium cursor-pointer text-zinc-700 dark:text-zinc-300',
-          open && 'bg-background/94 text-zinc-900 border-border dark:bg-white/10 dark:text-zinc-100 dark:border-white/14',
+          'flex items-center gap-1 h-8 max-w-36 px-2 rounded-lg text-xs font-medium cursor-pointer text-ui-ink-soft dark:text-ui-ink-strong',
+          open && 'bg-ui-surface-hover text-ui-ink-strong border-ui-border-strong',
         )}
       >
         <span className="truncate flex-1 text-left">

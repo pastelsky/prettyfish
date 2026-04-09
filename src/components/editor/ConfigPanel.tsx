@@ -10,6 +10,7 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { Palette, ArrowCounterClockwise, CaretDown } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils'
+import { chromeStatusClass, chromeStatusSurfaceClass } from '@/components/ui/app-chrome'
 import { detectDiagramType } from '@/lib/detectDiagram'
 import type { DiagramConfig, FlowchartCurve, MermaidLook } from '@/types'
 import { DEFAULT_DIAGRAM_CONFIG } from '@/types'
@@ -162,7 +163,7 @@ export function ConfigPanel({ config, code, onChange, mermaidTheme, onMermaidThe
             basicSetup={{ lineNumbers: true, foldGutter: true, autocompletion: true, bracketMatching: true, closeBrackets: true }}
           />
           {jsonError && (
-            <div className="shrink-0 px-3.5 py-2 text-xs font-medium text-red-600 border-t border-red-500/20 bg-red-500/5 font-mono dark:text-red-400 dark:border-red-500/20 dark:bg-red-500/5">
+            <div className={cn('shrink-0 px-3.5 py-2 text-xs font-medium border-t font-mono', chromeStatusSurfaceClass('danger'))}>
               {jsonError}
             </div>
           )}
@@ -204,14 +205,14 @@ export function ConfigPanel({ config, code, onChange, mermaidTheme, onMermaidThe
       {/* ── Colors ── */}
       <Section title="Colors">
         {!isBaseTheme ? (
-          <div className="rounded-md border border-amber-500/30 bg-amber-500/8 px-3 py-2.5 -mt-1 mb-1 dark:border-amber-500/30 dark:bg-amber-500/8">
-            <p className="text-xs text-amber-600 dark:text-amber-400 leading-relaxed">
+          <div className={cn('rounded-md border px-3 py-2.5 -mt-1 mb-1', chromeStatusSurfaceClass('warning'))}>
+            <p className={cn('text-xs leading-relaxed', chromeStatusClass('warning'))}>
               Custom colors only work with the <strong>Base</strong> theme.
             </p>
             <button
               data-testid="config-switch-to-base-button"
               onClick={() => onMermaidThemeChange('base')}
-              className="mt-1.5 text-xs font-medium text-amber-700 dark:text-amber-300 underline underline-offset-2 cursor-pointer hover:no-underline"
+              className={cn('mt-1.5 text-xs font-medium underline underline-offset-2 cursor-pointer hover:no-underline', chromeStatusClass('warning'))}
             >
               Switch to Base →
             </button>

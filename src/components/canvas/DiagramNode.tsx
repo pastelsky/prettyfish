@@ -91,7 +91,7 @@ export const DiagramNode = memo(function DiagramNode({
     : mode === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)'
 
   const bgColor = mode === 'dark' ? 'oklch(0.18 0.015 260)' : '#ffffff'
-  const labelColor = mode === 'dark' ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.35)'
+  const labelColor = mode === 'dark' ? 'rgba(255,255,255,0.72)' : 'rgba(17,24,39,0.66)'
 
   return (
     <div
@@ -159,7 +159,7 @@ export const DiagramNode = memo(function DiagramNode({
             outline: 'none',
             fontSize: 11,
             fontWeight: 600,
-            color: mode === 'dark' ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.5)',
+            color: mode === 'dark' ? 'rgba(255,255,255,0.76)' : 'rgba(17,24,39,0.72)',
             fontFamily: 'inherit',
             minWidth: 0,
             cursor: 'text',
@@ -168,7 +168,7 @@ export const DiagramNode = memo(function DiagramNode({
 
         {/* Width — only visible when resizing (selected) */}
         {selected && (
-          <span style={{ fontSize: 10, color: labelColor, flexShrink: 0, opacity: 0.6 }}>
+          <span style={{ fontSize: 10, color: labelColor, flexShrink: 0 }}>
             {diagram.width}px
           </span>
         )}
@@ -194,7 +194,7 @@ export const DiagramNode = memo(function DiagramNode({
               outline: 'none',
               fontSize: 10,
               fontWeight: 500,
-              color: mode === 'dark' ? 'rgba(255,255,255,0.68)' : 'rgba(0,0,0,0.62)',
+              color: mode === 'dark' ? 'rgba(255,255,255,0.72)' : 'rgba(17,24,39,0.66)',
               fontFamily: 'inherit',
               cursor: 'text',
             }}

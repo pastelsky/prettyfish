@@ -15,32 +15,23 @@ export function chromePillClass(): string {
 }
 
 export function chromeDividerClass(): string {
-  return 'w-px h-4 mx-0.5 shrink-0 bg-black/10 dark:bg-white/10'
+  return 'w-px h-4 mx-0.5 shrink-0 bg-ui-border-soft'
 }
 
 export function chromeIconButtonClass(): string {
-  return cn(
-    'rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-black/5',
-    'dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-white/8',
-  )
+  return 'rounded-lg text-ui-ink-muted hover:text-ui-ink-strong hover:bg-ui-surface-hover'
 }
 
 export function chromeActiveIconButtonClass(): string {
-  return cn(
-    chromeIconButtonClass(),
-    'bg-black/5 text-zinc-900 dark:bg-white/8 dark:text-zinc-100',
-  )
+  return cn(chromeIconButtonClass(), 'bg-ui-surface-hover text-ui-ink-strong')
 }
 
 export function chromeTextButtonClass(): string {
-  return cn(
-    'h-6 px-2 text-xs gap-1 rounded-lg font-medium text-zinc-600 hover:text-zinc-900 hover:bg-black/5',
-    'dark:text-zinc-300 dark:hover:text-zinc-100 dark:hover:bg-white/8',
-  )
+  return 'h-6 px-2 text-xs gap-1 rounded-lg font-medium text-ui-ink-soft hover:text-ui-ink-strong hover:bg-ui-surface-hover'
 }
 
 export function chromePopoverClass(): string {
-  return 'rounded-xl border bg-white border-black/10 dark:bg-[oklch(0.17_0.018_260)] dark:border-white/12'
+  return 'rounded-xl border bg-ui-surface-elevated border-ui-border-soft'
 }
 
 export function chromeGlassPanelClass(mode: ChromeMode): string {
@@ -66,8 +57,8 @@ export function chromeMenuItemClass(mode: ChromeMode, options?: { active?: boole
     return cn(
       'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs text-left transition-colors',
       mode === 'dark'
-        ? 'text-red-300 hover:bg-red-500/10'
-        : 'text-red-600 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-500/10',
+        ? 'text-ui-danger hover:bg-ui-danger-soft'
+        : 'text-ui-danger hover:bg-ui-danger-soft dark:text-ui-danger dark:hover:bg-ui-danger-soft',
     )
   }
 
@@ -82,17 +73,39 @@ export function chromeMenuItemClass(mode: ChromeMode, options?: { active?: boole
     return cn(
       'transition-colors',
       mode === 'dark'
-        ? 'text-zinc-400 hover:text-zinc-100 hover:bg-white/6'
-        : 'text-zinc-500 hover:text-zinc-700 hover:bg-black/4 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-white/6',
+        ? 'text-ui-ink-muted hover:text-ui-ink-strong hover:bg-ui-surface-hover'
+        : 'text-ui-ink-muted hover:text-ui-ink-soft hover:bg-ui-surface-hover dark:text-ui-ink-muted dark:hover:text-ui-ink-strong dark:hover:bg-ui-surface-hover',
     )
   }
 
   return cn(
     'transition-colors',
     mode === 'dark'
-      ? 'text-foreground hover:bg-white/6'
-      : 'text-zinc-700 hover:bg-black/4 dark:text-foreground dark:hover:bg-white/6',
+      ? 'text-ui-ink-strong hover:bg-ui-surface-hover'
+      : 'text-ui-ink-soft hover:bg-ui-surface-hover dark:text-ui-ink-strong dark:hover:bg-ui-surface-hover',
   )
+}
+
+export function chromeStatusClass(tone: 'success' | 'danger' | 'warning'): string {
+  switch (tone) {
+    case 'success':
+      return 'text-ui-success'
+    case 'danger':
+      return 'text-ui-danger'
+    case 'warning':
+      return 'text-ui-warning'
+  }
+}
+
+export function chromeStatusSurfaceClass(tone: 'success' | 'danger' | 'warning'): string {
+  switch (tone) {
+    case 'success':
+      return 'bg-ui-success-soft text-ui-success border-ui-success/20'
+    case 'danger':
+      return 'bg-ui-danger-soft text-ui-danger border-ui-danger/20'
+    case 'warning':
+      return 'bg-ui-warning-soft text-ui-warning border-ui-warning/24'
+  }
 }
 
 type ButtonProps = React.ComponentProps<typeof Button>

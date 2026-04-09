@@ -20,6 +20,7 @@ export interface UsePersistenceSyncOptions {
 export function usePersistenceSync({ state, dispatch }: UsePersistenceSyncOptions): void {
   const hydratedRef = useRef(false)
   const suppressNextPersistRef = useRef(false)
+  const lastSnapshotKeyRef = useRef<string | null>(null)
 
   const snapshot = useMemo(() => ({
     pages: stripRuntimePagesState(state.pages),
@@ -28,6 +29,7 @@ export function usePersistenceSync({ state, dispatch }: UsePersistenceSyncOption
     editorLigatures: state.editorLigatures,
     autoFormat: state.autoFormat,
   }), [state.activePageId, state.autoFormat, state.editorLigatures, state.mode, state.pages])
+  const snapshotKey = useMemo(() => JSON.stringify(snapshot), [snapshot])
 
   useEffect(() => {
     let cancelled = false
@@ -43,6 +45,7 @@ export function usePersistenceSync({ state, dispatch }: UsePersistenceSyncOption
 
       if (!snapshot) return
 
+      lastSnapshotKeyRef.current = JSON.stringify(snapshot)
       suppressNextPersistRef.current = true
       dispatch({
         type: 'document/restore',
@@ -62,6 +65,9 @@ export function usePersistenceSync({ state, dispatch }: UsePersistenceSyncOption
     return subscribeToPersistedDocumentState((persisted) => {
       const normalized = normalizePersistedDocumentState(persisted)
       if (!normalized) return
+      const incomingSnapshotKey = JSON.stringify(normalized)
+      if (incomingSnapshotKey === lastSnapshotKeyRef.current) return
+      lastSnapshotKeyRef.current = incomingSnapshotKey
       suppressNextPersistRef.current = true
       dispatch({
         type: 'document/restore',
@@ -80,7 +86,8 @@ export function usePersistenceSync({ state, dispatch }: UsePersistenceSyncOption
       return
     }
 
+    lastSnapshotKeyRef.current = snapshotKey
     void savePersistedDocumentState(snapshot)
     publishPersistedDocumentState(snapshot)
-  }, [snapshot])
+  }, [snapshot, snapshotKey])
 }

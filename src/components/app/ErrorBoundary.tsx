@@ -1,3 +1,4 @@
+import { chromeStatusSurfaceClass } from '@/components/ui/app-chrome'
 import { Component, type ErrorInfo, type ReactNode } from 'react'
 
 interface Props {
@@ -33,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     if (inline) {
       return (
-        <div className="flex items-center gap-2 px-3 py-2 text-xs text-red-600 bg-red-500/8 border border-red-500/20 rounded-lg dark:text-red-300 dark:bg-red-500/8 dark:border-red-500/20">
+        <div className={`flex items-center gap-2 px-3 py-2 text-xs border rounded-lg ${chromeStatusSurfaceClass('danger')}`}>
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none" className="shrink-0">
             <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M8 5v3.5M8 11v.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>

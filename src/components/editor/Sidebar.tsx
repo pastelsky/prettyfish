@@ -4,8 +4,8 @@ import CodeMirror from '@uiw/react-codemirror'
 import { mermaidFallbackLanguage } from '@/lib/mermaidHighlight'
 import { mermaidAltClickExtension } from '@/lib/mermaidAltClick'
 import type { TokenRef } from '@/lib/mermaidTokenLookup'
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
-import { githubLight } from '@uiw/codemirror-theme-github'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags } from '@lezer/highlight'
 import { vscodeDark } from '@uiw/codemirror-theme-vscode'
 import { EditorView } from '@codemirror/view'
 import { Button } from '@/components/ui/button'
@@ -55,7 +55,7 @@ import { cn } from '@/lib/utils'
 import { pfDebug } from '@/lib/debug'
 import { ConfigPanel } from '@/components/editor/ConfigPanel'
 import { TemplateGallery } from '@/components/editor/TemplateGallery'
-import { chromeGlassPanelClass } from '@/components/ui/app-chrome'
+import { chromeGlassPanelClass, chromeStatusClass, chromeStatusSurfaceClass } from '@/components/ui/app-chrome'
 import type { AppMode, Diagram, DiagramConfig, MermaidRenderError } from '@/types'
 
 
@@ -69,12 +69,25 @@ const EXTENSIONS_BASE = [
   }),
 ]
 
+const lightEditorTheme = EditorView.theme({}, { dark: false })
+
+const mermaidEditorHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: '#5f3dc4' },
+  { tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName], color: '#173b8c' },
+  { tag: [tags.literal, tags.inserted], color: '#005c41' },
+  { tag: [tags.string, tags.deleted], color: '#9f1c1c' },
+  { tag: [tags.typeName, tags.namespace], color: '#0f5c7a' },
+  { tag: tags.className, color: '#0f5c7a' },
+  { tag: tags.comment, color: '#8a5a00' },
+])
+
 interface SidebarProps {
   diagram: Diagram | null
   collapsed?: boolean
   onCollapsedChange?: (collapsed: boolean) => void
   onInsertReady?: (fn: (text: string) => void) => void
   onAltClick?: (ref: TokenRef) => void
+  onTemplateSelect?: () => void
   mode: AppMode
   diagramConfig: DiagramConfig
   renderError?: MermaidRenderError | null
@@ -93,7 +106,7 @@ export function Sidebar({
   autoFormat = true,
   editorLigatures = true,
   onFocusReady,
-  onChange, onConfigChange, onMermaidThemeChange, onInsertReady, onAltClick,
+  onChange, onConfigChange, onMermaidThemeChange, onInsertReady, onAltClick, onTemplateSelect,
 }: SidebarProps) {
   const code = diagram?.code ?? ''
   const activePageId = diagram?.id ?? ''
@@ -115,7 +128,7 @@ export function Sidebar({
   const isDark = mode === 'dark'
 
   const langExtension = useMemo(
-    () => [mermaidFallbackLanguage, syntaxHighlighting(defaultHighlightStyle)],
+    () => [mermaidFallbackLanguage, syntaxHighlighting(mermaidEditorHighlightStyle)],
     [],
   )
 
@@ -208,10 +221,10 @@ export function Sidebar({
         chromeGlassPanelClass(isDark ? 'dark' : 'light'),
       )}>
         <div className={cn('text-3xl mb-1', isDark ? 'opacity-30' : 'opacity-20')}>⬡</div>
-        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        <p className="text-sm font-medium text-ui-ink-muted">
           Select a diagram to edit
         </p>
-        <p className="text-xs text-zinc-400 dark:text-zinc-600">
+        <p className="text-xs text-ui-ink-faint">
           Click any diagram on the canvas, or add a new one from the bottom bar.
         </p>
       </div>
@@ -228,10 +241,10 @@ export function Sidebar({
       {/* Title bar */}
       <div data-testid="editor-header" className="flex items-center gap-1 px-2 py-1.5 border-b border-border/40 shrink-0">
         <div className="min-w-0 flex-1 px-1 flex items-center gap-2 overflow-hidden">
-          <span className="text-[11px] font-semibold tracking-wide uppercase text-muted-foreground shrink-0">
+          <span className="text-[11px] font-semibold tracking-wide uppercase text-ui-ink-muted shrink-0">
             Editor
           </span>
-          <span className="text-muted-foreground/60 shrink-0">•</span>
+          <span className="text-ui-ink-faint shrink-0">•</span>
           <span className="text-sm font-medium text-foreground truncate">
             {diagram?.name ?? 'Diagram'}
           </span>
@@ -240,7 +253,7 @@ export function Sidebar({
         {/* Error indicator */}
         {error && (
           <div className="flex items-center gap-1 mr-0.5">
-            <WarningCircle className="w-3 h-3 text-red-500 dark:text-red-400" />
+            <WarningCircle className={cn('w-3 h-3', chromeStatusClass('danger'))} />
           </div>
         )}
 
@@ -260,7 +273,7 @@ export function Sidebar({
               if (copyTimerRef.current) clearTimeout(copyTimerRef.current)
               copyTimerRef.current = setTimeout(() => setCodeCopied(false), 1500)
             }}
-            className={cn('shrink-0 rounded-lg', codeCopied ? 'text-emerald-500 dark:text-emerald-400' : 'text-muted-foreground hover:text-foreground')}
+            className={cn('shrink-0 rounded-lg', codeCopied ? chromeStatusClass('success') : 'text-muted-foreground hover:text-foreground')}
           >
             {codeCopied ? <Check className="w-3.5 h-3.5" /> : <CopySimple className="w-3.5 h-3.5" />}
           </Button>
@@ -285,6 +298,7 @@ export function Sidebar({
             {code.trim() === '' ? (
               <TemplateGallery mode={mode} onSelect={(code) => {
                 onChange(code)
+                onTemplateSelect?.()
               }} />
             ) : (
               <CodeMirror
@@ -292,7 +306,7 @@ export function Sidebar({
                 value={code}
                 onChange={handleCodeChange}
                 extensions={extensions}
-                theme={isDark ? vscodeDark : githubLight}
+                theme={isDark ? vscodeDark : lightEditorTheme}
                 height="100%"
                 style={{
                   height: '100%',
@@ -323,20 +337,12 @@ export function Sidebar({
           {error && (
             <div className={cn(
               'absolute bottom-0 left-0 right-0 z-10 border-t',
-              isDark
-                ? 'bg-[oklch(0.15_0.02_15)] border-red-500/20'
-                : 'bg-red-50 border-red-200/70 dark:bg-[oklch(0.15_0.02_15)] dark:border-red-500/20',
+              chromeStatusSurfaceClass('danger'),
             )} style={{ minHeight: '110px', padding: '14px 16px 18px' }}>
               {/* Header row */}
               <div className="flex items-center gap-2 pb-2">
-                <WarningCircle className={cn(
-                  'w-4 h-4 shrink-0',
-                  'text-red-500 dark:text-red-400',
-                )} />
-                <span className={cn(
-                  'text-xs font-semibold tracking-wide',
-                  'text-red-700 dark:text-red-300',
-                )}>
+                <WarningCircle className={cn('w-4 h-4 shrink-0', chromeStatusClass('danger'))} />
+                <span className={cn('text-xs font-semibold tracking-wide', chromeStatusClass('danger'))}>
                   Syntax Error
                 </span>
                 {error.line && (
@@ -344,9 +350,8 @@ export function Sidebar({
                     onClick={goToErrorLine}
                     className={cn(
                       'ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors cursor-pointer',
-                      isDark
-                        ? 'bg-red-500/15 hover:bg-red-500/25 text-red-300'
-                        : 'bg-red-100 hover:bg-red-200 text-red-600 dark:bg-red-500/15 dark:hover:bg-red-500/25 dark:text-red-300',
+                      chromeStatusSurfaceClass('danger'),
+                      'hover:brightness-95 dark:hover:brightness-110',
                     )}
                   >
                     Line {error.line} <ArrowRight className="w-3 h-3" />
@@ -354,11 +359,7 @@ export function Sidebar({
                 )}
               </div>
               {/* Message */}
-              <p className={cn(
-                'font-mono text-[11px] leading-relaxed break-words',
-                'whitespace-pre-wrap',
-                'text-red-600/90 dark:text-red-300/80',
-              )}>
+              <p className={cn('font-mono text-[11px] leading-relaxed break-words whitespace-pre-wrap', chromeStatusClass('danger'))}>
                 {error.message}
               </p>
             </div>
@@ -368,7 +369,7 @@ export function Sidebar({
             <Accordion.Root
               value={settingsOpen}
               onValueChange={(value: string[]) => setSettingsOpen(value)}
-              className="border-t shrink-0 border-black/6 bg-zinc-50 dark:border-white/8 dark:bg-white/[0.05]"
+              className="border-t shrink-0 border-ui-border-soft bg-ui-surface-soft"
             >
               <Accordion.Item value="config">
                 <Accordion.Header>
@@ -376,14 +377,14 @@ export function Sidebar({
                     data-testid="configuration-trigger"
                     className={cn(
                       'group w-full flex items-center justify-between px-3 py-2 text-left font-sans transition-colors cursor-pointer',
-                      'text-zinc-700 hover:bg-black/4 dark:text-zinc-200 dark:hover:bg-white/6',
+                      'text-ui-ink-soft hover:bg-ui-surface-hover dark:text-ui-ink-strong',
                     )}
                   >
                     <span className="min-w-0 flex items-start gap-1.5">
                       <GearSix className="w-3.5 h-3.5 shrink-0 opacity-60 mt-0.5" />
                       <span className="flex flex-col">
                         <span className="text-[11px] font-semibold tracking-wide uppercase">Configuration</span>
-                        <span className="text-[11px] truncate text-muted-foreground dark:text-zinc-400">
+                        <span className="text-[11px] truncate text-ui-ink-muted">
                           Theme, layout, and chart options
                         </span>
                       </span>
