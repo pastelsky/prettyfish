@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test'
+import { test } from '@playwright/test'
 import { createApp } from '../support/pretty-fish-app'
 
 test.describe('History and navigation', () => {

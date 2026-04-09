@@ -35,7 +35,7 @@ test.describe('Presentation mode', () => {
     await presentation.close()
   })
 
-  test('shows an empty-state message when no diagram payload is provided', async ({ page, browser }) => {
+  test('shows an empty-state message when no diagram payload is provided', async ({ browser }) => {
     const presentation = await browser.newPage()
     await presentation.goto('/present', { waitUntil: 'networkidle' })
 
