@@ -116,6 +116,8 @@ test.describe('Keyboard shortcuts', () => {
       page.keyboard.press('Control+O'),
     ])
     await chooser.setFiles(savedPath!)
+    // Wait for the project to finish loading before continuing
+    await expect(page.getByTestId('app-root')).toBeVisible({ timeout: 10000 })
     await app.header.openPagesMenu()
     await expect(page.getByTestId('page-item-active')).toContainText('Shortcut Page')
     await page.keyboard.press('Escape')

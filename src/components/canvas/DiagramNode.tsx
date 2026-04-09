@@ -261,10 +261,13 @@ export const DiagramNode = memo(function DiagramNode({
             )}
           </>
         ) : (
-          <div style={{
-            color: mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)',
-            fontSize: 13,
-          }}>
+          <div
+            aria-hidden="true"
+            style={{
+              color: mode === 'dark' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.18)',
+              fontSize: 13,
+            }}
+          >
             {diagram.code.trim() === '' ? '' : 'Rendering…'}
           </div>
         )}
