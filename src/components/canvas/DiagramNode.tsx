@@ -48,6 +48,39 @@ export const DiagramNode = memo(function DiagramNode({
     onOpenContextMenu(diagram.id, e.clientX, e.clientY)
   }, [diagram.id, onOpenContextMenu, onSelect])
 
+  // Long-press for touch devices (fires context menu after 500 ms)
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const longPressTriggeredRef = useRef(false)
+
+  const handlePointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.pointerType !== 'touch') return
+    longPressTriggeredRef.current = false
+    longPressTimerRef.current = setTimeout(() => {
+      longPressTriggeredRef.current = true
+      onSelect(diagram.id)
+      onOpenContextMenu(diagram.id, e.clientX, e.clientY)
+    }, 500)
+  }, [diagram.id, onOpenContextMenu, onSelect])
+
+  const handlePointerUp = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }, [])
+
+  const handlePointerCancel = useCallback(() => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+  }, [])
+
+  // Clean up timer on unmount
+  useEffect(() => () => {
+    if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current)
+  }, [])
+
   const nameInputRef = useRef<HTMLInputElement>(null)
   const descInputRef = useRef<HTMLInputElement>(null)
 
@@ -99,6 +132,9 @@ export const DiagramNode = memo(function DiagramNode({
       data-diagram-id={diagram.id}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
       style={{
         width: diagram.width,
         minHeight: 300,

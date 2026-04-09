@@ -453,10 +453,10 @@ function PagesDropdown({
         <div
           data-testid="pages-dropdown-list"
           className={cn(
-          'absolute top-full mt-2 z-50 min-w-[200px] max-w-[calc(100vw-2rem)] rounded-xl border overflow-hidden',
-          'left-0 sm:left-0 right-auto',
-          'bg-ui-surface-elevated border-ui-border-soft',
-        )} style={{ boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.5)' : '0 8px 24px rgba(0,0,0,0.12)' }}>
+          'absolute top-full mt-2 z-50 min-w-[200px] max-w-[calc(100vw-2rem)] overflow-hidden',
+          'left-0 right-auto',
+          chromeGlassPanelClass(isDark ? 'dark' : 'light'),
+        )}>
           <div className="py-1">
             {pages.map((page) => {
               const isActive = page.id === activePageId
