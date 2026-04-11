@@ -24,10 +24,6 @@ interface DurableObjectStateLike {
   }
 }
 
-interface ExecutionContextLike {
-  waitUntil: (promise: Promise<unknown>) => void
-}
-
 interface RelayServerWebSocket extends WebSocket {
   accept: () => void
 }
@@ -230,7 +226,7 @@ async function connectPeer(request: Request, env: RelayWorkerEnv, sessionId: str
 }
 
 export default {
-  async fetch(request: Request, env: RelayWorkerEnv, _ctx: ExecutionContextLike): Promise<Response> {
+  async fetch(request: Request, env: RelayWorkerEnv): Promise<Response> {
     const url = new URL(request.url)
     const requestOrigin = request.headers.get('origin')
 
@@ -292,7 +288,7 @@ export class RelaySessionDurableObject {
     timer: ReturnType<typeof setTimeout>
   }>()
 
-  constructor(state: DurableObjectStateLike, _env: RelayWorkerEnv) {
+  constructor(state: DurableObjectStateLike) {
     this.state = state
   }
 

@@ -57,7 +57,7 @@ function CodePanel({
         <div className="text-sm font-semibold">{title}</div>
         <CopyButton value={code} label="Copy" />
       </div>
-      <pre className="overflow-x-auto rounded-lg bg-black px-3 py-2 text-[11px] text-zinc-100">
+      <pre className="overflow-x-auto rounded-lg bg-black px-3 py-2 text-[11px] text-zinc-100 dark:bg-black dark:text-zinc-100">
         {code}
       </pre>
     </div>

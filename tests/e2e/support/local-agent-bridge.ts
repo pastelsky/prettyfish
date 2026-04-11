@@ -20,7 +20,19 @@ interface JsonRpcResponse {
   }
 }
 
-function parseJsonContentText(result: any): any {
+interface McpContentEntry {
+  type: string
+  text?: string
+  mimeType?: string
+  data?: string
+}
+
+interface McpToolResult {
+  isError?: boolean
+  content?: McpContentEntry[]
+}
+
+function parseJsonContentText(result: McpToolResult): unknown {
   if (result?.isError) {
     const errorText = result?.content?.find((entry: { type: string }) => entry.type === 'text')?.text
     throw new Error(errorText || 'MCP tool call failed')
@@ -157,7 +169,7 @@ export class PrettyFishMcpClient {
     this.notify('notifications/initialized')
   }
 
-  async callTool<T = any>(name: string, args: Record<string, unknown> = {}): Promise<T> {
+  async callTool<T = unknown>(name: string, args: Record<string, unknown> = {}): Promise<T> {
     const response = await this.request('tools/call', {
       name,
       arguments: args,

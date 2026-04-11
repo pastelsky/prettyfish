@@ -61,7 +61,7 @@ test.describe('Local agent bridge', () => {
       expect(svgExport.mimeType).toContain('image/svg+xml')
       expect(svgExport.data.length).toBeGreaterThan(200)
 
-      const pngExport = await bridge.callTool<any>('export_png', {
+      const pngExport = await bridge.callTool<{ content: Array<{ type: string; mimeType: string; data: string }> }>('export_png', {
         sessionId,
         diagramId: createDiagramResult.diagram.id,
       })
