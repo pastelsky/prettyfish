@@ -333,6 +333,7 @@ export default function App() {
         open={mcpOpen}
         onClose={() => setMcpOpen(false)}
         remoteRelay={remoteAgentRelay}
+        isDark={mode === 'dark'}
       />
 
       {isMobile && (docsOpen || (sidebarOpen && !mobileSidebarCollapsed)) && (

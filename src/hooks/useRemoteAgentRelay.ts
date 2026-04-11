@@ -273,6 +273,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     setStatus('connecting')
     setError(null)
 
+    let session: PublicRelaySessionResponse
     try {
       const response = await fetch(`${relayUrl.replace(/\/$/, '')}/api/relay/public/sessions`, {
         method: 'POST',
@@ -286,12 +287,24 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         throw new Error(`Failed to create hosted MCP session (${response.status})`)
       }
 
-      const session = await response.json() as PublicRelaySessionResponse
+      session = await response.json() as PublicRelaySessionResponse
       applySession(session)
-      await connectWithSession(session.relayUrl, session.sessionId, session.browserToken)
     } catch (sessionError) {
       setStatus('error')
       setError(sessionError instanceof Error ? sessionError.message : 'Failed to create hosted session')
+      return
+    }
+
+    // Session created — now try to attach the browser WebSocket.
+    // A WS failure is non-fatal: the MCP config is still valid and the agent
+    // can call tools as soon as the browser reconnects.
+    try {
+      await connectWithSession(session.relayUrl, session.sessionId, session.browserToken)
+    } catch {
+      // WS connect failed — leave status as disconnected so the user can retry,
+      // but don't wipe the session (config snippet is still usable).
+      setStatus('disconnected')
+      setError('Session created but browser connection failed — click Reconnect to retry.')
     }
   }, [applySession, connectWithSession, disconnect, relayUrl])
 
