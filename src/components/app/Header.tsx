@@ -96,8 +96,8 @@ interface HeaderProps {
   onToggleSidebar: () => void
   onToggleDocs: () => void
   onOpenHelp: () => void
-  onOpenLocalAgent: () => void
-  localAgentConnected: boolean
+  onOpenMcp: () => void
+  mcpConnected: boolean
 }
 
 // ── Main Header — floating pill layout ────────────────────────────────────────
@@ -127,8 +127,8 @@ export function Header({
   onToggleSidebar,
   onToggleDocs,
   onOpenHelp,
-  onOpenLocalAgent,
-  localAgentConnected,
+  onOpenMcp,
+  mcpConnected,
   sidebarWidth,
 }: HeaderProps) {
   const isDark = mode === 'dark'
@@ -387,14 +387,14 @@ export function Header({
       {!isMobile && (
         <div className={pillClass}>
           <ChromeTextButton
-            data-testid="open-local-agent-button"
-            aria-label="Connect local MCP"
-            title="Connect local MCP"
-            onClick={onOpenLocalAgent}
-            className={cn(localAgentConnected && chromeStatusClass('success'))}
+            data-testid="open-mcp-button"
+            aria-label="Connect MCP"
+            title="Connect MCP"
+            onClick={onOpenMcp}
+            className={cn(mcpConnected && chromeStatusClass('success'))}
           >
             <PlugsConnected className="w-3.5 h-3.5" />
-            {localAgentConnected ? 'MCP Connected' : 'Connect MCP'}
+            {mcpConnected ? 'MCP Connected' : 'Connect MCP'}
           </ChromeTextButton>
         </div>
       )}

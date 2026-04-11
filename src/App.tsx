@@ -3,7 +3,7 @@ import { CaretDown, Copy, CopySimple, Plus, ShareNetwork, Trash } from '@phospho
 
 import { Header } from './components/app/Header'
 import { KeyboardHelp } from './components/app/KeyboardHelp'
-import { LocalAgentDialog } from './components/app/LocalAgentDialog'
+import { McpPanel } from './components/app/McpPanel'
 import type { ReferenceDocsHandle } from './components/docs/ReferenceDocs'
 import { ErrorBoundary } from './components/app/ErrorBoundary'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
@@ -41,7 +41,7 @@ export default function App() {
   const controller = useAppController(isMobile)
   const referenceDocsRef = useRef<ReferenceDocsHandle>(null)
   const [mobileSidebarCollapsed, setMobileSidebarCollapsed] = useState(true)
-  const [localAgentOpen, setLocalAgentOpen] = useState(false)
+  const [mcpOpen, setMcpOpen] = useState(false)
 
   const {
     state,
@@ -324,14 +324,14 @@ export default function App() {
           }
         }}
         onOpenHelp={() => dispatch({ type: 'ui/set-help-open', open: true })}
-        onOpenLocalAgent={() => setLocalAgentOpen(true)}
-        localAgentConnected={remoteAgentRelay.status === 'connected'}
+        onOpenMcp={() => setMcpOpen(true)}
+        mcpConnected={remoteAgentRelay.status === 'connected'}
         sidebarWidth={sidebarOpen ? sidebarWidth : null}
       />
 
-      <LocalAgentDialog
-        open={localAgentOpen}
-        onClose={() => setLocalAgentOpen(false)}
+      <McpPanel
+        open={mcpOpen}
+        onClose={() => setMcpOpen(false)}
         remoteRelay={remoteAgentRelay}
       />
 

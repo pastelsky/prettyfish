@@ -12,7 +12,7 @@ class HeaderBar {
   get openButton() { return this.page.getByTestId('open-project-button') }
   get resetButton() { return this.page.getByTestId('reset-workspace-button').first() }
   get shareButton() { return this.page.getByTestId('share-button') }
-  get localAgentButton() { return this.page.getByTestId('open-local-agent-button') }
+  get mcpButton() { return this.page.getByTestId('open-mcp-button') }
 
   async shouldBeVisible() {
     await expect(this.logoPill).toBeVisible()
@@ -136,9 +136,9 @@ class HeaderBar {
     await expect(this.page.getByTestId('page-item')).toHaveCount(count)
   }
 
-  async openLocalAgentDialog() {
-    await this.localAgentButton.click()
-    await expect(this.page.getByTestId('local-agent-dialog')).toBeVisible()
+  async openMcpPanel() {
+    await this.mcpButton.click()
+    await expect(this.page.getByTestId('mcp-panel')).toBeVisible()
   }
 }
 

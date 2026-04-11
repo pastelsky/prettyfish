@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import type { RemoteAgentRelayControls } from '@/hooks/useRemoteAgentRelay'
 import { cn } from '@/lib/utils'
 
-interface LocalAgentPanelProps {
+interface McpPanelProps {
   open: boolean
   onClose: () => void
   remoteRelay: RemoteAgentRelayControls
@@ -62,7 +62,7 @@ function StatusDot({ status }: { status: 'disconnected' | 'connecting' | 'connec
 
 // ── Main panel ─────────────────────────────────────────────────────────────────
 
-export function LocalAgentDialog({ open, onClose, remoteRelay }: LocalAgentPanelProps) {
+export function McpPanel({ open, onClose, remoteRelay }: McpPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
   const hasSession = Boolean(remoteRelay.sessionId && remoteRelay.agentToken)
@@ -100,7 +100,7 @@ export function LocalAgentDialog({ open, onClose, remoteRelay }: LocalAgentPanel
       {/* Panel */}
       <div
         ref={panelRef}
-        data-testid="local-agent-dialog"
+        data-testid="mcp-panel"
         role="dialog"
         aria-label="Connect MCP"
         className={cn(
