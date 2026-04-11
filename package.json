@@ -17,7 +17,6 @@
   },
   "scripts": {
     "seo:generate": "node --experimental-strip-types scripts/generate-seo-pages.mjs",
-    "agent:bridge": "node scripts/prettyfish-bridge.mjs",
     "dev": "npm run seo:generate && vite",
     "build": "npm run seo:generate && vite build",
     "typecheck": "tsc -b --noEmit",

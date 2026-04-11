@@ -539,8 +539,6 @@ export class PrettyFishApp {
   readonly docs: ReferenceDocsPanel
   readonly diagramPicker: DiagramPicker
   readonly mobile: MobileShell
-  readonly localAgent: LocalAgentBridgePanel
-
   constructor(readonly page: Page) {
     this.header = new HeaderBar(page)
     this.templates = new TemplatePicker(page)
@@ -550,7 +548,6 @@ export class PrettyFishApp {
     this.docs = new ReferenceDocsPanel(page)
     this.diagramPicker = new DiagramPicker(page)
     this.mobile = new MobileShell(page)
-    this.localAgent = new LocalAgentBridgePanel(page)
   }
 
   async openFresh() {
@@ -655,26 +652,6 @@ export class PrettyFishApp {
   }
 }
 
-class LocalAgentBridgePanel {
-  constructor(private readonly page: Page) {}
-
-  get dialog() { return this.page.getByTestId('local-agent-dialog') }
-  get bridgeUrlInput() { return this.page.getByTestId('local-agent-bridge-url') }
-  get connectButton() { return this.page.getByTestId('local-agent-connect-button') }
-  get disconnectButton() { return this.page.getByTestId('local-agent-disconnect-button') }
-
-  async connect(bridgeUrl = 'http://127.0.0.1:46321') {
-    await expect(this.dialog).toBeVisible()
-    // Expand the advanced local bridge section
-    await this.dialog.getByText('Advanced: local bridge').click()
-    await expect(this.bridgeUrlInput).toBeVisible()
-    await this.bridgeUrlInput.fill(bridgeUrl)
-    await this.connectButton.click()
-    await expect(this.disconnectButton).toBeVisible({ timeout: 15000 })
-    await this.page.keyboard.press('Escape')
-    await expect(this.dialog).toBeHidden()
-  }
-}
 
 export function createApp(page: Page) {
   return new PrettyFishApp(page)

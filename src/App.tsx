@@ -9,7 +9,6 @@ import { ErrorBoundary } from './components/app/ErrorBoundary'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useAppController } from './hooks/useAppController'
-import { useLocalAgentBridge } from './hooks/useLocalAgentBridge'
 import { useRemoteAgentRelay } from './hooks/useRemoteAgentRelay'
 import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
@@ -98,14 +97,6 @@ export default function App() {
 
   const activeSvg = activeDiagram?.render?.svg ?? ''
   const panelSurfaceClass = chromeGlassPanelClass(mode)
-  const localAgentBridge = useLocalAgentBridge({
-    state,
-    getState: controller.getState,
-    createPageWithName,
-    createDiagramWithOptions,
-    selectDiagram,
-    updateDiagramCode,
-  })
   const remoteAgentRelay = useRemoteAgentRelay({
     state,
     getState: controller.getState,
@@ -334,14 +325,13 @@ export default function App() {
         }}
         onOpenHelp={() => dispatch({ type: 'ui/set-help-open', open: true })}
         onOpenLocalAgent={() => setLocalAgentOpen(true)}
-        localAgentConnected={localAgentBridge.status === 'connected' || remoteAgentRelay.status === 'connected'}
+        localAgentConnected={remoteAgentRelay.status === 'connected'}
         sidebarWidth={sidebarOpen ? sidebarWidth : null}
       />
 
       <LocalAgentDialog
         open={localAgentOpen}
         onClose={() => setLocalAgentOpen(false)}
-        bridge={localAgentBridge}
         remoteRelay={remoteAgentRelay}
       />
 
