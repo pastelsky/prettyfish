@@ -469,32 +469,6 @@ export default function App() {
         </div>
       )}
 
-      {!isMobile && (
-        <footer
-          aria-label="Mermaid guide links"
-          className={cn(
-            'absolute bottom-4 z-30 hidden xl:flex items-center gap-3 rounded-xl border px-3 py-2 text-[11px] backdrop-blur-md pointer-events-auto',
-            mode === 'dark'
-              ? 'bg-[oklch(0.16_0.015_260)]/76 border-white/10 text-zinc-300'
-              : 'bg-white/84 border-black/8 text-zinc-600',
-          )}
-          style={{
-            left: sidebarOpen
-              ? `calc(${sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)'} + 1rem)`
-              : '1rem',
-          }}
-        >
-          <span className="font-semibold tracking-[0.08em] uppercase text-[10px] text-zinc-500 dark:text-zinc-400">
-            Mermaid Guides
-          </span>
-          <a className="hover:text-foreground transition-colors" href="/guides/">All</a>
-          <a className="hover:text-foreground transition-colors" href="/guides/flowchart-maker/">Flowchart</a>
-          <a className="hover:text-foreground transition-colors" href="/guides/sequence-diagram-editor/">Sequence</a>
-          <a className="hover:text-foreground transition-colors" href="/guides/er-diagram-tool/">ERD</a>
-          <a className="hover:text-foreground transition-colors" href="/guides/architecture-diagram-maker/">Architecture</a>
-        </footer>
-      )}
-
       {isMobile && !docsOpen && (
         <div
           className="absolute right-4 z-40 pointer-events-none transition-all duration-300"

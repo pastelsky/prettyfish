@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "prettyfish-relay",
   "main": "src/relay/worker.ts",
-  "compatibility_date": "2026-04-12",
+  "compatibility_date": "2026-04-11",
   "observability": {
     "enabled": true
   },
@@ -20,9 +20,6 @@
       "new_sqlite_classes": ["RelaySessionDurableObject"]
     }
   ],
-  "vars": {
-    "RELAY_BOOTSTRAP_TOKEN": "replace-me"
-  },
   "compatibility_flags": [
     "nodejs_compat"
   ]
