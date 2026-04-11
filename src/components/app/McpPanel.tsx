@@ -114,7 +114,7 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
               <span className="font-semibold">Connect MCP</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Let any AI agent drive this browser tab to create and export diagrams.
+              Per-tab relay session — lets any MCP client create and export diagrams in this tab.
             </p>
           </div>
           <button
