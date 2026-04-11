@@ -109,12 +109,15 @@ test.describe('MCP panel — production smoke', () => {
     // Grab the first session display ID
     const firstId = await panel.locator('.font-mono').first().textContent()
 
-    // Generate a new session
+    // Generate a new session — panel temporarily loses the config block while connecting
     await panel.getByRole('button', { name: /new session/i }).click()
-    await expect(panel.locator('.cm-editor')).toBeVisible({ timeout: 15_000 })
 
-    const secondId = await panel.locator('.font-mono').first().textContent()
-    expect(secondId).not.toEqual(firstId)
+    // Wait until the ID changes (not just until the editor reappears, since IDs
+    // are short prefixes and could theoretically collide on a retry)
+    await expect(panel.locator('.font-mono').first()).not.toHaveText(firstId ?? '', { timeout: 15_000 })
+
+    // Editor should be visible with the new session
+    await expect(panel.locator('.cm-editor')).toBeVisible({ timeout: 5_000 })
   })
 
   test('panel closes on Escape key', async ({ page }) => {
