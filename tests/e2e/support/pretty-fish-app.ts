@@ -12,6 +12,7 @@ class HeaderBar {
   get openButton() { return this.page.getByTestId('open-project-button') }
   get resetButton() { return this.page.getByTestId('reset-workspace-button').first() }
   get shareButton() { return this.page.getByTestId('share-button') }
+  get localAgentButton() { return this.page.getByTestId('open-local-agent-button') }
 
   async shouldBeVisible() {
     await expect(this.logoPill).toBeVisible()
@@ -133,6 +134,11 @@ class HeaderBar {
   async shouldShowInactivePageCount(count: number) {
     await this.openPagesMenu()
     await expect(this.page.getByTestId('page-item')).toHaveCount(count)
+  }
+
+  async openLocalAgentDialog() {
+    await this.localAgentButton.click()
+    await expect(this.page.getByTestId('local-agent-dialog')).toBeVisible()
   }
 }
 
@@ -533,6 +539,7 @@ export class PrettyFishApp {
   readonly docs: ReferenceDocsPanel
   readonly diagramPicker: DiagramPicker
   readonly mobile: MobileShell
+  readonly localAgent: LocalAgentBridgePanel
 
   constructor(readonly page: Page) {
     this.header = new HeaderBar(page)
@@ -543,6 +550,7 @@ export class PrettyFishApp {
     this.docs = new ReferenceDocsPanel(page)
     this.diagramPicker = new DiagramPicker(page)
     this.mobile = new MobileShell(page)
+    this.localAgent = new LocalAgentBridgePanel(page)
   }
 
   async openFresh() {
@@ -644,6 +652,24 @@ export class PrettyFishApp {
 
   async resetWorkspace() {
     await this.header.resetWorkspace()
+  }
+}
+
+class LocalAgentBridgePanel {
+  constructor(private readonly page: Page) {}
+
+  get dialog() { return this.page.getByTestId('local-agent-dialog') }
+  get bridgeUrlInput() { return this.page.getByTestId('local-agent-bridge-url') }
+  get connectButton() { return this.page.getByTestId('local-agent-connect-button') }
+  get disconnectButton() { return this.page.getByTestId('local-agent-disconnect-button') }
+
+  async connect(bridgeUrl = 'http://127.0.0.1:46321') {
+    await expect(this.dialog).toBeVisible()
+    await this.bridgeUrlInput.fill(bridgeUrl)
+    await this.connectButton.click()
+    await expect(this.dialog).toContainText('Status: connected', { timeout: 15000 })
+    await this.page.keyboard.press('Escape')
+    await expect(this.dialog).toBeHidden()
   }
 }
 

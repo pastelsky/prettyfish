@@ -65,6 +65,29 @@ npm run deploy
 
 Cloudflare configuration lives in [wrangler.jsonc](wrangler.jsonc).
 
+## Local Agent Bridge
+
+Pretty Fish includes a phase-one local bridge that lets a paired browser tab be controlled by an MCP client running on the same machine.
+
+Start the bridge with:
+
+```bash
+npm run agent:bridge
+```
+
+Setup details are in [docs/local-agent-bridge.md](docs/local-agent-bridge.md).
+
+## Remote Agent Relay
+
+There is also a phase-two Cloudflare relay scaffold for remote MCP-style control:
+
+- Worker entry: `src/relay/worker.ts`
+- Durable Object session relay
+- Dedicated config: `wrangler.relay.jsonc`
+- Remote MCP wrapper: `npm run agent:remote-relay`
+
+Details are in [docs/remote-agent-relay.md](docs/remote-agent-relay.md).
+
 ## Contributing
 
 Contributions are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md).

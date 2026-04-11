@@ -32,6 +32,7 @@ import {
   FloppyDisk,
   FolderOpen,
   PencilSimple,
+  PlugsConnected,
   Trash,
   Heart,
 } from '@phosphor-icons/react'
@@ -95,6 +96,8 @@ interface HeaderProps {
   onToggleSidebar: () => void
   onToggleDocs: () => void
   onOpenHelp: () => void
+  onOpenLocalAgent: () => void
+  localAgentConnected: boolean
 }
 
 // ── Main Header — floating pill layout ────────────────────────────────────────
@@ -124,6 +127,8 @@ export function Header({
   onToggleSidebar,
   onToggleDocs,
   onOpenHelp,
+  onOpenLocalAgent,
+  localAgentConnected,
   sidebarWidth,
 }: HeaderProps) {
   const isDark = mode === 'dark'
@@ -350,6 +355,16 @@ export function Header({
           <Books className="w-3.5 h-3.5" />
         </ChromeIconButton>
 
+        <ChromeIconButton
+          data-testid="open-local-agent-button"
+          aria-label="Open local agent bridge"
+          title="Local agent bridge"
+          onClick={onOpenLocalAgent}
+          active={localAgentConnected}
+        >
+          <PlugsConnected className="w-3.5 h-3.5" />
+        </ChromeIconButton>
+
         {/* Help */}
         <ChromeIconButton
           data-testid="open-help-button"
@@ -359,20 +374,6 @@ export function Header({
         >
           <Question className="w-3.5 h-3.5" />
         </ChromeIconButton>
-
-        <div className={chromeDividerClass()} />
-
-        <a
-          href="/guides/"
-          aria-label="Browse Mermaid guides"
-          title="Browse Mermaid guides"
-          className={cn(
-            'inline-flex items-center rounded-lg px-2 h-7 text-xs font-medium transition-colors',
-            'text-ui-ink-soft hover:text-ui-ink-strong hover:bg-ui-surface-hover',
-          )}
-        >
-          Guides
-        </a>
 
         <div className={chromeDividerClass()} />
 

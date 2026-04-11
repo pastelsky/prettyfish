@@ -7,6 +7,12 @@ function downloadBlob(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
+export async function buildSvgBlob(svgString: string): Promise<Blob> {
+  const fontFamily = detectFontFromSvg(svgString)
+  const withFonts = await embedFontsInSvg(svgString, fontFamily)
+  return new Blob([withFonts], { type: 'image/svg+xml;charset=utf-8' })
+}
+
 /**
  * Extract unique characters from all text/tspan elements in an SVG string.
  */
@@ -138,18 +144,15 @@ function detectFontFromSvg(svgString: string): string {
 }
 
 export async function exportSvg(svgString: string, filename = 'diagram'): Promise<void> {
-  const fontFamily = detectFontFromSvg(svgString)
-  const withFonts = await embedFontsInSvg(svgString, fontFamily)
-  const blob = new Blob([withFonts], { type: 'image/svg+xml;charset=utf-8' })
+  const blob = await buildSvgBlob(svgString)
   downloadBlob(blob, `${filename}.svg`)
 }
 
-export async function exportPng(
+export async function buildPngBlob(
   svgString: string,
   bgColor: string,
-  filename = 'diagram',
   scale = 2,
-): Promise<void> {
+): Promise<Blob> {
   // Embed fonts first so the PNG renders correctly
   const fontFamily = detectFontFromSvg(svgString)
   const withFonts = await embedFontsInSvg(svgString, fontFamily)
@@ -195,7 +198,23 @@ export async function exportPng(
     img.src = dataUrl
   })
 
-  canvas.toBlob((blob) => {
-    if (blob) downloadBlob(blob, `${filename}.png`)
-  }, 'image/png')
+  return await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob)
+        return
+      }
+      reject(new Error('Failed to encode PNG blob'))
+    }, 'image/png')
+  })
+}
+
+export async function exportPng(
+  svgString: string,
+  bgColor: string,
+  filename = 'diagram',
+  scale = 2,
+): Promise<void> {
+  const blob = await buildPngBlob(svgString, bgColor, scale)
+  downloadBlob(blob, `${filename}.png`)
 }

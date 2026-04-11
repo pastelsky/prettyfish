@@ -26,6 +26,13 @@ export interface UseDiagramActionsOptions {
 
 export interface DiagramActions {
   addDiagram: (width?: number) => string
+  createDiagramWithOptions: (options?: {
+    pageId?: string
+    name?: string
+    code?: string
+    width?: number
+    mermaidTheme?: MermaidTheme
+  }) => string | undefined
   selectDiagram: (diagramId: string) => void
   focusDiagram: (diagramId: string) => void
   renameDiagram: (diagramId: string, name: string) => void
@@ -35,6 +42,7 @@ export interface DiagramActions {
   moveDiagram: (diagramId: string, x: number, y: number) => void
   resizeDiagram: (diagramId: string, width: number) => void
   updateCode: (value: string) => void
+  updateDiagramCode: (diagramId: string, value: string) => void
   setDiagramConfig: (config: DiagramConfig) => void
   setMermaidTheme: (theme: MermaidTheme) => void
 }
@@ -49,18 +57,41 @@ export function useDiagramActions({
   pushUndoSnapshot,
   focusDiagramRef,
 }: UseDiagramActionsOptions): DiagramActions {
-  const addDiagram = useCallback((width?: number): string => {
+  const createDiagramWithOptions = useCallback((options?: {
+    pageId?: string
+    name?: string
+    code?: string
+    width?: number
+    mermaidTheme?: MermaidTheme
+  }): string | undefined => {
+    const targetPage = options?.pageId
+      ? pages.find((page) => page.id === options.pageId)
+      : activePage
+    if (!targetPage) return undefined
+
     pushUndoSnapshot()
-    const position = nextDiagramPosition(activePage.diagrams)
-    // Inherit the active diagram's theme so new diagrams feel consistent.
-    const inheritedTheme = activeDiagram?.mermaidTheme ?? 'blueprint'
-    const newDiagram = createDiagram(`Diagram ${activePage.diagrams.length + 1}`, '', position, inheritedTheme)
-    if (width !== undefined) newDiagram.width = width
+    const position = nextDiagramPosition(targetPage.diagrams)
+    const inheritedTheme = options?.mermaidTheme ?? activeDiagram?.mermaidTheme ?? 'blueprint'
+    const newDiagram = createDiagram(
+      options?.name?.trim() || `Diagram ${targetPage.diagrams.length + 1}`,
+      options?.code ?? '',
+      position,
+      inheritedTheme,
+    )
+    if (options?.width !== undefined) newDiagram.width = options.width
     const diagram = queueDiagramRender(newDiagram)
-    dispatch({ type: 'diagram/add', pageId: activePage.id, diagram })
+    dispatch({ type: 'diagram/add', pageId: targetPage.id, diagram })
+    if (targetPage.id !== activePage.id) {
+      dispatch({ type: 'page/select', pageId: targetPage.id })
+    }
     setTimeout(() => focusDiagramRef.current?.(diagram.id), 50)
     return diagram.id
-  }, [activeDiagram, activePage, dispatch, focusDiagramRef, pushUndoSnapshot])
+  }, [activeDiagram, activePage, dispatch, focusDiagramRef, pages, pushUndoSnapshot])
+
+  const addDiagram = useCallback((width?: number): string => {
+    const diagramId = createDiagramWithOptions(width !== undefined ? { width } : undefined)
+    return diagramId!
+  }, [createDiagramWithOptions])
 
   const selectDiagram = useCallback((diagramId: string) => {
     dispatch({ type: 'diagram/select', pageId: activePage.id, diagramId })
@@ -126,6 +157,12 @@ export function useDiagramActions({
     dispatch({ type: 'diagram/update-code', diagramId: activeDiagram.id, code: value })
   }, [activeDiagram, dispatch])
 
+  const updateDiagramCode = useCallback((diagramId: string, value: string) => {
+    const diagram = findDiagramById(pages, diagramId)?.diagram
+    if (!diagram) return
+    dispatch({ type: 'diagram/update-code', diagramId, code: value })
+  }, [dispatch, pages])
+
   const setDiagramConfig = useCallback((config: DiagramConfig) => {
     if (!activeDiagram) return
     dispatch({ type: 'diagram/update-config', diagramId: activeDiagram.id, config })
@@ -138,6 +175,7 @@ export function useDiagramActions({
 
   return {
     addDiagram,
+    createDiagramWithOptions,
     selectDiagram,
     focusDiagram,
     renameDiagram,
@@ -147,6 +185,7 @@ export function useDiagramActions({
     moveDiagram,
     resizeDiagram,
     updateCode,
+    updateDiagramCode,
     setDiagramConfig,
     setMermaidTheme,
   }

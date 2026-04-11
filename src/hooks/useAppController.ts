@@ -68,9 +68,17 @@ export interface AppController {
   focusEditor: () => void
   setHasCopied: Dispatch<SetStateAction<boolean>>
   addPage: () => string
+  createPageWithName: (name?: string, code?: string) => string
   deletePage: (pageId: string) => void
   renamePage: (pageId: string, name: string) => void
   addDiagram: () => string
+  createDiagramWithOptions: (options?: {
+    pageId?: string
+    name?: string
+    code?: string
+    width?: number
+    mermaidTheme?: MermaidTheme
+  }) => string | undefined
   selectDiagram: (diagramId: string) => void
   focusDiagram: (diagramId: string) => void
   renameDiagram: (diagramId: string, name: string) => void
@@ -83,6 +91,7 @@ export interface AppController {
   moveDiagram: (diagramId: string, x: number, y: number) => void
   resizeDiagram: (diagramId: string, width: number) => void
   updateCode: (value: string) => void
+  updateDiagramCode: (diagramId: string, value: string) => void
   setDiagramConfig: (config: DiagramConfig) => void
   setMermaidTheme: (theme: MermaidTheme) => void
   saveProject: () => void

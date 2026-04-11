@@ -13,6 +13,7 @@ export interface UsePageActionsOptions {
 
 export interface PageActions {
   addPage: () => string
+  createPageWithName: (name?: string, code?: string) => string
   deletePage: (pageId: string) => void
   renamePage: (pageId: string, name: string) => void
 }
@@ -23,12 +24,14 @@ export function usePageActions({
   pushUndoSnapshot,
   pageById,
 }: UsePageActionsOptions): PageActions {
-  const addPage = useCallback((): string => {
+  const createPageWithName = useCallback((name?: string, code = ''): string => {
     pushUndoSnapshot()
-    const page = withRuntimePagesState([createPage(`Page ${pages.length + 1}`, '')])[0]!
+    const page = withRuntimePagesState([createPage(name?.trim() || `Page ${pages.length + 1}`, code)])[0]!
     dispatch({ type: 'page/add', page })
     return page.id
   }, [dispatch, pages.length, pushUndoSnapshot])
+
+  const addPage = useCallback((): string => createPageWithName(), [createPageWithName])
 
   const deletePage = useCallback((pageId: string) => {
     if (pages.length === 1) return
@@ -43,5 +46,5 @@ export function usePageActions({
     dispatch({ type: 'page/rename', pageId, name })
   }, [dispatch, pageById, pushUndoSnapshot])
 
-  return { addPage, deletePage, renamePage }
+  return { addPage, createPageWithName, deletePage, renamePage }
 }

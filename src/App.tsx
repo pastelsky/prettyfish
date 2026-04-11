@@ -3,11 +3,14 @@ import { CaretDown, Copy, CopySimple, Plus, ShareNetwork, Trash } from '@phospho
 
 import { Header } from './components/app/Header'
 import { KeyboardHelp } from './components/app/KeyboardHelp'
+import { LocalAgentDialog } from './components/app/LocalAgentDialog'
 import type { ReferenceDocsHandle } from './components/docs/ReferenceDocs'
 import { ErrorBoundary } from './components/app/ErrorBoundary'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useAppController } from './hooks/useAppController'
+import { useLocalAgentBridge } from './hooks/useLocalAgentBridge'
+import { useRemoteAgentRelay } from './hooks/useRemoteAgentRelay'
 import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
 import { cn } from './lib/utils'
@@ -39,6 +42,7 @@ export default function App() {
   const controller = useAppController(isMobile)
   const referenceDocsRef = useRef<ReferenceDocsHandle>(null)
   const [mobileSidebarCollapsed, setMobileSidebarCollapsed] = useState(true)
+  const [localAgentOpen, setLocalAgentOpen] = useState(false)
 
   const {
     state,
@@ -54,9 +58,11 @@ export default function App() {
     focusEditor,
     dispatch,
     addPage,
+    createPageWithName,
     deletePage,
     renamePage,
     addDiagram,
+    createDiagramWithOptions,
     selectDiagram,
     focusDiagram,
     renameDiagram,
@@ -69,6 +75,7 @@ export default function App() {
     moveDiagram,
     resizeDiagram,
     updateCode,
+    updateDiagramCode,
     setDiagramConfig,
     setMermaidTheme,
     saveProject,
@@ -91,6 +98,22 @@ export default function App() {
 
   const activeSvg = activeDiagram?.render?.svg ?? ''
   const panelSurfaceClass = chromeGlassPanelClass(mode)
+  const localAgentBridge = useLocalAgentBridge({
+    state,
+    getState: controller.getState,
+    createPageWithName,
+    createDiagramWithOptions,
+    selectDiagram,
+    updateDiagramCode,
+  })
+  const remoteAgentRelay = useRemoteAgentRelay({
+    state,
+    getState: controller.getState,
+    createPageWithName,
+    createDiagramWithOptions,
+    selectDiagram,
+    updateDiagramCode,
+  })
 
   const handleInsertReady = useCallback((fn: (text: string) => void) => {
     registerInsertHandler(fn)
@@ -231,10 +254,9 @@ export default function App() {
     if (!isMobile) return
     // On mobile, tapping a diagram opens the sidebar so the user can edit it.
     dispatch({ type: 'ui/set-sidebar-open', open: true })
-    const diagram = activePage.diagrams.find((candidate) => candidate.id === diagramId)
     // Always expand the editor so user can see/edit the diagram
     setMobileSidebarCollapsed(false)
-  }, [activePage.diagrams, dispatch, isMobile, selectDiagram])
+  }, [dispatch, isMobile, selectDiagram])
 
   const handleToggleSidebar = useCallback(() => {
     const nextOpen = !sidebarOpen
@@ -311,7 +333,16 @@ export default function App() {
           }
         }}
         onOpenHelp={() => dispatch({ type: 'ui/set-help-open', open: true })}
+        onOpenLocalAgent={() => setLocalAgentOpen(true)}
+        localAgentConnected={localAgentBridge.status === 'connected'}
         sidebarWidth={sidebarOpen ? sidebarWidth : null}
+      />
+
+      <LocalAgentDialog
+        open={localAgentOpen}
+        onOpenChange={setLocalAgentOpen}
+        bridge={localAgentBridge}
+        remoteRelay={remoteAgentRelay}
       />
 
       {isMobile && (docsOpen || (sidebarOpen && !mobileSidebarCollapsed)) && (
