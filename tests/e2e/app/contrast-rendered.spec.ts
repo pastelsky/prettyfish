@@ -1,19 +1,24 @@
 /**
  * RENDERED CONTRAST AUDIT
  * =======================
- * Ground-truth accessibility contrast test — uses Playwright to render actual
- * Mermaid diagrams in Chromium and reads real computed colors from the SVG DOM.
+ * Tests color contrast of actual rendered Mermaid diagrams across all themes
+ * and config permutations, using the app's real rendering pipeline.
  *
- * NO static analysis. NO guessing at variable-to-color mappings.
- * Every check is driven by what the browser actually renders.
+ * WHY NOT axe-core for SVGs:
+ * axe-core checks CSS `color` vs `background-color` — it is designed for HTML.
+ * Mermaid diagrams are SVG: text colors are SVG `fill` attributes, backgrounds
+ * are SVG `rect` fills. axe cannot reliably map SVG fills to their visual
+ * backgrounds, producing both false positives and false negatives on SVG content.
  *
- * Each test covers one diagram type × one config permutation, run across all
- * custom themes. If a text/background pair fails WCAG AA large text (3:1),
- * the test fails with a detailed message showing which theme, diagram, and
- * CSS selector has the problem.
+ * APPROACH: Use Playwright's getComputedStyle() on real SVG elements.
+ * - Navigates to /contrast-audit (app's ContrastAuditPage, real renderDiagram())
+ * - Renders each diagram with each theme via window.__renderForAudit()
+ * - Reads actual computed fill/stroke colors from SVG DOM elements
+ * - Computes WCAG contrast ratios from real browser-computed colors
+ * - Fails with exact element, theme, colors, and ratio if below 3:1 (AA large)
  *
- * To run:   npx playwright test tests/e2e/app/contrast-rendered.spec.ts
- * To run one diagram: npx playwright test --grep "sequence autonumber"
+ * To run:  npx playwright test tests/e2e/app/contrast-rendered.spec.ts
+ * To grep: npx playwright test --grep "sequence autonumber"
  */
 
 import { test, expect, Page } from '@playwright/test'
@@ -47,22 +52,16 @@ function contrastRatio(rgb1: [number, number, number], rgb2: [number, number, nu
   return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05)
 }
 
-const WCAG_AA_LARGE = 3.0 // minimum for large/bold text
+const WCAG_AA_LARGE = 3.0 // WCAG AA for large text (≥18pt or ≥14pt bold)
 
-// ── Mermaid rendering helper ──────────────────────────────────────────────────
+// ── Render helper ─────────────────────────────────────────────────────────────
 
-/**
- * Navigate to /contrast-audit (the app's ContrastAuditPage component) and call
- * window.__renderForAudit() — which uses the app's real renderDiagram() pipeline.
- * This means contrast tests exercise EXACTLY the same code as production.
- */
-async function renderDiagramForAudit(
+async function renderForTheme(
   page: Page,
   code: string,
   themeId: string,
   configOverrides: Record<string, unknown> = {}
-): Promise<void> {
-  // Navigate once per page; reuse for subsequent renders within the same test
+): Promise<boolean> {
   if (!page.url().includes('/contrast-audit')) {
     await page.goto('/contrast-audit', { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(
@@ -72,48 +71,51 @@ async function renderDiagramForAudit(
   }
 
   const result = await page.evaluate(
-    async ({ code: c, themeId: t, configOverrides: co }) => {
-      return (window as unknown as {
+    async ({ code: c, themeId: t, configOverrides: co }) =>
+      (window as unknown as {
         __renderForAudit: (a: string, b: string, c: Record<string, unknown>) => Promise<{ ok: boolean; error?: string }>
-      }).__renderForAudit(c, t, co)
-    },
+      }).__renderForAudit(c, t, co),
     { code, themeId, configOverrides }
   )
 
-  if (!result.ok) {
-    throw new Error(`Mermaid render failed: ${result.error}`)
-  }
+  return result.ok
 }
 
-// Read a real computed color from a CSS selector in the SVG DOM
-// Returns the computed fill or color as a hex string, or null if not found
-async function getComputedColor(page: Page, selector: string, property: 'fill' | 'color' | 'stroke' = 'fill'): Promise<string | null> {
+// ── SVG color extraction ──────────────────────────────────────────────────────
+
+/**
+ * Read a real computed color from an SVG element.
+ * For SVG, fill/stroke are set as attributes and as CSS — getComputedStyle
+ * returns the actual rendered value (CSS wins over attribute, as browsers do).
+ */
+async function getSvgColor(
+  page: Page,
+  selector: string,
+  property: 'fill' | 'stroke' = 'fill'
+): Promise<string | null> {
   return page.evaluate(({ sel, prop }) => {
     const el = document.querySelector(sel)
     if (!el) return null
-    const computed = window.getComputedStyle(el)[prop as 'fill' | 'color' | 'stroke']
-    if (computed && computed !== 'none' && computed !== '' && !computed.startsWith('url(')) {
-      return computed
-    }
-    // Fallback: SVG attribute
-    const attr = el.getAttribute(prop === 'color' ? 'fill' : prop)
-    return attr ?? null
+    const computed = window.getComputedStyle(el)[prop as 'fill' | 'stroke']
+    if (computed && computed !== 'none' && !computed.startsWith('url(')) return computed
+    const attr = el.getAttribute(prop)
+    if (attr && attr !== 'none') return attr
+    return null
   }, { sel: selector, prop: property })
 }
 
-// Get the background color of the page itself (html/body background)
 async function getPageBackground(page: Page): Promise<string> {
   return page.evaluate(() => window.getComputedStyle(document.body).backgroundColor)
 }
 
-// ── Check a text/bg color pair ────────────────────────────────────────────────
+// ── Color pair check ──────────────────────────────────────────────────────────
 
 interface ColorPairCheck {
   label: string
   textSelector: string
-  textProperty?: 'fill' | 'color' | 'stroke'
-  bgSelector: string | null  // null = use page background
-  bgProperty?: 'fill' | 'color' | 'stroke'
+  textProperty?: 'fill' | 'stroke'
+  bgSelector: string | null
+  bgProperty?: 'fill' | 'stroke'
 }
 
 interface CheckResult {
@@ -124,16 +126,13 @@ interface CheckResult {
   passes: boolean
 }
 
-async function checkColorPair(
-  page: Page,
-  check: ColorPairCheck
-): Promise<CheckResult | null> {
-  const textRaw = await getComputedColor(page, check.textSelector, check.textProperty ?? 'fill')
+async function checkColorPair(page: Page, check: ColorPairCheck): Promise<CheckResult | null> {
+  const textRaw = await getSvgColor(page, check.textSelector, check.textProperty ?? 'fill')
   const bgRaw = check.bgSelector
-    ? await getComputedColor(page, check.bgSelector, check.bgProperty ?? 'fill')
+    ? await getSvgColor(page, check.bgSelector, check.bgProperty ?? 'fill')
     : await getPageBackground(page)
 
-  if (!textRaw || !bgRaw) return null // element not present in this diagram
+  if (!textRaw || !bgRaw) return null
 
   const textRgb = parseRgb(textRaw)
   const bgRgb = parseRgb(bgRaw)
@@ -151,7 +150,6 @@ async function checkColorPair(
 
 // ── Theme loading ─────────────────────────────────────────────────────────────
 
-// Dynamically load theme IDs + labels at test time
 let _themes: Record<string, { label: string }> | null = null
 
 async function loadThemes() {
@@ -163,30 +161,44 @@ async function loadThemes() {
   return _themes
 }
 
-// ── Test helper: run a diagram check across all themes ───────────────────────
+// ── Test factory ──────────────────────────────────────────────────────────────
 
-function forEachTheme(
-  diagramLabel: string,
+/**
+ * Create a test that renders a diagram with every theme and checks SVG contrast
+ * pairs using real browser getComputedStyle() values.
+ */
+function contrastTest(
+  label: string,
   diagramCode: string,
   checks: ColorPairCheck[],
-  mermaidConfig: Record<string, unknown> = {}
+  configOverrides: Record<string, unknown> = {}
 ) {
-  test(diagramLabel, async ({ page }) => {
+  test(label, async ({ page }) => {
     const themes = await loadThemes()
     const failures: string[] = []
 
     for (const [themeId, theme] of Object.entries(themes)) {
+      let ok: boolean
       try {
-        // Uses the app's real renderDiagram() pipeline via /contrast-audit route
-        await renderDiagramForAudit(page, diagramCode, themeId, mermaidConfig)
+        ok = await renderForTheme(page, diagramCode, themeId, configOverrides)
       } catch {
-        // Some diagram types may not render in some themes — skip
-        continue
+        // Context destroyed (e.g. page navigated during render) — re-navigate and retry once
+        await page.goto('/contrast-audit', { waitUntil: 'domcontentloaded' })
+        await page.waitForFunction(
+          () => (window as unknown as { __ready?: boolean }).__ready === true,
+          { timeout: 10000 }
+        )
+        try {
+          ok = await renderForTheme(page, diagramCode, themeId, configOverrides)
+        } catch {
+          continue // skip this theme if it still fails
+        }
       }
+      if (!ok) continue
 
       for (const check of checks) {
         const result = await checkColorPair(page, check)
-        if (!result) continue // element not present — skip
+        if (!result) continue
 
         if (!result.passes) {
           failures.push(
@@ -198,8 +210,7 @@ function forEachTheme(
     }
 
     if (failures.length > 0) {
-      expect.soft(false, `Contrast failures:\n${failures.map(f => '  • ' + f).join('\n')}`).toBe(true)
-      // Force test to fail after all soft assertions
+      for (const f of failures) expect.soft(false, f).toBe(true)
       expect(failures.length, `${failures.length} contrast failure(s) found`).toBe(0)
     }
   })
@@ -213,34 +224,19 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Sequence diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'actors and signals (default)',
       `sequenceDiagram
   Alice->>Bob: Hello Bob, how are you?
   Bob-->>Alice: Great thanks!`,
       [
-        {
-          label: 'Actor text on actor bg',
-          // text.actor > tspan: fill = actorTextColor
-          // rect.actor:        fill = actorBkg
-          textSelector: 'text.actor > tspan',
-          textProperty: 'fill',
-          bgSelector: 'rect.actor',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Signal/message text on page background',
-          // .messageText: fill = signalTextColor
-          // background: diagram canvas color
-          textSelector: '.messageText',
-          textProperty: 'fill',
-          bgSelector: null,
-        },
+        { label: 'Actor text on actor bg', textSelector: 'text.actor > tspan', bgSelector: 'rect.actor' },
+        { label: 'Signal text on page bg', textSelector: '.messageText', bgSelector: null },
       ]
     )
 
-    forEachTheme(
-      'sequence autonumber — number text on circle bg',
+    contrastTest(
+      'autonumber — number text on circle bg',
       `sequenceDiagram
   autonumber
   Alice->>Bob: First message
@@ -248,39 +244,29 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   Alice->>Bob: Third message`,
       [
         {
-          label: 'Autonumber text (.sequenceNumber fill=sequenceNumberColor) on circle ([id$="-sequencenumber"] circle fill=signalColor)',
-          // .sequenceNumber CSS class: fill = sequenceNumberColor (the number text)
-          // [id$="-sequencenumber"] circle: fill = signalColor (the circle background)
+          // .sequenceNumber { fill: sequenceNumberColor } = number text
+          // [id$="-sequencenumber"] circle { fill: signalColor } = circle background
+          label: 'Autonumber text (sequenceNumberColor) on circle bg (signalColor)',
           textSelector: '.sequenceNumber',
-          textProperty: 'fill',
           bgSelector: '[id$="-sequencenumber"] circle',
-          bgProperty: 'fill',
         },
       ],
       { sequence: { showSequenceNumbers: true } }
     )
 
-    forEachTheme(
-      'sequence notes',
+    contrastTest(
+      'notes',
       `sequenceDiagram
   Alice->>Bob: Hello
   Note right of Bob: Bob thinks carefully
   Bob-->>Alice: Hi there`,
       [
-        {
-          label: 'Note text on note bg',
-          // .noteText: fill = noteTextColor
-          // .note rect: fill = noteBkgColor
-          textSelector: '.noteText',
-          textProperty: 'fill',
-          bgSelector: '.note',
-          bgProperty: 'fill',
-        },
+        { label: 'Note text on note bg', textSelector: '.noteText', bgSelector: '.note' },
       ]
     )
 
-    forEachTheme(
-      'sequence loop/alt frames — label text on label box',
+    contrastTest(
+      'loop/alt frames — label text on label box',
       `sequenceDiagram
   loop Every minute
     Alice->>Bob: ping
@@ -291,42 +277,20 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
     Bob-->>Alice: error
   end`,
       [
-        {
-          label: 'Label text on label box bg',
-          // .labelText: fill = labelTextColor
-          // .labelBox: fill = labelBoxBkgColor
-          textSelector: '.labelText',
-          textProperty: 'fill',
-          bgSelector: '.labelBox',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Loop text on page background',
-          // .loopText: fill = loopTextColor
-          textSelector: '.loopText',
-          textProperty: 'fill',
-          bgSelector: null,
-        },
+        { label: 'Label text on label box bg', textSelector: '.labelText', bgSelector: '.labelBox' },
+        { label: 'Loop text on page bg', textSelector: '.loopText', bgSelector: null },
       ]
     )
 
-    forEachTheme(
-      'sequence activation boxes',
+    contrastTest(
+      'activation boxes',
       `sequenceDiagram
   Alice->>+Bob: Request
   Bob->>+Service: Process
   Service-->>-Bob: Result
   Bob-->>-Alice: Response`,
       [
-        {
-          label: 'Signal text on activation box bg',
-          // .messageText: fill = signalTextColor
-          // .activation0: fill = activationBkgColor
-          textSelector: '.messageText',
-          textProperty: 'fill',
-          bgSelector: '.activation0',
-          bgProperty: 'fill',
-        },
+        { label: 'Signal text on activation bg', textSelector: '.messageText', bgSelector: '.activation0' },
       ]
     )
 
@@ -336,7 +300,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Flowchart', () => {
 
-    forEachTheme(
+    contrastTest(
       'nodes and edge labels',
       `flowchart TD
   A[Start] --> B{Decision}
@@ -345,24 +309,12 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   C --> E[End]
   D --> E`,
       [
-        {
-          label: 'Node label on node bg',
-          textSelector: '.nodeLabel',
-          textProperty: 'color',
-          bgSelector: '.node rect',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Edge label on edge label bg',
-          textSelector: '.edgeLabel .label',
-          textProperty: 'color',
-          bgSelector: '.edgeLabel .label-container',
-          bgProperty: 'fill',
-        },
+        { label: 'Node label on node bg', textSelector: '.nodeLabel', textProperty: 'fill', bgSelector: '.node rect' },
+        { label: 'Edge label on edge label bg', textSelector: '.edgeLabel .label', textProperty: 'fill', bgSelector: '.edgeLabel .label-container' },
       ]
     )
 
-    forEachTheme(
+    contrastTest(
       'subgraph cluster labels',
       `flowchart TD
   subgraph GroupA[Group A]
@@ -371,13 +323,9 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   end
   A --> C[Gamma]`,
       [
-        {
-          label: 'Cluster label on cluster bg',
-          textSelector: '.cluster-label .nodeLabel, .cluster .label .nodeLabel',
-          textProperty: 'color',
-          bgSelector: '.cluster rect',
-          bgProperty: 'fill',
-        },
+        // Cluster label text is rendered as SVG <text> with CSS fill = tertiaryTextColor
+        // The cluster background rect fill = clusterBkg (tertiaryColor)
+        { label: 'Cluster label on cluster bg', textSelector: '.cluster-label text, .cluster .label text', textProperty: 'fill', bgSelector: '.cluster rect' },
       ]
     )
 
@@ -387,7 +335,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Class diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'class boxes with fillType colors',
       `classDiagram
   class Vehicle {
@@ -405,20 +353,8 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   Vehicle <|-- Car
   Vehicle <|-- Truck`,
       [
-        {
-          label: 'Class title on class bg (fillType)',
-          textSelector: '.classTitle',
-          textProperty: 'fill',
-          bgSelector: '.classGroup .outer-title, .classGroup > rect',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Class member text on class body bg',
-          textSelector: '.member',
-          textProperty: 'fill',
-          bgSelector: '.classGroup rect',
-          bgProperty: 'fill',
-        },
+        { label: 'Class title on class bg', textSelector: '.classTitle', bgSelector: '.classGroup .outer-title, .classGroup > rect' },
+        { label: 'Class member text on class bg', textSelector: '.member', bgSelector: '.classGroup rect' },
       ]
     )
 
@@ -428,7 +364,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('ER diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'entity header and attribute rows',
       `erDiagram
   CUSTOMER ||--o{ ORDER : places
@@ -443,27 +379,9 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
     date placed_at
   }`,
       [
-        {
-          label: 'Entity header text on entity header bg',
-          textSelector: '.er.entityLabel',
-          textProperty: 'fill',
-          bgSelector: '.er.entityBox',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Attribute text on even attr row bg',
-          textSelector: '.er.attributeBoxEven text',
-          textProperty: 'fill',
-          bgSelector: '.er.attributeBoxEven',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Attribute text on odd attr row bg',
-          textSelector: '.er.attributeBoxOdd text',
-          textProperty: 'fill',
-          bgSelector: '.er.attributeBoxOdd',
-          bgProperty: 'fill',
-        },
+        { label: 'Entity header text on entity header bg', textSelector: '.er.entityLabel', bgSelector: '.er.entityBox' },
+        { label: 'Attribute text on even row bg', textSelector: '.er.attributeBoxEven text', bgSelector: '.er.attributeBoxEven' },
+        { label: 'Attribute text on odd row bg', textSelector: '.er.attributeBoxOdd text', bgSelector: '.er.attributeBoxOdd' },
       ]
     )
 
@@ -473,7 +391,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('State diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'state labels',
       `stateDiagram-v2
   [*] --> Idle
@@ -483,17 +401,11 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   Done --> [*]
   Failed --> [*]`,
       [
-        {
-          label: 'State label on state bg',
-          textSelector: '.state-title',
-          textProperty: 'fill',
-          bgSelector: '.stateGroup rect, .basic-state rect',
-          bgProperty: 'fill',
-        },
+        { label: 'State label on state bg', textSelector: '.state-title', bgSelector: '.stateGroup rect, .basic-state rect' },
       ]
     )
 
-    forEachTheme(
+    contrastTest(
       'composite state title',
       `stateDiagram-v2
   state Compound {
@@ -504,13 +416,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   [*] --> Compound
   Compound --> [*]`,
       [
-        {
-          label: 'Composite state title on composite title bg',
-          textSelector: '.compositeTitle',
-          textProperty: 'fill',
-          bgSelector: '.compositeTitle ~ rect, .compositeTitleBackground',
-          bgProperty: 'fill',
-        },
+        { label: 'Composite title on composite title bg', textSelector: '.compositeTitle', bgSelector: '.compositeTitleBackground' },
       ]
     )
 
@@ -520,7 +426,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Gantt chart', () => {
 
-    forEachTheme(
+    contrastTest(
       'tasks including crit and done tasks',
       `gantt
   title Development Plan
@@ -533,20 +439,8 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
     Design     :        d4, 2024-01-05, 2024-01-10
     Build      :crit,   d5, 2024-01-10, 2024-01-20`,
       [
-        {
-          label: 'Task text on task bg',
-          textSelector: '.taskText',
-          textProperty: 'fill',
-          bgSelector: '.task:not(.crit)',
-          bgProperty: 'fill',
-        },
-        {
-          label: 'Task text on crit task bg',
-          textSelector: '.taskTextCritLine, .taskTextCritNoLine',
-          textProperty: 'fill',
-          bgSelector: '.crit',
-          bgProperty: 'fill',
-        },
+        { label: 'Task text on task bg', textSelector: '.taskText', bgSelector: '.task:not(.crit)' },
+        { label: 'Task text on crit task bg', textSelector: '.taskTextCritLine, .taskTextCritNoLine', bgSelector: '.crit' },
       ]
     )
 
@@ -556,8 +450,8 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Git graph', () => {
 
-    forEachTheme(
-      'branch commits and labels',
+    contrastTest(
+      'branch commit and label colors',
       `gitGraph
   commit id: "Initial"
   branch develop
@@ -568,25 +462,10 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   merge develop id: "Merge"
   commit id: "Release"`,
       [
-        {
-          // .commit-label: fill = commitLabelColor (the commit ID text beneath each commit)
-          // .commit-label-bkg: fill = commitLabelBackground (rect behind the label, opacity 0.5)
-          // We check against the page background since at opacity 0.5 the effective bg is a blend;
-          // checking against the background is the conservative (safer) choice.
-          label: 'Commit ID label (commitLabelColor) on page background',
-          textSelector: '.commit-label',
-          textProperty: 'fill',
-          bgSelector: null, // page background
-        },
-        {
-          // .branch-label{i}: fill = gitBranchLabelN (branch name text color)
-          // Branch label text is rendered ON the git line, not on a separate bg rect.
-          // The effective background behind branch labels is the diagram canvas.
-          label: 'Branch label text (gitBranchLabelN) on page background',
-          textSelector: '.branch-label0, .branch-label1, .branch-label2',
-          textProperty: 'fill',
-          bgSelector: null, // page background
-        },
+        // commitLabelColor on page background (commit ID text below each circle)
+        { label: 'Commit ID label on page bg', textSelector: '.commit-label', bgSelector: null },
+        // gitBranchLabelN on page background (branch name labels)
+        { label: 'Branch label on page bg', textSelector: '.branch-label0, .branch-label1, .branch-label2', bgSelector: null },
       ]
     )
 
@@ -596,7 +475,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Pie chart', () => {
 
-    forEachTheme(
+    contrastTest(
       'pie slices and section labels',
       `pie title Quarterly Revenue
   "Q1" : 25
@@ -604,15 +483,8 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
   "Q3" : 20
   "Q4" : 25`,
       [
-        {
-          label: 'Pie section text on pie slice bg',
-          // pieSectionTextPath text: fill = pieSectionTextColor
-          // .pieCircle path: fill = pie1..pie8 slice colors
-          textSelector: '.pieSectionText',
-          textProperty: 'fill',
-          bgSelector: '.pieCircle path',
-          bgProperty: 'fill',
-        },
+        // pieSectionTextColor on first pie slice (pie1 color)
+        { label: 'Pie section text on pie slice bg', textSelector: '.pieSectionText', bgSelector: '.pieCircle path' },
       ]
     )
 
@@ -622,7 +494,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Journey diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'journey sections and task labels',
       `journey
   title A Developer's Day
@@ -631,17 +503,9 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
     Stand-up: 3: Dev, Team
   section Afternoon
     Coding: 8: Dev
-    Review: 6: Dev, Team
-  section Evening
-    Deploy: 7: Dev`,
+    Review: 6: Dev, Team`,
       [
-        {
-          label: 'Section label on section bg (cScale colors)',
-          textSelector: '.label',
-          textProperty: 'fill',
-          bgSelector: 'rect.actor, .section',
-          bgProperty: 'fill',
-        },
+        { label: 'Section label on section bg (cScale)', textSelector: '.label', bgSelector: 'rect.actor, .section' },
       ]
     )
 
@@ -651,7 +515,7 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
 
   test.describe('Timeline diagram', () => {
 
-    forEachTheme(
+    contrastTest(
       'timeline events',
       `timeline
   title Software Release Timeline
@@ -659,16 +523,9 @@ test.describe('Rendered contrast audit — all themes × diagram configs', () =>
        : Architecture
   2024 : Development
        : Testing
-  2025 : Launch
-       : Growth`,
+  2025 : Launch`,
       [
-        {
-          label: 'Timeline event text on event bg',
-          textSelector: '.timeline-event .label, .event-label',
-          textProperty: 'fill',
-          bgSelector: '.timeline-event rect, .event',
-          bgProperty: 'fill',
-        },
+        { label: 'Timeline event text on event bg', textSelector: '.timeline-event .label, .event-label', bgSelector: '.timeline-event rect, .event' },
       ]
     )
 
