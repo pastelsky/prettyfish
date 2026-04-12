@@ -86,7 +86,7 @@ test.describe('MCP panel — production smoke', () => {
     // Config should contain the MCP server URL
     const configText = await panel.locator('.cm-editor').textContent()
     expect(configText).toContain('mcpServers')
-    expect(configText).toContain('pretty.fish')
+    expect(configText).toContain('/mcp/')
   })
 
   test('copy button copies the MCP config to clipboard', async ({ page, context }) => {
