@@ -129,6 +129,8 @@ export interface GitVars {
   commitLabelColor: string
   /** Background rect color for commit ID labels (rendered at 0.5 opacity). Defaults to secondaryColor. */
   commitLabelBackground: string
+  /** Font size for commit ID labels. Mermaid default: "10px". */
+  commitLabelFontSize?: string
   gitBranchLabel0: string
   gitBranchLabel1: string
   gitBranchLabel2: string

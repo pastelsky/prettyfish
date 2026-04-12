@@ -263,6 +263,15 @@ export interface DiagramConfig {
     messageMargin: number
     actorMargin: number
     width: number
+    actorFontFamily?: string
+    actorFontSize?: number
+    actorFontWeight?: string | number
+    noteFontFamily?: string
+    noteFontSize?: number
+    noteFontWeight?: string | number
+    messageFontFamily?: string
+    messageFontSize?: number
+    messageFontWeight?: string | number
   }
 
   gantt: {

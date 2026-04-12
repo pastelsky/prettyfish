@@ -29,8 +29,22 @@ const WHITE  = '#ffffff'
 const GREY_LIGHT = '#f5f5f5'
 const GREY_MID   = '#d4d4d4'
 const GREY_DARK  = '#6b6b6b'
-const MONO_FONT =
-  "'ui-monospace', 'Cascadia Code', 'Source Code Pro', 'JetBrains Mono', 'Fira Code', monospace"
+// ── Typography ──────────────────────────────────────────────────────────────
+// Two fonts, applied per diagram element:
+//
+//  ARCHIVO BLACK  — Display/headings. Chunky, heavy, unapologetic.
+//                   Gumroad / neo-brutalist poster energy.
+//                   → Sequence actors (via sequence.actorFontFamily)
+//
+//  SPACE GROTESK  — Body/UI text. Geometric grotesque with personality.
+//                   Slightly quirky 'a', 'g', 'y' terminals.
+//                   → Global default, messages, notes, all other diagrams.
+//
+// Note: Fira Code (monospace) is loaded in index.html for future use when
+// Mermaid exposes commitLabelFontFamily or classFontFamily themeVariables.
+//
+const DISPLAY_FONT = "'Archivo Black', 'Impact', sans-serif"
+const BODY_FONT    = "'Space Grotesk', 'DM Sans', 'Inter', sans-serif"
 
 const brutalistTheme: ThemePresetDef = {
   label: 'Brutalist',
@@ -49,7 +63,9 @@ const brutalistTheme: ThemePresetDef = {
       tertiaryBorderColor: BLACK,
       lineColor: BLACK,
       titleColor: BLACK,
-      fontFamily: MONO_FONT,
+      // Global default: Space Grotesk for body/labels across most diagrams.
+      // Per-element overrides applied in configOverrides below.
+      fontFamily: BODY_FONT,
     },
 
     flowchart: {
@@ -215,6 +231,9 @@ const brutalistTheme: ThemePresetDef = {
     xyChart: {
       // Full brutalist palette — passed as themeVariables.xyChart (nested, not flat)
       plotColorPalette: `${YELLOW},${RED},${BLUE},${GREEN},${ORANGE},${PURPLE},${CYAN},${AMBER}`,
+      // Axis and label text uses Space Grotesk body font
+      // Data labels use monospace for a code-like feel on numeric values
+      dataLabelColor: BLACK,
     },
 
     journey: {
@@ -237,8 +256,10 @@ const brutalistTheme: ThemePresetDef = {
 
   configOverrides: {
     look: 'classic',
-    fontFamily: MONO_FONT,
+    // Global body font — Space Grotesk as default for most elements
+    fontFamily: BODY_FONT,
     fontSize: 14,
+
     // Sharp, right-angle edges — brutalist aesthetic
     flowchart: {
       curve: 'linear',
@@ -247,11 +268,25 @@ const brutalistTheme: ThemePresetDef = {
       padding: 15,
       diagramPadding: 20,
     },
+
     sequence: {
       actorMargin: 80,
       messageMargin: 40,
       mirrorActors: false,
+      // Actors = the big display elements — Archivo Black (chunky, bold, loud)
+      actorFontFamily: DISPLAY_FONT,
+      actorFontSize: 13,
+      actorFontWeight: 400, // Archivo Black is already max weight
+      // Notes = aside/annotation — Space Grotesk body
+      noteFontFamily: BODY_FONT,
+      noteFontSize: 12,
+      noteFontWeight: 'normal',
+      // Messages = the action text — Space Grotesk slightly larger
+      messageFontFamily: BODY_FONT,
+      messageFontSize: 13,
+      messageFontWeight: 600, // semi-bold for readability
     },
+
     gantt: {
       barHeight: 28,
       barGap: 6,
