@@ -50,11 +50,11 @@ export function recordNudgeShown() {
 }
 
 // Rotating messages — [before logo, after logo]
-// The Pretty Fish pink logo is rendered inline between the two parts.
+// The Pretty Fish pink logo is rendered inline where the split occurs.
 const MESSAGES: [string, string][] = [
-  ["Pretty ", " lives rent-free in your browser. If it's been useful, throwing a few bucks our way keeps the lights on (and the fish swimming)."],
-  ["Built with too much coffee and genuine love for good diagrams. If Pretty ", " saved you some time, consider tossing a coin to your developer."],
-  ["Pretty ", " is free, open-source, and powered by stubbornness. If you've enjoyed it, GitHub Sponsors is a lovely way to say so."],
+  ["Pretty Fish lives rent-free in your browser. If it's been useful, throwing a few bucks our way keeps the lights on (and the ", " swimming)."],
+  ["Built with too much coffee and genuine love for good diagrams. If Pretty Fish saved you some time, consider tossing a coin to your developer.", ""],
+  ["Pretty Fish is free, open-source, and powered by stubbornness. If you've enjoyed it, GitHub Sponsors is a lovely way to say so.", ""],
 ]
 
 function getMessage(showCount: number): [string, string] {
@@ -111,7 +111,7 @@ export function SponsorNudge({ visible, onDismiss, showCount }: SponsorNudgeProp
             const [before, after] = getMessage(showCount)
             return (
               <>
-                {before}<img src="/favicon-pink.svg" alt="Pretty Fish" className="inline w-4 h-4 mx-0.5 align-middle" />{after}
+                {before}{after ? <><img src="/favicon-pink.svg" alt="Pretty Fish" className="inline w-4 h-4 mx-0.5 align-middle" />{after}</> : null}
               </>
             )
           })()}
