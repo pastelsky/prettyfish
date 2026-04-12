@@ -43,7 +43,7 @@ test.describe('MCP panel — production smoke', () => {
     const panel = page.getByTestId('mcp-panel')
     await expect(panel).toBeVisible()
     await expect(panel).toContainText('Connect MCP')
-    await expect(panel).toContainText('Per-tab relay session')
+    await expect(panel).toContainText('Per-page MCP session')
   })
 
   test('panel opens without auto-generating a session', async ({ page }) => {
