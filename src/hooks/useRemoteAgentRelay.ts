@@ -60,7 +60,6 @@ interface RemoteAgentRelayOptions {
   activePageId: string
   state: AppStoreState
   getState: () => AppState
-  createPageWithName: (name?: string, code?: string) => string
   createDiagramWithOptions: (options?: {
     pageId?: string
     name?: string

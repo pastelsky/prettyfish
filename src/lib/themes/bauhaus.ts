@@ -76,7 +76,7 @@ const bauhaus: ThemePresetDef = {
       classText: '#ffffff',
       fillType0: '#1565c0',
       fillType1: '#d32f2f',
-      fillType2: '#c68a00',
+      fillType2: '#8a6200',
       fillType3: '#2e7d32',
       fillType4: '#212121',
       fillType5: '#6a1b9a',
@@ -121,7 +121,7 @@ const bauhaus: ThemePresetDef = {
     pie: {
       pie1: '#1565c0',
       pie2: '#d32f2f',
-      pie3: '#c68a00',
+      pie3: '#8a6200',
       pie4: '#2e7d32',
       pie5: '#212121',
       pie6: '#6a1b9a',

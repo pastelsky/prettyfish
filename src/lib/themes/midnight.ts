@@ -51,7 +51,7 @@ const midnight: ThemePresetDef = {
       loopTextColor: '#969896',
       activationBkgColor: '#282a2e',
       activationBorderColor: '#e8927c',
-      sequenceNumberColor: '#e0e0e0',
+      sequenceNumberColor: '#1d1f21',
       noteBkgColor: '#373b41',
       noteTextColor: '#c5c8c6',
       noteBorderColor: '#5a5e63',

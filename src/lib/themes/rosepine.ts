@@ -50,7 +50,7 @@ const rosepine: ThemePresetDef = {
       loopTextColor: '#797593',
       activationBkgColor: '#f2e9e1',
       activationBorderColor: '#907aa9',
-      sequenceNumberColor: '#575279',
+      sequenceNumberColor: '#fffaf3',
       noteBkgColor: '#f4ede8',
       noteTextColor: '#575279',
       noteBorderColor: '#dfdad9',

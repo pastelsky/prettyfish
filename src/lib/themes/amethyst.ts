@@ -50,7 +50,7 @@ const amethyst: ThemePresetDef = {
       loopTextColor: '#6d28d9',
       activationBkgColor: '#c4b5fd',
       activationBorderColor: '#7c3aed',
-      sequenceNumberColor: '#3b0764',
+      sequenceNumberColor: '#ffffff',
       noteBkgColor: '#f5f3ff',
       noteTextColor: '#4c1d95',
       noteBorderColor: '#c4b5fd',

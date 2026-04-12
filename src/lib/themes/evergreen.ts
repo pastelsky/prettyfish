@@ -32,7 +32,7 @@ const evergreen: ThemePresetDef = {
     flowchart: {
       mainBkg: '#1b7a4e',
       nodeBorder: '#146340',
-      nodeTextColor: '#ffffff',
+      nodeTextColor: '#f7f7f5',
       clusterBkg: '#eeeee8',
       clusterBorder: '#999999',
       edgeLabelBackground: '#f7f7f5',
@@ -96,7 +96,7 @@ const evergreen: ThemePresetDef = {
       activeTaskBkgColor: '#d45b07',
       doneTaskBkgColor: '#999999',
       doneTaskBorderColor: '#6a6a6a',
-      critBkgColor: '#f5c4a8',
+      critBkgColor: '#b03a00',
       critBorderColor: '#d45b07',
       todayLineColor: '#d45b07',
     },

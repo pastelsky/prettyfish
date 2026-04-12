@@ -96,7 +96,7 @@ const dataviz: ThemePresetDef = {
       activeTaskBkgColor: '#e6550d',
       doneTaskBkgColor: '#969696',
       doneTaskBorderColor: '#636363',
-      critBkgColor: '#fee0d2',
+      critBkgColor: '#c0392b',
       critBorderColor: '#e6550d',
       todayLineColor: '#e6550d',
     },

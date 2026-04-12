@@ -32,7 +32,7 @@ const ocean: ThemePresetDef = {
     flowchart: {
       mainBkg: '#0d9488',
       nodeBorder: '#0f766e',
-      nodeTextColor: '#f8fafc',
+      nodeTextColor: '#ffffff',
       clusterBkg: '#f1f5f9',
       clusterBorder: '#cbd5e1',
       edgeLabelBackground: '#f8fafc',
@@ -96,7 +96,7 @@ const ocean: ThemePresetDef = {
       activeTaskBkgColor: '#6366f1',
       doneTaskBkgColor: '#94a3b8',
       doneTaskBorderColor: '#64748b',
-      critBkgColor: '#ffe4e6',
+      critBkgColor: '#be123c',
       critBorderColor: '#e11d48',
       todayLineColor: '#e11d48',
     },

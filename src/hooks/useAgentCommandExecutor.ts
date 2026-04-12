@@ -5,13 +5,12 @@ import type { AppStoreState } from '@/state/appStore'
 import type { AppState, Diagram, DiagramPage } from '@/types'
 
 export type BridgeCommandName =
-  | 'create_page'
+  | 'list_diagrams'
+  | 'get_diagram'
   | 'create_diagram'
   | 'set_diagram_code'
-  | 'render_status'
   | 'export_svg'
   | 'export_png'
-  | 'get_snapshot'
 
 export interface BrowserCommandEnvelope {
   id: string
@@ -22,7 +21,6 @@ export interface BrowserCommandEnvelope {
 interface AgentCommandExecutorOptions {
   state: AppStoreState
   getState: () => AppState
-  createPageWithName: (name?: string, code?: string) => string
   createDiagramWithOptions: (options?: {
     pageId?: string
     name?: string
@@ -82,14 +80,12 @@ async function blobToBase64(blob: Blob): Promise<string> {
 export function useAgentCommandExecutor({
   state,
   getState,
-  createPageWithName,
   createDiagramWithOptions,
   selectDiagram,
   updateDiagramCode,
 }: AgentCommandExecutorOptions) {
   const stateRef = useRef(state)
   const getStateRef = useRef(getState)
-  const createPageWithNameRef = useRef(createPageWithName)
   const createDiagramWithOptionsRef = useRef(createDiagramWithOptions)
   const selectDiagramRef = useRef(selectDiagram)
   const updateDiagramCodeRef = useRef(updateDiagramCode)
@@ -100,11 +96,10 @@ export function useAgentCommandExecutor({
 
   useEffect(() => {
     getStateRef.current = getState
-    createPageWithNameRef.current = createPageWithName
     createDiagramWithOptionsRef.current = createDiagramWithOptions
     selectDiagramRef.current = selectDiagram
     updateDiagramCodeRef.current = updateDiagramCode
-  }, [createDiagramWithOptions, createPageWithName, getState, selectDiagram, updateDiagramCode])
+  }, [createDiagramWithOptions, getState, selectDiagram, updateDiagramCode])
 
   const waitForDiagramRender = useCallback((diagramId: string, timeoutMs = 8_000) => {
     const start = Date.now()
@@ -138,27 +133,6 @@ export function useAgentCommandExecutor({
     })
   }, [])
 
-  const waitForPage = useCallback((pageId: string, timeoutMs = 4_000) => {
-    const start = Date.now()
-
-    return new Promise<DiagramPage>((resolve, reject) => {
-      const poll = () => {
-        const page = stateRef.current.pages.find((candidate) => candidate.id === pageId)
-        if (page) {
-          resolve(page)
-          return
-        }
-        if (Date.now() - start >= timeoutMs) {
-          reject(new Error(`Timed out waiting for page: ${pageId}`))
-          return
-        }
-        window.setTimeout(poll, 50)
-      }
-
-      poll()
-    })
-  }, [])
-
   const waitForDiagram = useCallback((diagramId: string, timeoutMs = 4_000) => {
     const start = Date.now()
 
@@ -185,17 +159,57 @@ export function useAgentCommandExecutor({
     const args = command.args || {}
 
     switch (command.type) {
-      case 'create_page': {
-        const pageName = typeof args.name === 'string' ? args.name : undefined
-        const pageCode = typeof args.code === 'string' ? args.code : ''
-        const pageId = createPageWithNameRef.current(pageName, pageCode)
-        const page = await waitForPage(pageId)
-        return { page: summarizePage(page) }
+      case 'list_diagrams': {
+        const activePage = liveState.pages.find((p) => p.id === liveState.activePageId) ?? liveState.pages[0]
+        if (!activePage) throw new Error('No active page')
+        const includeCode = args.include_code === true
+        return {
+          page: summarizePage(activePage),
+          diagrams: activePage.diagrams.map((d) => ({
+            id: d.id,
+            name: d.name,
+            ...(includeCode ? { code: d.code } : {}),
+          })),
+        }
+      }
+
+      case 'get_diagram': {
+        const activePage = liveState.pages.find((p) => p.id === liveState.activePageId) ?? liveState.pages[0]
+        if (!activePage) throw new Error('No active page')
+        const targetId = typeof args.diagramId === 'string' ? args.diagramId : ''
+        const targetName = typeof args.name === 'string' ? args.name : ''
+
+        let match: { page: DiagramPage; diagram: Diagram } | null = null
+        if (targetId) {
+          match = findDiagram(liveState.pages, targetId)
+        } else if (targetName) {
+          const lower = targetName.toLowerCase()
+          const diagram = activePage.diagrams.find(
+            (d) => d.name.toLowerCase() === lower
+              || d.name.toLowerCase().includes(lower)
+              || lower.includes(d.name.toLowerCase()),
+          )
+          if (diagram) match = { page: activePage, diagram }
+        }
+
+        if (!match) {
+          const available = activePage.diagrams.map((d) => ({ id: d.id, name: d.name }))
+          return {
+            error: `Diagram not found. Use list_diagrams to see available diagrams.`,
+            available,
+          }
+        }
+
+        return {
+          diagram: {
+            ...summarizeDiagram(match.page, match.diagram),
+            code: match.diagram.code,
+          },
+        }
       }
 
       case 'create_diagram': {
         const diagramId = createDiagramWithOptionsRef.current({
-          pageId: typeof args.pageId === 'string' ? args.pageId : undefined,
           name: typeof args.name === 'string' ? args.name : undefined,
           code: typeof args.code === 'string' ? args.code : undefined,
           width: typeof args.width === 'number' ? args.width : undefined,
@@ -231,21 +245,6 @@ export function useAgentCommandExecutor({
         }
       }
 
-      case 'render_status': {
-        const diagramId = typeof args.diagramId === 'string' ? args.diagramId : getActiveDiagramId(liveState)
-        if (!diagramId) throw new Error('diagramId is required')
-        const match = findDiagram(liveState.pages, diagramId)
-        if (!match) throw new Error(`Diagram not found: ${diagramId}`)
-        return {
-          diagram: summarizeDiagram(match.page, match.diagram),
-          render: {
-            status: match.diagram.render?.status ?? 'queued',
-            error: match.diagram.render?.error ?? null,
-            svgWidth: match.diagram.render?.svgWidth ?? null,
-            svgHeight: match.diagram.render?.svgHeight ?? null,
-          },
-        }
-      }
 
       case 'export_svg': {
         const diagramId = typeof args.diagramId === 'string' ? args.diagramId : getActiveDiagramId(liveState)
@@ -283,13 +282,10 @@ export function useAgentCommandExecutor({
         }
       }
 
-      case 'get_snapshot':
-        return { snapshot: getStateRef.current() }
-
       default:
         throw new Error(`Unsupported bridge command: ${command.type}`)
     }
-  }, [waitForDiagram, waitForDiagramRender, waitForPage])
+  }, [waitForDiagram, waitForDiagramRender])
 
   return { executeCommand }
 }

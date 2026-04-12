@@ -37,7 +37,7 @@ function contrastRatio(hex1, hex2) {
 function getColorPairs(vars) {
   return [
     // ── Core / Flowchart ──
-    { diagram: 'flowchart', label: 'Node text on primary bg', text: vars.primaryTextColor, bg: vars.mainBkg || vars.primaryColor },
+    // nodeTextColor is the actual rendered text inside flowchart nodes (mainBkg is the node fill)
     { diagram: 'flowchart', label: 'Node text on node bg', text: vars.nodeTextColor || vars.primaryTextColor, bg: vars.mainBkg || vars.primaryColor },
     { diagram: 'flowchart', label: 'Secondary text on secondary bg', text: vars.secondaryTextColor, bg: vars.secondaryColor },
     { diagram: 'flowchart', label: 'Tertiary text on tertiary bg', text: vars.tertiaryTextColor, bg: vars.tertiaryColor },
@@ -50,10 +50,14 @@ function getColorPairs(vars) {
     { diagram: 'sequence', label: 'Label text on label box', text: vars.labelTextColor, bg: vars.labelBoxBkgColor },
     { diagram: 'sequence', label: 'Loop text on background', text: vars.loopTextColor, bg: vars.background || '#ffffff' },
     { diagram: 'sequence', label: 'Note text on note bg', text: vars.noteTextColor, bg: vars.noteBkgColor },
-    { diagram: 'sequence', label: 'Seq number on primary', text: vars.sequenceNumberColor, bg: vars.primaryColor },
+    // sequenceNumberColor is the text inside the autonumber circles — the circle bg matches actorBkg
+    { diagram: 'sequence', label: 'Seq number on actor bg (autonumber circles)', text: vars.sequenceNumberColor, bg: vars.actorBkg },
+    // Activation box text (signal text shown over activation bars)
+    { diagram: 'sequence', label: 'Signal text on activation bg', text: vars.signalTextColor, bg: vars.activationBkgColor },
 
     // ── ER ──
-    { diagram: 'er', label: 'Primary text on entity header', text: vars.primaryTextColor, bg: vars.primaryColor },
+    // ER entity headers use nodeTextColor (same as flowchart node text) on primaryColor background
+    { diagram: 'er', label: 'Node text on entity header', text: vars.nodeTextColor || vars.primaryTextColor, bg: vars.primaryColor },
     { diagram: 'er', label: 'Primary text on attr row odd', text: vars.primaryTextColor, bg: vars.attributeBackgroundColorOdd },
     { diagram: 'er', label: 'Primary text on attr row even', text: vars.primaryTextColor, bg: vars.attributeBackgroundColorEven },
 

@@ -66,14 +66,13 @@ const PUBLIC_ORIGIN_PATTERNS = [
   /^http:\/\/127\.0\.0\.1:\d+$/,
 ]
 const MCP_TOOL_DEFINITIONS = [
-  { name: 'session_info', description: 'Return the current relay session details and browser attach URL.', inputSchema: { type: 'object', properties: {} } },
-  { name: 'create_page', description: 'Create a new page in the connected Pretty Fish browser tab.', inputSchema: { type: 'object', properties: { name: { type: 'string' }, code: { type: 'string' } } } },
-  { name: 'create_diagram', description: 'Create a new diagram in the connected Pretty Fish browser tab.', inputSchema: { type: 'object', properties: { pageId: { type: 'string' }, name: { type: 'string' }, code: { type: 'string' }, width: { type: 'number' } } } },
-  { name: 'set_diagram_code', description: 'Replace Mermaid source and wait for render completion.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, code: { type: 'string' }, timeoutMs: { type: 'number' }, select: { type: 'boolean' } }, required: ['diagramId', 'code'] } },
-  { name: 'render_status', description: 'Read render status from the connected browser session.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' } } } },
-  { name: 'export_svg', description: 'Export the current rendered diagram as SVG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, timeoutMs: { type: 'number' } } } },
-  { name: 'export_png', description: 'Export the current rendered diagram as PNG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, background: { type: 'string' }, scale: { type: 'number' }, timeoutMs: { type: 'number' } } } },
-  { name: 'get_snapshot', description: 'Return the full Pretty Fish document snapshot.', inputSchema: { type: 'object', properties: {} } },
+  { name: 'session_info', description: 'Return the current relay session details.', inputSchema: { type: 'object', properties: {} } },
+  { name: 'list_diagrams', description: 'List all diagrams on the current page. Returns each diagram\'s ID and name. Use include_code to also return the Mermaid source.', inputSchema: { type: 'object', properties: { include_code: { type: 'boolean', description: 'Include Mermaid source code for each diagram. Defaults to false.' } } } },
+  { name: 'get_diagram', description: 'Get a single diagram by ID or name. Returns the diagram\'s details and Mermaid source code. If not found, suggests using list_diagrams.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string', description: 'Diagram ID (exact match).' }, name: { type: 'string', description: 'Diagram name (case-insensitive fuzzy match).' } } } },
+  { name: 'create_diagram', description: 'Create a new Mermaid diagram on the current page. Always provide a short, descriptive name based on the diagram content.', inputSchema: { type: 'object', properties: { name: { type: 'string', description: 'A short descriptive name for the diagram (e.g. "User Auth Flow", "DB Schema").' }, code: { type: 'string', description: 'Mermaid diagram source code.' }, width: { type: 'number' } } } },
+  { name: 'set_diagram_code', description: 'Replace a diagram\'s Mermaid source code and wait for render.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, code: { type: 'string' }, timeoutMs: { type: 'number' }, select: { type: 'boolean' } }, required: ['diagramId', 'code'] } },
+  { name: 'export_svg', description: 'Export a diagram as SVG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, timeoutMs: { type: 'number' } } } },
+  { name: 'export_png', description: 'Export a diagram as PNG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, background: { type: 'string' }, scale: { type: 'number' }, timeoutMs: { type: 'number' } } } },
 ] as const
 
 function normalizeOrigin(origin: string | null): string | null {
@@ -498,10 +497,9 @@ export class RelaySessionDurableObject {
                 browserAttached: Boolean(this.getBrowserSocket()?.readyState === WebSocket.OPEN),
               }),
             }
-          case 'create_page':
-          case 'create_diagram':
-          case 'render_status':
-          case 'get_snapshot': {
+          case 'list_diagrams':
+          case 'get_diagram':
+          case 'create_diagram': {
             const payload = await this.sendCommandToBrowser(toolName, args)
             return { jsonrpc: '2.0', id, result: textResult(payload) }
           }
