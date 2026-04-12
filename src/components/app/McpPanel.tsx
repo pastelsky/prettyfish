@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, Copy, PlugsConnected, Sparkle, X, ArrowsClockwise } from '@phosphor-icons/react'
+import { Check, Copy, PlugsConnected, ArrowsClockwise, X, Terminal } from '@phosphor-icons/react'
 import CodeMirror from '@uiw/react-codemirror'
 import { json } from '@codemirror/lang-json'
 import { githubLight, githubDark } from '@uiw/codemirror-theme-github'
@@ -75,16 +75,16 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
 
   const configSnippet = remoteRelay.getHostedConfigSnippet()
   const statusLabel = isConnected
-    ? 'Browser connected'
+    ? 'Connected'
     : isBusy
-      ? 'Creating session…'
+      ? 'Creating…'
       : hasSession
-        ? 'Session ready'
+        ? 'Ready'
         : 'No session'
 
   return (
     <>
-      {/* Backdrop — click to close */}
+      {/* Backdrop */}
       <div
         className="absolute inset-0 z-40"
         onClick={onClose}
@@ -110,11 +110,11 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
         <div className="flex items-start justify-between gap-2 border-b px-4 py-3">
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-              <Sparkle className="h-4 w-4 text-primary" />
+              <Terminal className="h-4 w-4 text-primary" weight="duotone" />
               <span className="font-semibold">Connect MCP</span>
             </div>
             <p className="text-xs text-muted-foreground">
-              Per-page MCP session — lets any AI agent create and export diagrams on this page.
+              Let an AI agent create and export diagrams on this page.
             </p>
           </div>
           <button
@@ -130,28 +130,27 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
         {/* Body */}
         <div className="space-y-3 p-4">
 
-          {/* ── Session row ── */}
+          {/* Session status + actions */}
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 min-w-0">
               <StatusDot status={remoteRelay.status} />
-              <span className="font-medium text-sm">{statusLabel}</span>
+              <span className="text-sm font-medium">{statusLabel}</span>
               {hasSession && remoteRelay.displayId && (
-                <span className="rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
+                <span className="truncate rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
                   {remoteRelay.displayId}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               {hasSession && !isConnected && !isBusy && (
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-7 px-2 text-xs"
+                  className="h-7 w-7 p-0"
                   onClick={() => void remoteRelay.connect()}
-                  title="Reconnect browser WebSocket"
+                  title="Reconnect"
                 >
-                  <ArrowsClockwise className="h-3 w-3" />
-                  Reconnect
+                  <ArrowsClockwise className="h-3.5 w-3.5" />
                 </Button>
               )}
               <Button
@@ -162,28 +161,30 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
                 disabled={isBusy}
               >
                 <PlugsConnected className="h-3 w-3" />
-                {hasSession ? 'New session' : 'Generate session'}
+                {hasSession ? 'New' : 'Generate'}
               </Button>
             </div>
           </div>
 
-          {/* Error message */}
+          {/* Error */}
           {remoteRelay.error && (
             <div className="rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-950/40 dark:text-red-400">
               {remoteRelay.error}
             </div>
           )}
 
-          {/* ── MCP config — only shown once a session exists ── */}
+          {/* MCP config (only when session exists) */}
           {hasSession ? (
             <>
               <div className="h-px bg-border" />
+
+              {/* JSON config */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">MCP config</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">JSON config</p>
                   <CopyButton value={configSnippet} />
                 </div>
-                <div className="overflow-hidden rounded-lg border border-black/8 dark:border-white/10 text-[11px]">
+                <div className="overflow-hidden rounded-lg border border-black/8 text-[11px] dark:border-white/10">
                   <CodeMirror
                     value={configSnippet}
                     extensions={[json()]}
@@ -198,16 +199,28 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
                     style={{ fontSize: '11px' }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Paste into your AI client (Claude Desktop, Cursor, etc.) to connect it to this tab.
-                </p>
               </div>
+
+              {/* npx command */}
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Or run directly</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded-lg bg-muted px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                    npx prettyfish-mcp --url {remoteRelay.mcpUrl.split('?')[0]}
+                  </code>
+                  <CopyButton value={`npx prettyfish-mcp --url "${remoteRelay.mcpUrl}"`} />
+                </div>
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Paste the config into Claude Desktop, Cursor, or any MCP client.
+              </p>
             </>
           ) : !isBusy ? (
             <>
               <div className="h-px bg-border" />
               <p className="text-xs text-muted-foreground">
-                Generate a session to get your MCP config URL.
+                Generate a session to get your MCP config.
               </p>
             </>
           ) : null}
