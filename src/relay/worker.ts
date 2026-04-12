@@ -277,15 +277,35 @@ export async function handleRelayRequest(request: Request, env: RelayWorkerEnv):
   const mcpMatch = url.pathname.match(/^\/mcp\/([^/]+)$/)
   if (mcpMatch) {
     const [, sessionId] = mcpMatch
-    if (request.method !== 'POST') {
-      return jsonResponse({ error: 'Method not allowed' }, 405)
-    }
     const stub = getSessionStub(env, sessionId)
-    return stub.fetch('https://relay.internal/mcp', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: await request.text(),
-    })
+
+    // MCP Streamable HTTP: POST for JSON-RPC calls, GET for SSE stream
+    if (request.method === 'POST') {
+      const body = await request.text()
+      const accept = request.headers.get('accept') || ''
+      return stub.fetch('https://relay.internal/mcp', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          'accept': accept,
+        },
+        body,
+      })
+    }
+
+    if (request.method === 'GET') {
+      // SSE endpoint for server-initiated messages (required by MCP Streamable HTTP)
+      return stub.fetch('https://relay.internal/mcp/sse', {
+        method: 'GET',
+        headers: { 'accept': 'text/event-stream' },
+      })
+    }
+
+    if (request.method === 'DELETE') {
+      return jsonResponse({ ok: true })
+    }
+
+    return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
   const match = url.pathname.match(/^\/relay\/sessions\/([^/]+)\/(browser|agent)$/)
@@ -603,8 +623,45 @@ export class RelaySessionDurableObject {
         }, 400)
       }
 
-      const response = await this.handleMcpRequest(body)
-      return jsonResponse(response)
+      const result = await this.handleMcpRequest(body)
+      const accept = request.headers.get('accept') || ''
+
+      // MCP Streamable HTTP: if client accepts SSE, wrap response as SSE event
+      if (accept.includes('text/event-stream')) {
+        const sseData = `data: ${JSON.stringify(result)}\n\n`
+        return new Response(sseData, {
+          status: 200,
+          headers: {
+            'content-type': 'text/event-stream',
+            'cache-control': 'no-cache',
+            'connection': 'keep-alive',
+          },
+        })
+      }
+
+      return jsonResponse(result)
+    }
+
+    // SSE GET endpoint — keep-alive stream for server-initiated messages
+    if (request.method === 'GET' && url.pathname === '/mcp/sse') {
+      const encoder = new TextEncoder()
+      const stream = new ReadableStream({
+        start(controller) {
+          // Send an initial comment to establish the connection
+          controller.enqueue(encoder.encode(': connected\n\n'))
+          // Keep the stream open — in a real implementation we'd push
+          // server-initiated notifications here. For now this is a no-op
+          // keep-alive that satisfies the SSE handshake requirement.
+        },
+      })
+      return new Response(stream, {
+        status: 200,
+        headers: {
+          'content-type': 'text/event-stream',
+          'cache-control': 'no-cache',
+          'connection': 'keep-alive',
+        },
+      })
     }
 
     return jsonResponse({ error: 'Not found' }, 404)
