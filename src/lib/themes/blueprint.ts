@@ -49,7 +49,7 @@ const blueprint: ThemePresetDef = {
       loopTextColor: '#0a2d6b',
       activationBkgColor: '#c8d8f0',
       activationBorderColor: '#0a2d6b',
-      sequenceNumberColor: '#0a2d6b',
+      sequenceNumberColor: '#ffffff',
       noteBkgColor: '#eef3ff',
       noteTextColor: '#0a2d6b',
       noteBorderColor: '#1a4a9a',

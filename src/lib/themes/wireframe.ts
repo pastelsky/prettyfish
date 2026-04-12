@@ -48,7 +48,7 @@ const wireframe: ThemePresetDef = {
       loopTextColor: '#666666',
       activationBkgColor: '#eeeeee',
       activationBorderColor: '#999999',
-      sequenceNumberColor: '#333333',
+      sequenceNumberColor: '#ffffff',
       noteBkgColor: '#fff9c4',
       noteTextColor: '#333333',
       noteBorderColor: '#e6d85e',
