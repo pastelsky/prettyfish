@@ -51,34 +51,33 @@ const WCAG_AA_LARGE = 3.0 // minimum for large/bold text
 
 // ── Mermaid rendering helper ──────────────────────────────────────────────────
 
-interface ThemeVars {
-  background?: string
-  [key: string]: string | undefined
-}
-
 /**
- * Navigate to the render harness served by contrast-server.mjs, then call
- * window.renderDiagram() via page.evaluate() to render the diagram.
- * The harness page already has mermaid.js loaded — we just pass config.
+ * Navigate to /contrast-audit (the app's ContrastAuditPage component) and call
+ * window.__renderForAudit() — which uses the app's real renderDiagram() pipeline.
+ * This means contrast tests exercise EXACTLY the same code as production.
  */
-async function renderDiagram(
+async function renderDiagramForAudit(
   page: Page,
   code: string,
-  themeVars: ThemeVars,
+  themeId: string,
   configOverrides: Record<string, unknown> = {}
 ): Promise<void> {
-  // Navigate to harness (only needed once per page — page is reused within a test)
-  if (!page.url().includes('/render.html')) {
-    await page.goto('/render.html', { waitUntil: 'domcontentloaded' })
-    await page.waitForFunction(() => (window as unknown as { __ready?: boolean }).__ready === true, { timeout: 10000 })
+  // Navigate once per page; reuse for subsequent renders within the same test
+  if (!page.url().includes('/contrast-audit')) {
+    await page.goto('/contrast-audit', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(
+      () => (window as unknown as { __ready?: boolean }).__ready === true,
+      { timeout: 10000 }
+    )
   }
 
   const result = await page.evaluate(
-    async ({ code: c, themeVars: tv, configOverrides: co }) => {
-      return (window as unknown as { renderDiagram: (a: string, b: unknown, c: unknown) => Promise<{ ok: boolean; error?: string }> })
-        .renderDiagram(c, tv, co)
+    async ({ code: c, themeId: t, configOverrides: co }) => {
+      return (window as unknown as {
+        __renderForAudit: (a: string, b: string, c: Record<string, unknown>) => Promise<{ ok: boolean; error?: string }>
+      }).__renderForAudit(c, t, co)
     },
-    { code, themeVars, configOverrides }
+    { code, themeId, configOverrides }
   )
 
   if (!result.ok) {
@@ -152,22 +151,14 @@ async function checkColorPair(
 
 // ── Theme loading ─────────────────────────────────────────────────────────────
 
-// Dynamically load theme presets at test time
-let _themes: Record<string, { label: string; themeVariables: ThemeVars; configOverrides?: Record<string, unknown> }> | null = null
+// Dynamically load theme IDs + labels at test time
+let _themes: Record<string, { label: string }> | null = null
 
 async function loadThemes() {
   if (_themes) return _themes
-  // Use dynamic import via tsx transform
   const { CUSTOM_THEME_PRESETS } = await import('../../../src/lib/themePresets.ts')
   _themes = Object.fromEntries(
-    Object.entries(CUSTOM_THEME_PRESETS).map(([id, preset]) => [
-      id,
-      {
-        label: preset.label,
-        themeVariables: preset.themeVariables as ThemeVars,
-        configOverrides: preset.configOverrides as Record<string, unknown> | undefined,
-      },
-    ])
+    Object.entries(CUSTOM_THEME_PRESETS).map(([id, preset]) => [id, { label: preset.label }])
   )
   return _themes
 }
@@ -184,12 +175,10 @@ function forEachTheme(
     const themes = await loadThemes()
     const failures: string[] = []
 
-    for (const [, theme] of Object.entries(themes)) {
+    for (const [themeId, theme] of Object.entries(themes)) {
       try {
-        await renderDiagram(page, diagramCode, theme.themeVariables, {
-          ...theme.configOverrides,
-          ...mermaidConfig,
-        })
+        // Uses the app's real renderDiagram() pipeline via /contrast-audit route
+        await renderDiagramForAudit(page, diagramCode, themeId, mermaidConfig)
       } catch {
         // Some diagram types may not render in some themes — skip
         continue

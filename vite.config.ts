@@ -7,13 +7,14 @@ import istanbul from 'vite-plugin-istanbul'
 import { cloudflare } from '@cloudflare/vite-plugin'
 
 const isVitest = process.env.VITEST === 'true'
+const isPlaywright = process.env.PLAYWRIGHT === 'true'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    !isVitest ? cloudflare() : null,
+    !isVitest && !isPlaywright ? cloudflare() : null,
     process.env.PLAYWRIGHT_COVERAGE
       ? istanbul({
           include: 'src/*',
