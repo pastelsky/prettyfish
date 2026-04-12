@@ -155,7 +155,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
 
   // ── Auto-reconnect — exponential backoff, max 10 attempts ─────────────────
   // Use a ref to hold the latest connectWithSession to avoid circular dep.
-  const connectWithSessionRef = useRef<(sid: string, token: string) => Promise<void>>()
+  const connectWithSessionRef = useRef<((sid: string, token: string) => Promise<void>) | undefined>(undefined)
 
   const scheduleReconnect = useCallback(() => {
     if (intentionalDisconnectRef.current) return
