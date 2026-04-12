@@ -354,6 +354,12 @@ function InnerCanvas({
       // Enforce single-selection semantics at the React Flow layer too.
       selectionOnDrag={false}
       multiSelectionKeyCode={null}
+      // Diagrams are not connectable — disable handles entirely
+      nodesConnectable={false}
+      // Don't auto-select nodes when dragging — only on click
+      selectNodesOnDrag={false}
+      // Require a small drag threshold to prevent accidental drags on click
+      nodeDragThreshold={5}
       style={{ background: bgColor }}
       deleteKeyCode={null} // We handle delete ourselves
       proOptions={{ hideAttribution: true }}
