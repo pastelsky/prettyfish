@@ -301,13 +301,25 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // Keep ref updated so scheduleReconnect can call it without circular dep
   connectWithSessionRef.current = connectWithSession
 
-  // ── Auto-reconnect on mount / page switch if stored session exists ─────────
+  // ── Auto-attach browser on mount / page switch if stored session exists ─────
   useEffect(() => {
     if (attemptedAutoConnectRef.current) return
     if (!sessionId || !browserToken) return
     attemptedAutoConnectRef.current = true
+    // Passive self-healing: re-attach the browser tab silently for existing sessions.
+    // Do not show scary errors here; user-visible errors are gated on explicit intent.
     void connectWithSession(sessionId, browserToken)
   }, [browserToken, connectWithSession, sessionId])
+
+  // ── If a session exists but browser is detached, keep trying to re-attach ────
+  useEffect(() => {
+    if (!sessionId || !browserToken) return
+    if (status === 'connected' || status === 'connecting') return
+    const timer = setTimeout(() => {
+      void connectWithSession(sessionId, browserToken)
+    }, 1200)
+    return () => clearTimeout(timer)
+  }, [browserToken, connectWithSession, sessionId, status])
 
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
