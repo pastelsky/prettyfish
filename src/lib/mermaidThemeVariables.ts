@@ -148,6 +148,10 @@ export interface PieVars {
   pieTitleTextColor: string
   pieSectionTextColor: string
   pieStrokeColor: string
+  /** Stroke color for the outer ring of the pie chart. Defaults to pieStrokeColor. */
+  pieOuterStrokeColor?: string
+  /** Width of the outer ring stroke. */
+  pieOuterStrokeWidth?: string
 }
 
 /** Requirement diagram — boxes and relation lines. */

@@ -167,12 +167,17 @@ const brutalistTheme: ThemePresetDef = {
       pie3: ORANGE,   // 4.6:1 with black ✓
       pie4: AMBER,    // 9.4:1 with black ✓
       pie5: CYAN,     // 4.6:1 with black ✓
-      pie6: '#ccf5e4', // pale green — 17:1 ✓
-      pie7: '#ffd6d6', // pale red — 16:1 ✓
-      pie8: '#d6e4ff', // pale blue — 18:1 ✓
+      // For dark slices, use white text convention — but pieSectionTextColor is global.
+      // Keep all slices light/mid-saturation so black text works across all 8.
+      pie6: RED,       // bold red — keep but accept 4.5:1 large text threshold
+      pie7: BLUE,      // electric blue
+      pie8: PURPLE,    // vivid purple
       pieTitleTextColor: BLACK,
-      pieSectionTextColor: BLACK,
-      pieStrokeColor: WHITE,
+      pieSectionTextColor: WHITE, // white works on RED, BLUE, PURPLE (dark) — and is visible on light slices too (3:1 large text)
+      // Brutalist: black borders between slices and outer ring — bold, graphic
+      pieStrokeColor: BLACK,
+      pieOuterStrokeColor: BLACK,
+      pieOuterStrokeWidth: '3px',
     },
 
     requirement: {
@@ -247,6 +252,10 @@ const brutalistTheme: ThemePresetDef = {
       barGap: 6,
       topPadding: 60,
       axisFormat: '%Y-%m-%d',
+    },
+    // XY chart: full brutalist color palette for bar/line series
+    xyChart: {
+      plotColorPalette: `${YELLOW},${RED},${BLUE},${GREEN},${ORANGE},${PURPLE},${CYAN},${AMBER}`,
     },
   },
 }
