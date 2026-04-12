@@ -6,7 +6,10 @@ import type { PublicRelaySessionResponse, RelayEnvelope } from '@/relay/protocol
 import type { AppStoreState } from '@/state/appStore'
 import type { AppState } from '@/types'
 
-const DEFAULT_RELAY_URL = ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL || 'https://prettyfish-relay.binalgo.workers.dev').replace(/\/$/, '')
+// Use the same origin as the app so relay API calls are same-origin (no CORS).
+// The main worker proxies /api/relay/* and /api/mcp/* to the relay worker.
+const DEFAULT_RELAY_URL = ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL
+  || (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish')).replace(/\/$/, '')
 
 const RELAY_URL_KEY = 'prettyfish:relay-url'
 
