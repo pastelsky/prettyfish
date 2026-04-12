@@ -3,6 +3,16 @@ import { afterEach, describe, expect, test, vi } from 'vitest'
 import { decodeStateFromHash } from '../share'
 import { normalizeAppState, normalizePages, normalizePersistedDocumentState } from '../documentState'
 import { MERMAID_THEMES } from '../../types'
+import { THEME_PRESET_DEFS } from '../themePresetDefs'
+
+// ── Theme registration sanity check ────────────────────────────────────────────
+// Every theme defined in THEME_PRESET_DEFS must appear in MERMAID_THEMES.
+// If you add a new theme file, you must also register it in both places.
+test('all THEME_PRESET_DEFS entries are registered in MERMAID_THEMES', () => {
+  const registered = new Set(MERMAID_THEMES.map(t => t.value))
+  const missing = Object.keys(THEME_PRESET_DEFS).filter(id => !registered.has(id as never))
+  expect(missing, `Theme(s) defined but not registered in MERMAID_THEMES: ${missing.join(', ')}`).toEqual([])
+})
 
 const originalWindow = globalThis.window
 
