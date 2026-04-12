@@ -293,8 +293,38 @@ export function useAgentCommandExecutor({
           mermaidTheme: typeof args.theme === 'string' ? (args.theme as MermaidTheme) : undefined,
         })
         if (!diagramId) throw new Error('Unable to create diagram')
-        const match = await waitForDiagram(diagramId)
-        return { diagram: summarizeDiagram(match.page, match.diagram) }
+        // Wait for diagram to exist in state, then wait for render to complete.
+        // This ensures the agent gets back the actual render result (including any
+        // syntax errors) rather than a 'queued' status with no useful feedback.
+        await waitForDiagram(diagramId)
+        let rendered: Diagram
+        try {
+          rendered = await waitForDiagramRender(diagramId)
+        } catch (renderError) {
+          // Render failed (syntax error etc) — find the diagram and return the error
+          // so the agent can fix the code rather than silently producing a broken diagram.
+          const latestMatch = findDiagram(stateRef.current.pages, diagramId)
+          if (!latestMatch) throw renderError
+          return {
+            diagram: summarizeDiagram(latestMatch.page, latestMatch.diagram),
+            render: {
+              status: 'error',
+              error: renderError instanceof Error ? renderError.message : 'Render failed',
+            },
+            hint: 'The diagram was created but failed to render. Fix the Mermaid syntax and call set_diagram_code with the corrected code.',
+          }
+        }
+        const latestMatch = findDiagram(stateRef.current.pages, diagramId)
+        if (!latestMatch) throw new Error(`Diagram not found after render: ${diagramId}`)
+        return {
+          diagram: summarizeDiagram(latestMatch.page, rendered),
+          render: {
+            status: rendered.render?.status ?? 'ready',
+            error: rendered.render?.error ?? null,
+            svgWidth: rendered.render?.svgWidth ?? null,
+            svgHeight: rendered.render?.svgHeight ?? null,
+          },
+        }
       }
 
       case 'set_diagram_code': {
