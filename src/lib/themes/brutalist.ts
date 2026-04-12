@@ -32,7 +32,7 @@ const GREY_DARK  = '#6b6b6b'
 const MONO_FONT =
   "'ui-monospace', 'Cascadia Code', 'Source Code Pro', 'JetBrains Mono', 'Fira Code', monospace"
 
-export const brutalistTheme: ThemePresetDef = {
+const brutalistTheme: ThemePresetDef = {
   label: 'Brutalist',
   description: 'Neo-brutalism: bold yellow accents, near-black borders, monospace typography',
   vars: {
@@ -250,3 +250,5 @@ export const brutalistTheme: ThemePresetDef = {
     },
   },
 }
+
+export default brutalistTheme

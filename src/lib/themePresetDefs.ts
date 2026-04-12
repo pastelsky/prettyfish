@@ -14,6 +14,7 @@ import blueprint from './themes/blueprint'
 import terracotta from './themes/terracotta'
 import midnight from './themes/midnight'
 import ocean from './themes/ocean'
+import brutalist from './themes/brutalist'
 
 export interface ThemePresetDef {
   label: string
@@ -46,4 +47,5 @@ export const THEME_PRESET_DEFS: Record<string, ThemePresetDef> = {
   terracotta,
   midnight,
   ocean,
+  brutalist,
 }
