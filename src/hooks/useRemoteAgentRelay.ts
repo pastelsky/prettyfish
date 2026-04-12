@@ -69,6 +69,7 @@ interface RemoteAgentRelayOptions {
   }) => string | undefined
   selectDiagram: (diagramId: string) => void
   updateDiagramCode: (diagramId: string, code: string) => void
+  updateDiagramDescription: (diagramId: string, description: string) => void
 }
 
 export interface RemoteAgentRelayControls {

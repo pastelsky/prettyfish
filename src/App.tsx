@@ -127,6 +127,7 @@ export default function App() {
     createDiagramWithOptions,
     selectDiagram,
     updateDiagramCode,
+    updateDiagramDescription,
   })
 
   const ENABLE_WEBMCP = false

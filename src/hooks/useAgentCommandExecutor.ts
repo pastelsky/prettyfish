@@ -38,6 +38,7 @@ interface AgentCommandExecutorOptions {
   }) => string | undefined
   selectDiagram: (diagramId: string) => void
   updateDiagramCode: (diagramId: string, code: string) => void
+  updateDiagramDescription: (diagramId: string, description: string) => void
 }
 
 function findDiagram(pages: DiagramPage[], diagramId: string): { page: DiagramPage; diagram: Diagram } | null {
@@ -93,6 +94,7 @@ export function useAgentCommandExecutor({
   createDiagramWithOptions,
   selectDiagram,
   updateDiagramCode,
+  updateDiagramDescription,
 }: AgentCommandExecutorOptions) {
   const stateRef = useRef(state)
   const getStateRef = useRef(getState)
@@ -100,6 +102,7 @@ export function useAgentCommandExecutor({
   const createDiagramWithOptionsRef = useRef(createDiagramWithOptions)
   const selectDiagramRef = useRef(selectDiagram)
   const updateDiagramCodeRef = useRef(updateDiagramCode)
+  const updateDiagramDescriptionRef = useRef(updateDiagramDescription)
 
   useEffect(() => {
     stateRef.current = state
@@ -111,7 +114,8 @@ export function useAgentCommandExecutor({
     createDiagramWithOptionsRef.current = createDiagramWithOptions
     selectDiagramRef.current = selectDiagram
     updateDiagramCodeRef.current = updateDiagramCode
-  }, [createDiagramWithOptions, getState, selectDiagram, setDiagramTheme, updateDiagramCode])
+    updateDiagramDescriptionRef.current = updateDiagramDescription
+  }, [createDiagramWithOptions, getState, selectDiagram, setDiagramTheme, updateDiagramCode, updateDiagramDescription])
 
   const waitForDiagramRender = useCallback((diagramId: string, timeoutMs = 8_000) => {
     const start = Date.now()
@@ -293,6 +297,10 @@ export function useAgentCommandExecutor({
           mermaidTheme: typeof args.theme === 'string' ? (args.theme as MermaidTheme) : undefined,
         })
         if (!diagramId) throw new Error('Unable to create diagram')
+        // Set description immediately after creation if provided
+        if (typeof args.description === 'string' && args.description) {
+          updateDiagramDescriptionRef.current(diagramId, args.description)
+        }
         // Wait for diagram to exist in state, then wait for render to complete.
         // This ensures the agent gets back the actual render result (including any
         // syntax errors) rather than a 'queued' status with no useful feedback.
