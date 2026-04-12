@@ -219,22 +219,16 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         if (socketRef.current !== socket) return
         if (socket.readyState !== WebSocket.OPEN) {
           setStatus('error')
+          // Keep the existing per-page session sticky. A deploy/reload or transient WS
+          // failure should not destroy the user's session ID; auto-reattach will repair it.
           if (userInitiatedConnectRef.current) {
             setError('Failed to connect to relay WebSocket')
           } else {
             setError(null)
           }
-          // If a stored session/token is stale, clear it so the next explicit click
-          // starts fresh instead of repeatedly retrying a dead session.
-          const pageId = activePageIdRef.current
-          setSessionId('')
-          setBrowserToken('')
-          setMcpUrl('')
-          persist(sessionIdKey(pageId), '')
-          persist(browserTokenKey(pageId), '')
           reject(new Error('Failed to connect to relay WebSocket'))
         }
-      }, { once: true })
+      }, { once: true }) 
 
       socket.addEventListener('close', () => {
         if (socketRef.current === socket) {
@@ -387,19 +381,14 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       return
     }
 
-    // Attach browser WebSocket — if it fails, clear the just-created session so the
-    // next click creates a fresh session instead of retrying a broken one.
+    // Attach browser WebSocket. If it fails, keep the created session sticky and let
+    // auto-reattach retry in the background. This preserves the same MCP URL across
+    // deploys/reloads instead of unexpectedly replacing it.
     try {
       await connectWithSession(session.sessionId, session.browserToken)
     } catch {
-      const pageId = activePageIdRef.current
       setStatus('disconnected')
-      setSessionId('')
-      setBrowserToken('')
-      setMcpUrl('')
-      persist(sessionIdKey(pageId), '')
-      persist(browserTokenKey(pageId), '')
-      setError('Session created but browser connection failed — click Start session to create a fresh session.')
+      setError('Browser connection dropped — retrying in the background.')
     }
   }, [connectWithSession, disconnect])
 
