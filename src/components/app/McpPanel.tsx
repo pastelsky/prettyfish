@@ -194,11 +194,25 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false }
 
           {/* WebMCP banner */}
           {webMcpSupported && (
-            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-2.5 py-1.5 dark:bg-green-950/30">
-              <StatusDot status="connected" />
-              <span className="text-[11px] text-green-800 dark:text-green-300">
-                Browser MCP active. Tools are registered and ready for any agent connected via Chrome DevTools.
-              </span>
+            <div className="space-y-1 rounded-lg bg-green-50 px-2.5 py-2 dark:bg-green-950/30">
+              <div className="flex items-center gap-1.5">
+                <StatusDot status="connected" />
+                <span className="text-[11px] font-medium text-green-800 dark:text-green-300">
+                  WebMCP active
+                </span>
+              </div>
+              <p className="text-[10px] text-green-700 dark:text-green-400">
+                8 tools registered on this page. Use the{' '}
+                <a
+                  href="https://chromewebstore.google.com/detail/model-context-tool-inspec/gbpdfapgefenggkahomfgkhfehlcenpd"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-green-900 dark:hover:text-green-200"
+                >
+                  Model Context Tool Inspector
+                </a>{' '}
+                extension to test tools, or connect any browser agent.
+              </p>
             </div>
           )}
 
