@@ -6,12 +6,32 @@ import { MERMAID_THEMES } from '../../types'
 import { THEME_PRESET_DEFS } from '../themePresetDefs'
 
 // ── Theme registration sanity check ────────────────────────────────────────────
-// Every theme defined in THEME_PRESET_DEFS must appear in MERMAID_THEMES.
-// If you add a new theme file, you must also register it in both places.
-test('all THEME_PRESET_DEFS entries are registered in MERMAID_THEMES', () => {
-  const registered = new Set(MERMAID_THEMES.map(t => t.value))
-  const missing = Object.keys(THEME_PRESET_DEFS).filter(id => !registered.has(id as never))
-  expect(missing, `Theme(s) defined but not registered in MERMAID_THEMES: ${missing.join(', ')}`).toEqual([])
+// Rules:
+//  1. Every ACTIVE (non-disabled) theme in THEME_PRESET_DEFS must be in MERMAID_THEMES.
+//  2. Every custom theme in MERMAID_THEMES must have a definition in THEME_PRESET_DEFS.
+// Disabled themes are kept in THEME_PRESET_DEFS for backwards compat but may be
+// omitted from MERMAID_THEMES — that is intentional and not checked here.
+test('all active themes are registered in MERMAID_THEMES and vice versa', () => {
+  const inMermaidThemes = new Set(MERMAID_THEMES.map(t => t.value))
+  const inPresetDefs = new Set(Object.keys(THEME_PRESET_DEFS))
+
+  // Active themes must appear in MERMAID_THEMES
+  const activeIds = Object.entries(THEME_PRESET_DEFS)
+    .filter(([, def]) => !def.disabled)
+    .map(([id]) => id)
+  const missingFromMermaidThemes = activeIds.filter(id => !inMermaidThemes.has(id as never))
+  expect(
+    missingFromMermaidThemes,
+    `Active theme(s) not in MERMAID_THEMES (add to src/types.ts): ${missingFromMermaidThemes.join(', ')}`
+  ).toEqual([])
+
+  // Custom themes in MERMAID_THEMES must have a preset definition
+  const customIds = MERMAID_THEMES.filter(t => t.group === 'custom').map(t => t.value)
+  const missingFromDefs = customIds.filter(id => !inPresetDefs.has(id))
+  expect(
+    missingFromDefs,
+    `Theme(s) in MERMAID_THEMES but not in THEME_PRESET_DEFS (add to themePresetDefs.ts): ${missingFromDefs.join(', ')}`
+  ).toEqual([])
 })
 
 const originalWindow = globalThis.window
