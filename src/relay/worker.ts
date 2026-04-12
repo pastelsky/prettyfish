@@ -267,9 +267,15 @@ async function createPublicRelaySession(request: Request, env: RelayWorkerEnv) {
 async function connectPeer(request: Request, env: RelayWorkerEnv, sessionId: string, role: RelayPeerRole) {
   const token = new URL(request.url).searchParams.get('token') || ''
   const stub = getSessionStub(env, sessionId)
-  // Forward the raw WebSocket upgrade request to the Durable Object.
-  // The DO handles WebSocketPair creation and accept() itself.
-  return stub.fetch(`https://relay.internal/connect/${role}?token=${encodeURIComponent(token)}`, request)
+  // Construct a new Request to the DO's internal URL, forwarding all original headers
+  // (including Upgrade: websocket). We cannot use the original request directly because
+  // its URL points to the public hostname — we need to rewrite it to the DO-internal URL.
+  const doUrl = `https://relay.internal/connect/${role}?token=${encodeURIComponent(token)}`
+  const doRequest = new Request(doUrl, {
+    method: request.method,
+    headers: request.headers,
+  })
+  return stub.fetch(doRequest)
 }
 
 /** Route handler for /relay/* and /mcp/* — called by the main worker */

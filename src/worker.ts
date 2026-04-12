@@ -8,8 +8,12 @@
  * Durable Objects handle per-session state and WebSocket hibernation.
  */
 
-export { RelaySessionDurableObject } from './relay/worker'
+import { handleRelayRequest, RelaySessionDurableObject } from './relay/worker'
 export type { RelayWorkerEnv } from './relay/worker'
+
+// Re-export the Durable Object class so Cloudflare can find it at module init time.
+// This MUST be a static export (not dynamic import) for the DO binding to work correctly.
+export { RelaySessionDurableObject }
 
 interface Env {
   ASSETS: { fetch: (request: Request) => Promise<Response> }
@@ -22,8 +26,6 @@ export default {
 
     // ── Relay and MCP routes ─────────────────────────────────────────────────
     if (url.pathname.startsWith('/relay/') || url.pathname.startsWith('/mcp/')) {
-      // Import and delegate to relay handler
-      const { handleRelayRequest } = await import('./relay/worker')
       return handleRelayRequest(request, {
         RELAY_SESSIONS: env.RELAY_SESSIONS,
         RELAY_BOOTSTRAP_TOKEN: '',

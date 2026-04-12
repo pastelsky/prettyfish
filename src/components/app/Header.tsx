@@ -109,7 +109,7 @@ interface HeaderProps {
 
 // ── MCP Button ────────────────────────────────────────────────────────────────
 
-function McpButton({ onOpenMcp, mcpConnected, mcpSessionReady, onTripleClick, iconOnly = false }: { onOpenMcp: () => void; mcpConnected: boolean; mcpSessionReady?: boolean; onTripleClick?: () => void; iconOnly?: boolean }) {
+function McpButton({ onOpenMcp, mcpConnected, mcpSessionReady, onTripleClick }: { onOpenMcp: () => void; mcpConnected: boolean; mcpSessionReady?: boolean; onTripleClick?: () => void }) {
   const clickCountRef = useRef(0)
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -138,25 +138,13 @@ function McpButton({ onOpenMcp, mcpConnected, mcpSessionReady, onTripleClick, ic
         className={cn(mcpConnected ? chromeStatusClass('success') : mcpSessionReady ? chromeStatusClass('warning') : '')}
       >
         <PlugsConnected className="w-3.5 h-3.5" />
-        {!iconOnly && (mcpConnected ? 'Agent Connected' : mcpSessionReady ? 'Session Ready' : 'Connect AI Agent')}
+        <span className="hidden lg:inline">{mcpConnected ? 'Agent Connected' : mcpSessionReady ? 'Session Ready' : 'Connect AI Agent'}</span>
       </ChromeTextButton>
     </div>
   )
 }
 
 // ── Main Header — floating pill layout ────────────────────────────────────────
-
-// ── Responsive breakpoints ────────────────────────────────────────────────────
-function useHeaderWidth() {
-  const [width, setWidth] = useState(() => window.innerWidth)
-  useEffect(() => {
-    const handler = () => setWidth(window.innerWidth)
-    window.addEventListener('resize', handler, { passive: true })
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-  // tablet: 768–1023px, desktop: 1024+
-  return { isTablet: width >= 768 && width < 1024, isDesktop: width >= 1024, isMobileWidth: width < 768 }
-}
 
 export function Header({
   showSponsorNudge = false,
@@ -192,7 +180,6 @@ export function Header({
   sidebarWidth,
 }: HeaderProps) {
   const isDark = mode === 'dark'
-  const { isTablet } = useHeaderWidth()
   const [copyState, setCopyState] = useState<'idle' | 'copied' | 'error'>('idle')
   const [resetOpen, setResetOpen] = useState(false)
   const [resetting, setResetting] = useState(false)
@@ -248,21 +235,21 @@ export function Header({
           <span className="font-semibold">Pretty</span><span className="font-medium text-primary ml-0.5">Fish</span>
         </span>
 
-        {/* App badge — hidden on tablet to save space */}
-        {!isMobile && !isTablet && (
+        {/* App badge — hidden below 1024px to save space */}
+        {!isMobile && (
         <div className={cn(
-          'inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold shrink-0',
+          'hidden lg:inline-flex items-center px-2 py-0.5 rounded-lg text-[11px] font-semibold shrink-0',
           isDark ? 'bg-primary/12 text-primary' : 'bg-primary/8 text-primary',
         )}>
           Mermaid Diagram Editor
         </div>
         )}
 
-        {/* File actions — hidden on tablet */}
-        {!isMobile && !isTablet && (
+        {/* File actions — hidden below 1024px */}
+        {!isMobile && (
           <>
-            <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
-            <div className="flex items-center gap-1 shrink-0">
+            <div className={cn('hidden lg:block w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
+            <div className="hidden lg:flex items-center gap-1 shrink-0">
               <ChromeIconButton
                 type="button"
                 data-testid="open-project-button"
@@ -291,7 +278,7 @@ export function Header({
                 <Trash className="w-3.5 h-3.5" />
               </ChromeIconButton>
             </div>
-            <div className={cn('w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
+            <div className={cn('hidden lg:block w-px h-4 mx-0.5 shrink-0', isDark ? 'bg-white/10' : 'bg-black/10')} />
           </>
         )}
 
@@ -385,14 +372,14 @@ export function Header({
             copyState === 'error' && chromeStatusClass('danger'),
           )}
         >
-          {copyState === 'copied' ? <><Check className="w-3 h-3" />{!isTablet && ' Copied!'}</> :
-           copyState === 'error' ? <><X className="w-3 h-3" />{!isTablet && ' Failed'}</> :
-           <><ShareNetwork className="w-3 h-3" />{!isTablet && ' Share'}</>}
+          {copyState === 'copied' ? <><Check className="w-3 h-3" /><span className="hidden lg:inline"> Copied!</span></> :
+           copyState === 'error' ? <><X className="w-3 h-3" /><span className="hidden lg:inline"> Failed</span></> :
+           <><ShareNetwork className="w-3 h-3" /><span className="hidden lg:inline"> Share</span></>}
         </ChromeTextButton>
 
         <div className={chromeDividerClass()} />
 
-        <ThemeDropdown value={mermaidTheme} onChange={onMermaidThemeChange} isDark={isDark} isTablet={isTablet} />
+        <ThemeDropdown value={mermaidTheme} onChange={onMermaidThemeChange} isDark={isDark} />
 
         <ChromeIconButton
           data-testid="toggle-mode-button"
@@ -416,53 +403,48 @@ export function Header({
           <Books className="w-3.5 h-3.5" />
         </ChromeIconButton>
 
-        {/* Help — hidden on tablet */}
-        {!isTablet && (
-          <ChromeIconButton
-            data-testid="open-help-button"
-            aria-label="Open keyboard shortcuts help"
-            title="Shortcuts (?)"
-            onClick={onOpenHelp}
-          >
-            <Question className="w-3.5 h-3.5" />
-          </ChromeIconButton>
-        )}
+        {/* Help — hidden below 1024px */}
+        <ChromeIconButton
+          data-testid="open-help-button"
+          aria-label="Open keyboard shortcuts help"
+          title="Shortcuts (?)"
+          onClick={onOpenHelp}
+          className="hidden lg:inline-flex"
+        >
+          <Question className="w-3.5 h-3.5" />
+        </ChromeIconButton>
 
-        <div className={chromeDividerClass()} />
+        <div className={cn(chromeDividerClass(), 'hidden lg:block')} />
 
-        {/* GitHub — hidden on tablet */}
-        {!isTablet && (
-          <a
-            href="https://github.com/pastelsky/prettyfish"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Pretty Fish on GitHub"
-            title="Star on GitHub"
-            className={cn(
-              'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
-              'text-ui-ink-muted hover:text-ui-ink-strong hover:bg-ui-surface-hover',
-            )}
-          >
-            <GithubLogo className="w-3.5 h-3.5" />
-          </a>
-        )}
+        {/* GitHub — hidden below 1024px */}
+        <a
+          href="https://github.com/pastelsky/prettyfish"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Pretty Fish on GitHub"
+          title="Star on GitHub"
+          className={cn(
+            'hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
+            'text-ui-ink-muted hover:text-ui-ink-strong hover:bg-ui-surface-hover',
+          )}
+        >
+          <GithubLogo className="w-3.5 h-3.5" />
+        </a>
 
-        {/* Sponsor — hidden on tablet */}
-        {!isTablet && (
-          <a
-            href="https://github.com/sponsors/pastelsky"
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="Sponsor Pretty Fish"
-            title="Sponsor"
-            className={cn(
-              'inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
-              'text-pink-500 dark:text-pink-400 hover:bg-ui-surface-hover',
-            )}
-          >
-            <Heart className="w-3.5 h-3.5" weight="fill" />
-          </a>
-        )}
+        {/* Sponsor — hidden below 1024px */}
+        <a
+          href="https://github.com/sponsors/pastelsky"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="Sponsor Pretty Fish"
+          title="Sponsor"
+          className={cn(
+            'hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-lg transition-colors cursor-pointer',
+            'text-pink-500 dark:text-pink-400 hover:bg-ui-surface-hover',
+          )}
+        >
+          <Heart className="w-3.5 h-3.5" weight="fill" />
+        </a>
       </div>
       )}
 
@@ -473,7 +455,6 @@ export function Header({
               onOpenMcp={onOpenMcp}
               mcpConnected={mcpConnected}
               mcpSessionReady={mcpSessionReady}
-              iconOnly={isTablet}
               onTripleClick={onSponsorNudgeDismiss ? () => {
                 // Triple-click: reset nudge state for testing then show it
                 try { localStorage.removeItem('prettyfish:sponsor-nudge') } catch { /* ignore */ }
@@ -670,7 +651,7 @@ function PagesDropdown({
 }
 
 
-function ThemeDropdown({ value, onChange, isDark, isTablet = false }: { value: MermaidTheme; onChange: (theme: MermaidTheme) => void; isDark: boolean; isTablet?: boolean }) {
+function ThemeDropdown({ value, onChange, isDark }: { value: MermaidTheme; onChange: (theme: MermaidTheme) => void; isDark: boolean }) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -769,7 +750,7 @@ function ThemeDropdown({ value, onChange, isDark, isTablet = false }: { value: M
             ))}
           </span>
         )}
-        {!isTablet && <span className="max-w-[90px] truncate">{current.label}</span>}
+        <span className="hidden lg:inline max-w-[90px] truncate">{current.label}</span>
         <CaretDown className={cn('w-3 h-3 text-muted-foreground transition-transform', open && 'rotate-180')} />
       </button>
       {dropdown}
