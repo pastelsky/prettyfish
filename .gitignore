@@ -36,6 +36,7 @@ playwright-report/
 coverage/
 tests/screenshots/
 tmp_chaos_logs/
+tmp_rovodev_*
 trace.json
 trace-*.json
 perf-artifacts/
