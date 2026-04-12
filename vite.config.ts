@@ -8,13 +8,14 @@ import { cloudflare } from '@cloudflare/vite-plugin'
 
 const isVitest = process.env.VITEST === 'true'
 const isPlaywright = process.env.PLAYWRIGHT === 'true'
+const isLocalAppOnly = process.env.LOCAL_APP_ONLY === 'true' 
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
-    !isVitest && !isPlaywright ? cloudflare() : null,
+    !isVitest && !isPlaywright && !isLocalAppOnly ? cloudflare() : null,
     process.env.PLAYWRIGHT_COVERAGE
       ? istanbul({
           include: 'src/*',

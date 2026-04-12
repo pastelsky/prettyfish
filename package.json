@@ -18,6 +18,8 @@
   "scripts": {
     "seo:generate": "node --experimental-strip-types scripts/generate-seo-pages.mjs",
     "dev": "npm run seo:generate && vite",
+    "dev:app": "npm run seo:generate && LOCAL_APP_ONLY=true vite",
+    "dev:worker": "wrangler dev --port 8787 --compatibility-date 2026-04-08",
     "build": "npm run seo:generate && vite build",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . --max-warnings 0 && npm run check:dark",

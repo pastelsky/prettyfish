@@ -33,7 +33,7 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'PLAYWRIGHT=true npx vite --host 127.0.0.1 --port 4175',
+    command: 'PLAYWRIGHT=true LOCAL_APP_ONLY=true npx vite --host 127.0.0.1 --port 4175',
     url: 'http://127.0.0.1:4175',
     reuseExistingServer: !process.env.CI,
     timeout: 30000,

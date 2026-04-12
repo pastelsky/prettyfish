@@ -24,8 +24,8 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url)
 
-    // ── Relay routes (MCP is now under /relay/{id}/mcp) ─────────────────────
-    if (url.pathname.startsWith('/relay/')) {
+    // ── Relay and MCP routes ─────────────────────────────────────────────────
+    if (url.pathname.startsWith('/relay/') || url.pathname.startsWith('/mcp/')) {
       return handleRelayRequest(request, {
         RELAY_SESSIONS: env.RELAY_SESSIONS,
         RELAY_BOOTSTRAP_TOKEN: '',

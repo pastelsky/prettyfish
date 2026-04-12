@@ -9,7 +9,11 @@ import type { AppState } from '@/types'
 // Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
 const DEFAULT_RELAY_URL = (
   (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL
-  || (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish')
+  // In local/dev, the Vite app does not serve /relay or /mcp routes. Default to the
+  // deployed worker so Connect AI Agent works in local review unless explicitly overridden.
+  || (typeof window !== 'undefined' && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+    ? 'https://prettyfish.binalgo.workers.dev'
+    : (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish'))
 ).replace(/\/$/, '')
 
 // Migrate: clear any stale relay URL previously stored in localStorage
@@ -32,13 +36,26 @@ function persist(key: string, value: string) {
   } catch { /* ignore */ }
 }
 
+function getOrCreateClientSecret(pageId: string): string {
+  const key = clientSecretKey(pageId)
+  try {
+    const existing = localStorage.getItem(key)
+    if (existing) return existing
+    const fresh = crypto.randomUUID()
+    localStorage.setItem(key, fresh)
+    return fresh
+  } catch {
+    return crypto.randomUUID()
+  }
+}
+
 
 function toWebSocketUrl(sessionId: string, browserToken: string): string {
   const base = DEFAULT_RELAY_URL.startsWith('https://')
     ? DEFAULT_RELAY_URL.replace(/^https:\/\//, 'wss://')
     : DEFAULT_RELAY_URL.replace(/^http:\/\//, 'ws://')
-  return `${base}/relay/${sessionId}/ws?token=${encodeURIComponent(browserToken)}`
-}
+  return `${base}/relay/sessions/${sessionId}/browser?token=${encodeURIComponent(browserToken)}`
+} 
 
 function buildConfigSnippet(mcpUrl: string): string {
   return JSON.stringify({ mcpServers: { prettyfish: { url: mcpUrl } } }, null, 2)
@@ -117,7 +134,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // ── Rebuild mcpUrl whenever session changes ────────────────────────────────
   useEffect(() => {
     if (!sessionId) { setMcpUrl(''); return }
-    setMcpUrl(`${DEFAULT_RELAY_URL}/relay/${sessionId}/mcp`)
+    setMcpUrl(`${DEFAULT_RELAY_URL}/mcp/${sessionId}`)
   }, [sessionId])
 
   // ── Cleanup on unmount ─────────────────────────────────────────────────────
@@ -188,16 +205,28 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       socketRef.current = socket
 
       socket.addEventListener('open', () => {
+        if (socketRef.current !== socket) return
         reconnectAttemptsRef.current = 0 // reset backoff on successful connect
         setStatus('connected')
+        setError(null)
         startHeartbeat()
         resolve()
       }, { once: true })
 
       socket.addEventListener('error', () => {
+        // Ignore errors from stale sockets that have already been replaced.
+        if (socketRef.current !== socket) return
         if (socket.readyState !== WebSocket.OPEN) {
           setStatus('error')
           setError('Failed to connect to relay WebSocket')
+          // If a stored session/token is stale, clear it so the next explicit click
+          // starts fresh instead of repeatedly retrying a dead session.
+          const pageId = activePageIdRef.current
+          setSessionId('')
+          setBrowserToken('')
+          setMcpUrl('')
+          persist(sessionIdKey(pageId), '')
+          persist(browserTokenKey(pageId), '')
           reject(new Error('Failed to connect to relay WebSocket'))
         }
       }, { once: true })
@@ -211,7 +240,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
           // Auto-reconnect after unexpected close (not triggered by user)
           scheduleReconnect()
         }
-      })
+      }) 
 
       socket.addEventListener('message', (event) => {
         const raw = typeof event.data === 'string' ? event.data : ''
@@ -311,10 +340,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     try {
       const pageId = activePageIdRef.current
 
-      const response = await fetch(`${DEFAULT_RELAY_URL}/relay/sessions`, {
+      const response = await fetch(`${DEFAULT_RELAY_URL}/relay/sessions/public`, {
         method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ createdBy: 'prettyfish-web' }),
+        // text/plain avoids a CORS preflight (simple request)
+        headers: { 'content-type': 'text/plain;charset=UTF-8' },
+        body: JSON.stringify({ createdBy: 'prettyfish-web', browserProof: getOrCreateClientSecret(pageId) }),
       })
 
       if (!response.ok) throw new Error(`Failed to create MCP session (${response.status})`)
@@ -337,12 +367,19 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       return
     }
 
-    // Attach browser WebSocket — non-fatal if it fails (config snippet still usable)
+    // Attach browser WebSocket — if it fails, clear the just-created session so the
+    // next click creates a fresh session instead of retrying a broken one.
     try {
       await connectWithSession(session.sessionId, session.browserToken)
     } catch {
+      const pageId = activePageIdRef.current
       setStatus('disconnected')
-      setError('Session created but browser connection failed — click Reconnect to retry.')
+      setSessionId('')
+      setBrowserToken('')
+      setMcpUrl('')
+      persist(sessionIdKey(pageId), '')
+      persist(browserTokenKey(pageId), '')
+      setError('Session created but browser connection failed — click Start session to create a fresh session.')
     }
   }, [connectWithSession, disconnect])
 

@@ -10,18 +10,14 @@ export type RelayPeerRole = 'browser' | 'agent'
 
 export interface RelaySessionRecord {
   sessionId: string
-  browserToken: string   // Random token — only the browser tab knows this
-  browserProof: string   // Used to HMAC-sign commands — proves origin
-  createdAt: number      // Unix timestamp ms
+  browserToken: string
+  browserProof: string   // HMAC-SHA256(clientSecret, pageId) — stored server-side, never sent to agent
+  createdAt: string
 }
 
-export interface PublicRelaySessionResponse {
-  sessionId: string
-  wsUrl: string          // wss://…/relay/{id}/ws?token=…  (for browser)
-  mcpUrl: string         // https://…/relay/{id}/mcp       (for agent)
-  browserProof: string   // Returned to browser only — never shown to agent
-  browserToken: string   // Token embedded in wsUrl — returned for convenience
-}
+export interface PublicRelaySessionResponse extends RelaySessionRecord {
+  mcpUrl: string
+}  // wsUrl is derived client-side from sessionId + browserToken like before.
 
 // ── WebSocket envelope types ──────────────────────────────────────────────────
 
