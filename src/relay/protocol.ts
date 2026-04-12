@@ -44,7 +44,10 @@ export interface RelayErrorMessage {
   message: string
 }
 
+export type PingEnvelope = { type: 'ping' }
+
 export type RelayEnvelope =
+  | PingEnvelope
   | RelayCommandMessage
   | RelayCommandResultMessage
   | RelayHelloMessage

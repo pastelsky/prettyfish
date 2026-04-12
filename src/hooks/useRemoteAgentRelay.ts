@@ -93,6 +93,10 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const [status, setStatus] = useState<RemoteAgentRelayControls['status']>('disconnected')
   const [agentConnected, setAgentConnected] = useState(false)
   const [sessionId, setSessionId] = useState(() => readStored(sessionIdKey(activePageId)))
+  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const reconnectAttemptsRef = useRef(0)
+  const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const intentionalDisconnectRef = useRef(false)
   const [browserToken, setBrowserToken] = useState(() => readStored(browserTokenKey(activePageId)))
   const [mcpUrl, setMcpUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -130,6 +134,51 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // ── Cleanup on unmount ─────────────────────────────────────────────────────
   useEffect(() => () => { socketRef.current?.close() }, [])
 
+  // ── Heartbeat — ping every 30s to prevent idle WebSocket closure ──────────
+  // Cloudflare drops idle WebSockets after 100s; most browsers/proxies after ~60s.
+  const startHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
+    heartbeatIntervalRef.current = setInterval(() => {
+      const socket = socketRef.current
+      if (socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ type: 'ping' } satisfies RelayEnvelope))
+      }
+    }, 30_000)
+  }, [])
+
+  const stopHeartbeat = useCallback(() => {
+    if (heartbeatIntervalRef.current) {
+      clearInterval(heartbeatIntervalRef.current)
+      heartbeatIntervalRef.current = null
+    }
+  }, [])
+
+  // ── Auto-reconnect — exponential backoff, max 10 attempts ─────────────────
+  // Use a ref to hold the latest connectWithSession to avoid circular dep.
+  const connectWithSessionRef = useRef<(sid: string, token: string) => Promise<void>>()
+
+  const scheduleReconnect = useCallback(() => {
+    if (intentionalDisconnectRef.current) return
+    const attempts = reconnectAttemptsRef.current
+    if (attempts >= 10) return // ~5 min total, give up
+    const delay = Math.min(1_000 * Math.pow(1.5, attempts), 30_000)
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+    reconnectTimerRef.current = setTimeout(() => {
+      const sid = readStored(sessionIdKey(activePageIdRef.current))
+      const tok = readStored(browserTokenKey(activePageIdRef.current))
+      if (sid && tok && connectWithSessionRef.current) {
+        reconnectAttemptsRef.current += 1
+        void connectWithSessionRef.current(sid, tok)
+      }
+    }, delay)
+  }, [])
+
+  // Cleanup heartbeat and reconnect timer on unmount
+  useEffect(() => () => {
+    stopHeartbeat()
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+  }, [stopHeartbeat])
+
   // ── Core WebSocket connect ─────────────────────────────────────────────────
   const connectWithSession = useCallback(async (
     nextSessionId: string,
@@ -149,7 +198,12 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       const socket = new WebSocket(toWebSocketUrl(nextSessionId, nextBrowserToken))
       socketRef.current = socket
 
-      socket.addEventListener('open', () => { setStatus('connected'); resolve() }, { once: true })
+      socket.addEventListener('open', () => {
+        reconnectAttemptsRef.current = 0 // reset backoff on successful connect
+        setStatus('connected')
+        startHeartbeat()
+        resolve()
+      }, { once: true })
 
       socket.addEventListener('error', () => {
         if (socket.readyState !== WebSocket.OPEN) {
@@ -162,8 +216,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       socket.addEventListener('close', () => {
         if (socketRef.current === socket) {
           socketRef.current = null
+          stopHeartbeat()
           setStatus('disconnected')
           setAgentConnected(false)
+          // Auto-reconnect after unexpected close (not triggered by user)
+          scheduleReconnect()
         }
       })
 
@@ -216,7 +273,10 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         }
       })
     }).catch(() => undefined)
-  }, [executeCommand])
+  }, [executeCommand, startHeartbeat, stopHeartbeat])
+
+  // Keep ref updated so scheduleReconnect can call it without circular dep
+  connectWithSessionRef.current = connectWithSession
 
   // ── Auto-reconnect on mount / page switch if stored session exists ─────────
   useEffect(() => {
@@ -227,11 +287,17 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   }, [browserToken, connectWithSession, sessionId])
 
   const disconnect = useCallback(() => {
+    intentionalDisconnectRef.current = true
+    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+    stopHeartbeat()
     socketRef.current?.close()
     socketRef.current = null
     setStatus('disconnected')
+    setAgentConnected(false)
     setError(null)
-  }, [])
+    // Allow reconnect again after manual re-connect is initiated
+    setTimeout(() => { intentionalDisconnectRef.current = false }, 1_000)
+  }, [stopHeartbeat])
 
   const connect = useCallback(async () => {
     await connectWithSession(sessionId, browserToken)
