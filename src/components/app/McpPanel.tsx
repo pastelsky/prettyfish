@@ -201,14 +201,14 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
                 </div>
               </div>
 
-              {/* npx command */}
+              {/* npx add-mcp command */}
               <div className="space-y-1.5">
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Or run directly</p>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Quick install</p>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 truncate rounded-lg bg-muted px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                    npx prettyfish-mcp --url {remoteRelay.mcpUrl.split('?')[0]}
+                    npx add-mcp {remoteRelay.mcpUrl}
                   </code>
-                  <CopyButton value={`npx prettyfish-mcp --url "${remoteRelay.mcpUrl}"`} />
+                  <CopyButton value={`npx add-mcp ${remoteRelay.mcpUrl}`} />
                 </div>
               </div>
 
