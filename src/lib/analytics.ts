@@ -1,5 +1,6 @@
 const analyticsKey = import.meta.env.VITE_POSTHOG_KEY
-const analyticsHost = import.meta.env.VITE_POSTHOG_HOST ?? 'https://us.i.posthog.com'
+const analyticsHost = import.meta.env.VITE_POSTHOG_HOST ?? 'https://a.pretty.fish'
+const analyticsUiHost = import.meta.env.VITE_POSTHOG_UI_HOST ?? 'https://us.posthog.com'
 
 let initialized = false
 let posthogPromise: Promise<typeof import('posthog-js')['default']> | null = null
@@ -15,6 +16,7 @@ export async function initAnalytics() {
   const posthog = await getPosthog()
   posthog.init(analyticsKey, {
     api_host: analyticsHost,
+    ui_host: analyticsUiHost,
     defaults: '2026-01-30',
     autocapture: false,
     capture_pageview: 'history_change',
