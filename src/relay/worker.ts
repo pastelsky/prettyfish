@@ -655,10 +655,22 @@ export class RelaySessionDurableObject {
         }, 400)
       }
 
+      // MCP Streamable HTTP spec §6.1:
+      // Notifications (id absent or method starts with 'notifications/') MUST be
+      // acknowledged with 202 Accepted and an empty body — NOT a JSON-RPC response.
+      // Sending any body confuses MCP clients (rmcp, etc.) during the handshake.
+      const isNotification = body.id == null || (typeof body.method === 'string' && body.method.startsWith('notifications/'))
+      if (isNotification) {
+        // Still process the notification (e.g. store initialized state) but don't respond
+        await this.handleMcpRequest(body).catch(() => {})
+        return new Response(null, { status: 202 })
+      }
+
       const result = await this.handleMcpRequest(body)
       const accept = request.headers.get('accept') || ''
 
-      // MCP Streamable HTTP: if client accepts SSE, wrap response as SSE event
+      // MCP Streamable HTTP: if client accepts SSE, wrap response as SSE event stream.
+      // We send a single event then close — Worker becomes idle immediately (no duration charge).
       if (accept.includes('text/event-stream')) {
         const sseData = `data: ${JSON.stringify(result)}\n\n`
         return new Response(sseData, {
@@ -666,7 +678,6 @@ export class RelaySessionDurableObject {
           headers: {
             'content-type': 'text/event-stream',
             'cache-control': 'no-cache',
-            'connection': 'keep-alive',
           },
         })
       }
