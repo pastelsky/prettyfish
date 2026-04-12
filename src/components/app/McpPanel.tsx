@@ -13,6 +13,7 @@ interface McpPanelProps {
   onClose: () => void
   remoteRelay: RemoteAgentRelayControls
   isDark?: boolean
+  webMcpSupported?: boolean
 }
 
 function CopyBtn({ value, label }: { value: string; label?: string }) {
@@ -115,7 +116,7 @@ Export a diagram as SVG or PNG image.
 4. Call \`list_diagrams\` to see existing diagrams, \`set_diagram_code\` to update them`
 }
 
-export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPanelProps) {
+export function McpPanel({ open, onClose, remoteRelay, isDark = false, webMcpSupported = false }: McpPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = useState<TabId>('install')
 
@@ -190,6 +191,16 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
 
         {/* Body */}
         <div className="space-y-2.5 p-3.5">
+
+          {/* WebMCP banner */}
+          {webMcpSupported && (
+            <div className="flex items-center gap-2 rounded-lg bg-green-50 px-2.5 py-1.5 dark:bg-green-950/30">
+              <StatusDot status="connected" />
+              <span className="text-[11px] text-green-800 dark:text-green-300">
+                Browser MCP active. Tools are registered and ready for any agent connected via Chrome DevTools.
+              </span>
+            </div>
+          )}
 
           {/* Session row */}
           <div className="flex items-center justify-between gap-2">

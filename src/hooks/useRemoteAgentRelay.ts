@@ -80,6 +80,7 @@ export interface RemoteAgentRelayControls {
   disconnect: () => void
   createHostedSession: () => Promise<void>
   resetSession: () => void
+  executeCommand: (command: BrowserCommandEnvelope) => Promise<unknown>
   getHostedConfigSnippet: () => string
 }
 
@@ -296,6 +297,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     disconnect,
     createHostedSession,
     resetSession,
+    executeCommand,
     getHostedConfigSnippet: () => buildConfigSnippet(mcpUrl),
-  }), [connect, createHostedSession, disconnect, displayId, error, mcpUrl, resetSession, sessionId, status])
+  }), [connect, createHostedSession, disconnect, displayId, error, executeCommand, mcpUrl, resetSession, sessionId, status])
 }

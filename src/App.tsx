@@ -10,6 +10,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useAppController } from './hooks/useAppController'
 import { useRemoteAgentRelay } from './hooks/useRemoteAgentRelay'
+import { useWebMcp, isWebMcpSupported } from './hooks/useWebMcp'
 import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
 import { cn } from './lib/utils'
@@ -104,6 +105,9 @@ export default function App() {
     selectDiagram,
     updateDiagramCode,
   })
+
+  const webMcpSupported = isWebMcpSupported()
+  useWebMcp({ executeCommand: remoteAgentRelay.executeCommand })
 
   const handleInsertReady = useCallback((fn: (text: string) => void) => {
     registerInsertHandler(fn)
@@ -324,7 +328,7 @@ export default function App() {
         }}
         onOpenHelp={() => dispatch({ type: 'ui/set-help-open', open: true })}
         onOpenMcp={() => setMcpOpen(true)}
-        mcpConnected={remoteAgentRelay.status === 'connected'}
+        mcpConnected={remoteAgentRelay.status === 'connected' || webMcpSupported}
         sidebarWidth={sidebarOpen ? sidebarWidth : null}
       />
 
@@ -333,6 +337,7 @@ export default function App() {
         onClose={() => setMcpOpen(false)}
         remoteRelay={remoteAgentRelay}
         isDark={mode === 'dark'}
+        webMcpSupported={webMcpSupported}
       />
 
       {isMobile && (docsOpen || (sidebarOpen && !mobileSidebarCollapsed)) && (
