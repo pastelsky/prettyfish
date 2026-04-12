@@ -5,10 +5,11 @@ const wireframe: ThemePresetDef = {
   description: 'Sketch-style wireframe',
   configOverrides: {
     look: 'handDrawn',
-    // Caveat: casual hand-printed Google Font — looks like annotations on a wireframe sketch.
-    // Gives diagrams that authentic "drawn with a marker" wireframe/mockup feel.
-    fontFamily: '"Caveat", "Patrick Hand", cursive',
-    fontSize: 16,
+    // Patrick Hand: clean hand-printed Google Font. Unlike Caveat, it's legible at small
+    // sizes (13-14px) while still feeling genuinely hand-drawn/sketched.
+    // Caveat is too chaotic for body text; Patrick Hand is the "readable wireframe font".
+    fontFamily: '"Patrick Hand", "Caveat", cursive',
+    fontSize: 15,
     flowchart: { curve: 'linear', nodeSpacing: 60, rankSpacing: 60, padding: 20 },
     sequence: { actorMargin: 60, messageMargin: 40 },
   },
@@ -26,7 +27,7 @@ const wireframe: ThemePresetDef = {
       tertiaryBorderColor: '#cccccc',
       lineColor: '#777777',
       titleColor: '#333333',
-      fontFamily: '"Caveat", "Patrick Hand", cursive',
+      fontFamily: '"Patrick Hand", "Caveat", cursive',
     },
     flowchart: {
       mainBkg: '#f5f5f5',
