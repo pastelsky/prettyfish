@@ -249,7 +249,8 @@ async function createRelaySession(request: Request, env: RelayWorkerEnv) {
 
 async function createPublicRelaySession(request: Request, env: RelayWorkerEnv) {
   const origin = request.headers.get('origin')
-  if (!isPublicOriginAllowed(origin)) {
+  // Allow requests with no Origin (server-to-server from Pages Functions proxy)
+  if (origin && !isPublicOriginAllowed(origin)) {
     return jsonResponse({ error: 'Origin not allowed' }, 403, corsHeaders(origin))
   }
 

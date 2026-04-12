@@ -14,16 +14,6 @@
       }
     ]
   },
-  "routes": [
-    {
-      "pattern": "pretty.fish/api/relay/*",
-      "zone_name": "pretty.fish"
-    },
-    {
-      "pattern": "pretty.fish/api/mcp/*",
-      "zone_name": "pretty.fish"
-    }
-  ],
   "migrations": [
     {
       "tag": "v1",
