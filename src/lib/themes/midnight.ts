@@ -182,4 +182,4 @@ const midnight: ThemePresetDef = {
   },
 }
 
-export default midnight
+export default midnight satisfies ThemePresetDef

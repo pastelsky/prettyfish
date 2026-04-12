@@ -272,6 +272,19 @@ export interface XYChartVars {
   dataLabelColor?: string
 }
 
+/**
+ * Truly optional vars — Mermaid derives these automatically from other vars.
+ * Themes CAN override them but are not required to.
+ * Every other field is REQUIRED — missing fields cause TypeScript errors.
+ */
+export type OptionalThemeVars =
+  | 'pie9' | 'pie10' | 'pie11' | 'pie12'
+  | 'pieStrokeWidth' | 'pieOuterStrokeColor' | 'pieOuterStrokeWidth' | 'pieOpacity'
+  | 'excludeBkgColor' | 'gridColor'
+  | 'tagLabelColor' | 'tagLabelBackground'
+  | 'requirementBorderSize'
+  | 'quadrantInternalBorderStrokeFill' | 'quadrantExternalBorderStrokeFill'
+
 export interface ThemeVariablesByDiagram {
   core: CoreVars
   flowchart: FlowchartVars
@@ -286,8 +299,11 @@ export interface ThemeVariablesByDiagram {
   quadrant: QuadrantVars
   architecture: ArchitectureVars
   journey: JourneyVars
-  /** Passed as nested themeVariables.xyChart — NOT flattened into root. */
-  xyChart?: XYChartVars
+  /**
+   * Passed as nested themeVariables.xyChart — NOT flattened into root.
+   * Required: every theme must define plotColorPalette so XY charts use theme colors.
+   */
+  xyChart: XYChartVars
 }
 
 /** All diagram group keys — useful for iteration. */

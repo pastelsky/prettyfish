@@ -182,4 +182,4 @@ const bauhaus: ThemePresetDef = {
   },
 }
 
-export default bauhaus
+export default bauhaus satisfies ThemePresetDef

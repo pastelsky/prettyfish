@@ -182,4 +182,4 @@ const terracotta: ThemePresetDef = {
   },
 }
 
-export default terracotta
+export default terracotta satisfies ThemePresetDef

@@ -181,4 +181,4 @@ const newsprint: ThemePresetDef = {
   },
 }
 
-export default newsprint
+export default newsprint satisfies ThemePresetDef

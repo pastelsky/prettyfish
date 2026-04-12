@@ -261,4 +261,4 @@ const brutalistTheme: ThemePresetDef = {
   },
 }
 
-export default brutalistTheme
+export default brutalistTheme satisfies ThemePresetDef

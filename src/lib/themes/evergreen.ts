@@ -182,4 +182,4 @@ const evergreen: ThemePresetDef = {
   },
 }
 
-export default evergreen
+export default evergreen satisfies ThemePresetDef

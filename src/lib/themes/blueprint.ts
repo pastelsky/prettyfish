@@ -181,4 +181,4 @@ const blueprint: ThemePresetDef = {
   },
 }
 
-export default blueprint
+export default blueprint satisfies ThemePresetDef

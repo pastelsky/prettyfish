@@ -181,4 +181,4 @@ const amethyst: ThemePresetDef = {
   },
 }
 
-export default amethyst
+export default amethyst satisfies ThemePresetDef

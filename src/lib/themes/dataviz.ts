@@ -182,4 +182,4 @@ const dataviz: ThemePresetDef = {
   },
 }
 
-export default dataviz
+export default dataviz satisfies ThemePresetDef

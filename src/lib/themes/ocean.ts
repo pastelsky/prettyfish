@@ -182,4 +182,4 @@ const ocean: ThemePresetDef = {
   },
 }
 
-export default ocean
+export default ocean satisfies ThemePresetDef

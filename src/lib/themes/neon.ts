@@ -182,4 +182,4 @@ const neon: ThemePresetDef = {
   },
 }
 
-export default neon
+export default neon satisfies ThemePresetDef

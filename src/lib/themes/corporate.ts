@@ -181,4 +181,4 @@ const corporate: ThemePresetDef = {
   },
 }
 
-export default corporate
+export default corporate satisfies ThemePresetDef

@@ -181,4 +181,4 @@ const rosepine: ThemePresetDef = {
   },
 }
 
-export default rosepine
+export default rosepine satisfies ThemePresetDef
