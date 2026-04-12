@@ -71,7 +71,9 @@ const MCP_TOOL_DEFINITIONS = [
   { name: 'get_diagram', description: 'Get a single diagram by ID or name. Returns the diagram\'s details and Mermaid source code. If not found, suggests using list_diagrams.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string', description: 'Diagram ID (exact match).' }, name: { type: 'string', description: 'Diagram name (case-insensitive fuzzy match).' } } } },
   { name: 'list_diagram_types', description: 'List all supported Mermaid diagram types (flowchart, sequence, class, ER, etc.).', inputSchema: { type: 'object', properties: {} } },
   { name: 'get_diagram_reference', description: 'Get the full syntax reference for a Mermaid diagram type, including all elements and examples. Call this before writing diagram code to ensure correct syntax.', inputSchema: { type: 'object', properties: { type: { type: 'string', description: 'Diagram type ID (e.g. "flowchart", "sequence", "classDiagram"). Use list_diagram_types to see all.' } }, required: ['type'] } },
-  { name: 'create_diagram', description: 'Create a new Mermaid diagram on the current page. Always provide a short, descriptive name based on the diagram content.', inputSchema: { type: 'object', properties: { name: { type: 'string', description: 'A short descriptive name for the diagram (e.g. "User Auth Flow", "DB Schema").' }, code: { type: 'string', description: 'Mermaid diagram source code.' }, width: { type: 'number' } } } },
+  { name: 'list_themes', description: 'List all available themes for diagrams (builtin and custom).', inputSchema: { type: 'object', properties: {} } },
+  { name: 'set_theme', description: 'Set the theme of an existing diagram. Use list_themes to see available themes.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, theme: { type: 'string', description: 'Theme ID (e.g. "blueprint", "dark", "neon"). Use list_themes to see all.' } }, required: ['theme'] } },
+  { name: 'create_diagram', description: 'Create a new Mermaid diagram on the current page. Always provide a short, descriptive name based on the diagram content.', inputSchema: { type: 'object', properties: { name: { type: 'string', description: 'A short descriptive name for the diagram (e.g. "User Auth Flow", "DB Schema").' }, code: { type: 'string', description: 'Mermaid diagram source code.' }, width: { type: 'number' }, theme: { type: 'string', description: 'Optional theme ID (e.g. "blueprint", "neon"). Defaults to page theme if not set.' } } } },
   { name: 'set_diagram_code', description: 'Replace a diagram\'s Mermaid source code and wait for render.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, code: { type: 'string' }, timeoutMs: { type: 'number' }, select: { type: 'boolean' } }, required: ['diagramId', 'code'] } },
   { name: 'export_svg', description: 'Export a diagram as SVG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, timeoutMs: { type: 'number' } } } },
   { name: 'export_png', description: 'Export a diagram as PNG.', inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, background: { type: 'string' }, scale: { type: 'number' }, timeoutMs: { type: 'number' } } } },
@@ -503,6 +505,8 @@ export class RelaySessionDurableObject {
           case 'get_diagram':
           case 'list_diagram_types':
           case 'get_diagram_reference':
+          case 'list_themes':
+          case 'set_theme':
           case 'create_diagram': {
             const payload = await this.sendCommandToBrowser(toolName, args)
             return { jsonrpc: '2.0', id, result: textResult(payload) }

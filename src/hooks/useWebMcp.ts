@@ -40,6 +40,19 @@ const TOOLS: WebMcpTool[] = [
     readOnly: true,
   },
   {
+    name: 'list_themes',
+    title: 'List Themes',
+    description: 'List all available themes for diagrams (builtin and custom).',
+    inputSchema: { type: 'object', properties: {} },
+    readOnly: true,
+  },
+  {
+    name: 'set_theme',
+    title: 'Set Theme',
+    description: 'Set the theme of an existing diagram. Use list_themes to see available themes.',
+    inputSchema: { type: 'object', properties: { diagramId: { type: 'string' }, theme: { type: 'string', description: 'Theme ID (e.g. "blueprint", "dark", "neon").' } }, required: ['theme'] },
+  },
+  {
     name: 'create_diagram',
     title: 'Create Diagram',
     description: 'Create a new Mermaid diagram. Always provide a descriptive name.',

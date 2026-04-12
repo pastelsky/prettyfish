@@ -97,10 +97,15 @@ export default function App() {
 
   const activeSvg = activeDiagram?.render?.svg ?? ''
   const panelSurfaceClass = chromeGlassPanelClass(mode)
+  const setDiagramTheme = useCallback((diagramId: string, theme: import('./types').MermaidTheme) => {
+    dispatch({ type: 'diagram/update-theme', diagramId, theme })
+  }, [dispatch])
+
   const remoteAgentRelay = useRemoteAgentRelay({
     activePageId,
     state,
     getState: controller.getState,
+    setDiagramTheme,
     createDiagramWithOptions,
     selectDiagram,
     updateDiagramCode,

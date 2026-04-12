@@ -60,6 +60,7 @@ interface RemoteAgentRelayOptions {
   activePageId: string
   state: AppStoreState
   getState: () => AppState
+  setDiagramTheme: (diagramId: string, theme: import('@/types').MermaidTheme) => void
   createDiagramWithOptions: (options?: {
     pageId?: string
     name?: string

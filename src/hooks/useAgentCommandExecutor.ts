@@ -3,13 +3,16 @@ import { useCallback, useEffect, useRef } from 'react'
 import { buildPngBlob, buildSvgBlob } from '@/lib/export'
 import { DIAGRAM_REFS, getRef } from '@/lib/reference'
 import type { AppStoreState } from '@/state/appStore'
-import type { AppState, Diagram, DiagramPage } from '@/types'
+import type { AppState, Diagram, DiagramPage, MermaidTheme } from '@/types'
+import { MERMAID_THEMES } from '@/types'
 
 export type BridgeCommandName =
   | 'list_diagrams'
   | 'get_diagram'
   | 'list_diagram_types'
   | 'get_diagram_reference'
+  | 'list_themes'
+  | 'set_theme'
   | 'create_diagram'
   | 'set_diagram_code'
   | 'export_svg'
@@ -29,6 +32,7 @@ interface AgentCommandExecutorOptions {
     name?: string
     code?: string
     width?: number
+    mermaidTheme?: MermaidTheme
   }) => string | undefined
   selectDiagram: (diagramId: string) => void
   updateDiagramCode: (diagramId: string, code: string) => void
@@ -83,12 +87,14 @@ async function blobToBase64(blob: Blob): Promise<string> {
 export function useAgentCommandExecutor({
   state,
   getState,
+  setDiagramTheme,
   createDiagramWithOptions,
   selectDiagram,
   updateDiagramCode,
 }: AgentCommandExecutorOptions) {
   const stateRef = useRef(state)
   const getStateRef = useRef(getState)
+  const setDiagramThemeRef = useRef(setDiagramTheme)
   const createDiagramWithOptionsRef = useRef(createDiagramWithOptions)
   const selectDiagramRef = useRef(selectDiagram)
   const updateDiagramCodeRef = useRef(updateDiagramCode)
@@ -99,10 +105,11 @@ export function useAgentCommandExecutor({
 
   useEffect(() => {
     getStateRef.current = getState
+    setDiagramThemeRef.current = setDiagramTheme
     createDiagramWithOptionsRef.current = createDiagramWithOptions
     selectDiagramRef.current = selectDiagram
     updateDiagramCodeRef.current = updateDiagramCode
-  }, [createDiagramWithOptions, getState, selectDiagram, updateDiagramCode])
+  }, [createDiagramWithOptions, getState, selectDiagram, setDiagramTheme, updateDiagramCode])
 
   const waitForDiagramRender = useCallback((diagramId: string, timeoutMs = 8_000) => {
     const start = Date.now()
@@ -247,11 +254,40 @@ export function useAgentCommandExecutor({
         }
       }
 
+      case 'list_themes': {
+        return {
+          themes: MERMAID_THEMES.map((t) => ({
+            id: t.value,
+            label: t.label,
+            group: t.group,
+          })),
+        }
+      }
+
+      case 'set_theme': {
+        const diagramId = typeof args.diagramId === 'string' ? args.diagramId : getActiveDiagramId(liveState)
+        if (!diagramId) throw new Error('diagramId is required')
+        const match = findDiagram(liveState.pages, diagramId)
+        if (!match) throw new Error(`Diagram not found: ${diagramId}`)
+        const theme = typeof args.theme === 'string' ? args.theme : undefined
+        if (!theme) throw new Error('theme is required. Use list_themes to see available themes.')
+        const valid = MERMAID_THEMES.find((t) => t.value === theme)
+        if (!valid) {
+          return {
+            error: `Unknown theme: "${theme}". Use list_themes to see available themes.`,
+            available: MERMAID_THEMES.map((t) => t.value),
+          }
+        }
+        setDiagramThemeRef.current(diagramId, theme as MermaidTheme)
+        return { diagram: summarizeDiagram(match.page, match.diagram), theme: valid.value }
+      }
+
       case 'create_diagram': {
         const diagramId = createDiagramWithOptionsRef.current({
           name: typeof args.name === 'string' ? args.name : undefined,
           code: typeof args.code === 'string' ? args.code : undefined,
           width: typeof args.width === 'number' ? args.width : undefined,
+          mermaidTheme: typeof args.theme === 'string' ? (args.theme as MermaidTheme) : undefined,
         })
         if (!diagramId) throw new Error('Unable to create diagram')
         const match = await waitForDiagram(diagramId)
