@@ -12,6 +12,7 @@
 
 import { useState, useRef, useCallback, useImperativeHandle, forwardRef, useEffect, useMemo } from 'react'
 import { ArrowElbowDownLeft, CaretDown, CaretRight, Copy, Check } from '@phosphor-icons/react'
+import { captureEvent } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 import { highlightMermaidCode, getHighlightStyle } from '@/lib/highlightCode'
 import { getRef, DIAGRAM_REFS, type RefElement as RefElementData } from '@/lib/reference'
@@ -136,6 +137,7 @@ function RefCodePreview({ code, isDark }: RefCodePreviewProps) {
 
   const copyLine = useCallback((text: string) => {
     navigator.clipboard.writeText(text).then(() => {
+      captureEvent('reference_code_copied')
       setCopiedLine(text)
       setTimeout(() => setCopiedLine(null), 1200)
     })

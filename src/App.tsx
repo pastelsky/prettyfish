@@ -14,7 +14,7 @@ import { useWebMcp, isWebMcpSupported, WEB_MCP_TOOL_COUNT } from './hooks/useWeb
 import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
 import { cn } from './lib/utils'
-import { maybeShowSponsorNudge, recordNudgeShown } from './components/app/SponsorNudge'
+import { maybeShowSponsorNudge, recordNudgeShown } from './lib/sponsorNudge'
 import { Button } from '@/components/ui/button'
 import {
   chromeFloatingActionClass,

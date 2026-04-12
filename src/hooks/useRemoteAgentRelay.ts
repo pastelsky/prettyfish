@@ -273,7 +273,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         }
       })
     }).catch(() => undefined)
-  }, [executeCommand, startHeartbeat, stopHeartbeat])
+  }, [executeCommand, scheduleReconnect, startHeartbeat, stopHeartbeat])
 
   // Keep ref updated so scheduleReconnect can call it without circular dep
   connectWithSessionRef.current = connectWithSession
@@ -373,5 +373,5 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     resetSession,
     executeCommand,
     getHostedConfigSnippet: () => buildConfigSnippet(mcpUrl),
-  }), [connect, createHostedSession, disconnect, displayId, error, executeCommand, mcpUrl, resetSession, sessionId, status])
+  }), [agentConnected, connect, createHostedSession, disconnect, displayId, error, executeCommand, mcpUrl, resetSession, sessionId, status])
 }

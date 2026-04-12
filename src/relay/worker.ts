@@ -24,6 +24,7 @@ interface DurableObjectStateLike {
   }
   acceptWebSocket: (ws: WebSocket, tags?: string[]) => void
   getWebSockets: (tag?: string) => WebSocket[]
+  setWebSocketAutoResponse: (pair: { request: string; response: string }) => void
 }
 
 interface JsonRpcRequest {
@@ -48,6 +49,10 @@ declare const WebSocketPair: {
     0: WebSocket
     1: WebSocket
   }
+}
+
+declare class WebSocketRequestResponsePair {
+  constructor(request: string, response: string)
 }
 
 export interface RelayWorkerEnv {
@@ -598,7 +603,13 @@ export class RelaySessionDurableObject {
       const pair = new WebSocketPair()
       const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
 
-      // Use hibernation API so the DO can sleep between messages
+      // Use hibernation API so the DO can sleep between messages.
+      // setWebSocketAutoResponse: when the browser sends {"type":"ping"}, the DO
+      // automatically replies {"type":"pong"} WITHOUT waking up (zero CPU, zero duration charge).
+      // This is the cheapest possible keepalive pattern for hibernatable WebSockets.
+      this.state.setWebSocketAutoResponse(
+        { request: '{"type":"ping"}', response: '{"type":"pong"}' },
+      )
       this.state.acceptWebSocket(server, [role])
 
       // Greet the new peer
@@ -648,16 +659,20 @@ export class RelaySessionDurableObject {
       return jsonResponse(result)
     }
 
-    // SSE GET endpoint — keep-alive stream for server-initiated messages
+    // SSE GET endpoint — required by MCP Streamable HTTP spec for server-initiated messages.
+    // We close the stream immediately after the initial comment:
+    // - Per the 2022 Cloudflare optimization, the Worker becomes idle as soon as response
+    //   headers are sent and the body is a passthrough stream — so we don't incur duration
+    //   charges for the time the client holds the SSE connection open.
+    // - MCP clients that rely on server-push will retry the SSE connection as needed.
     if (request.method === 'GET' && url.pathname === '/mcp/sse') {
       const encoder = new TextEncoder()
       const stream = new ReadableStream({
         start(controller) {
-          // Send an initial comment to establish the connection
+          // Send initial comment to establish the SSE handshake, then close.
+          // Worker becomes idle immediately after headers are flushed — no duration charges.
           controller.enqueue(encoder.encode(': connected\n\n'))
-          // Keep the stream open — in a real implementation we'd push
-          // server-initiated notifications here. For now this is a no-op
-          // keep-alive that satisfies the SSE handshake requirement.
+          controller.close()
         },
       })
       return new Response(stream, {
