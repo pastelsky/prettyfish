@@ -33,6 +33,18 @@ export default {
     }
 
     // ── Everything else: static SPA assets ───────────────────────────────────
-    return env.ASSETS.fetch(request)
+    const assetResponse = await env.ASSETS.fetch(request)
+
+    // Hashed asset filenames (e.g. main-Abc123.js, index-XYZ.css) are content-
+    // addressed and never change — serve with 1-year immutable cache.
+    // index.html and manifests must revalidate on every load.
+    const isHashedAsset = /\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(js|css|woff2?|png|svg|ico)$/.test(url.pathname)
+    if (isHashedAsset && assetResponse.status === 200) {
+      const res = new Response(assetResponse.body, assetResponse)
+      res.headers.set('cache-control', 'public, max-age=31536000, immutable')
+      return res
+    }
+
+    return assetResponse
   },
 }
