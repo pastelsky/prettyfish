@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import { useIsMobile } from './hooks/useIsMobile'
 import { useAppController } from './hooks/useAppController'
 import { useRemoteAgentRelay } from './hooks/useRemoteAgentRelay'
-import { useWebMcp, isWebMcpSupported } from './hooks/useWebMcp'
+import { useWebMcp, isWebMcpSupported, WEB_MCP_TOOL_COUNT } from './hooks/useWebMcp'
 import type { MermaidTheme } from './types'
 import { captureEvent } from './lib/analytics'
 import { cn } from './lib/utils'
@@ -337,6 +337,7 @@ export default function App() {
         onClose={() => setMcpOpen(false)}
         remoteRelay={remoteAgentRelay}
         webMcpSupported={webMcpSupported}
+        webMcpToolCount={WEB_MCP_TOOL_COUNT}
       />
 
       {isMobile && (docsOpen || (sidebarOpen && !mobileSidebarCollapsed)) && (

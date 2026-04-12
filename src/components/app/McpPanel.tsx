@@ -13,6 +13,7 @@ interface McpPanelProps {
   onClose: () => void
   remoteRelay: RemoteAgentRelayControls
   webMcpSupported?: boolean
+  webMcpToolCount?: number
 }
 
 function CopyBtn({ value, label }: { value: string; label?: string }) {
@@ -115,7 +116,7 @@ Export a diagram as SVG or PNG image.
 4. Call \`list_diagrams\` to see existing diagrams, \`set_diagram_code\` to update them`
 }
 
-export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false }: McpPanelProps) {
+export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, webMcpToolCount = 0 }: McpPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
   const [activeTab, setActiveTab] = useState<TabId>('install')
   const isDark = document.documentElement.classList.contains('dark')
@@ -202,7 +203,7 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false }
                 </span>
               </div>
               <p className="text-[10px] text-green-700 dark:text-green-400">
-                8 tools registered on this page. Use the{' '}
+                {webMcpToolCount} tools registered on this page. Use the{' '}
                 <a
                   href="https://chromewebstore.google.com/detail/model-context-tool-inspec/gbpdfapgefenggkahomfgkhfehlcenpd"
                   target="_blank"

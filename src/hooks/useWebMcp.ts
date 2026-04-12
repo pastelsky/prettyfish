@@ -80,6 +80,8 @@ interface UseWebMcpOptions {
  * Registers Pretty Fish tools via the WebMCP browser API when available.
  * Falls back silently when unsupported — the relay path handles that case.
  */
+export const WEB_MCP_TOOL_COUNT = TOOLS.length
+
 export function useWebMcp({ executeCommand }: UseWebMcpOptions) {
   const executeRef = useRef(executeCommand)
   useEffect(() => { executeRef.current = executeCommand }, [executeCommand])
