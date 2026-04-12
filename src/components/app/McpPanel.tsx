@@ -206,17 +206,17 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
           {!hasSession && !isBusy && (
             <div className="space-y-3">
               {/* What this does */}
-              <div className="rounded-xl bg-muted/50 px-3.5 py-3 space-y-2">
-                <p className="text-[11px] font-medium text-foreground">How it works</p>
-                <div className="space-y-1.5">
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-foreground">How it works</p>
+                <div className="space-y-2">
                   {[
-                    { n: '1', text: 'Click "Start session" to get a unique MCP URL for this tab' },
-                    { n: '2', text: 'Add the URL to Claude Code, Cursor, or any MCP client in one command' },
-                    { n: '3', text: 'Ask your AI agent to create, edit, or export diagrams — they appear here live' },
+                    { n: '1', text: 'Click "Start session" to get a unique MCP URL for this tab.' },
+                    { n: '2', text: 'Add the URL to Claude Code, Cursor, or any MCP client in one command.' },
+                    { n: '3', text: 'Ask your agent to create or export diagrams. They appear here live.' },
                   ].map(({ n, text }) => (
-                    <div key={n} className="flex gap-2 items-start">
+                    <div key={n} className="flex gap-2.5 items-start">
                       <span className="flex-shrink-0 w-4 h-4 rounded-full bg-primary/10 text-primary text-[9px] font-bold flex items-center justify-center mt-px">{n}</span>
-                      <span className="text-[11px] text-muted-foreground leading-snug">{text}</span>
+                      <span className="text-xs text-muted-foreground leading-snug">{text}</span>
                     </div>
                   ))}
                 </div>
