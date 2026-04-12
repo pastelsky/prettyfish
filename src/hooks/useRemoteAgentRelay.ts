@@ -7,23 +7,33 @@ import type { AppStoreState } from '@/state/appStore'
 import type { AppState } from '@/types'
 
 // Relay API is served same-origin (/api/relay/* and /api/mcp/* on pretty.fish).
-// Can be overridden via env var for local dev.
-const DEFAULT_RELAY_URL = ((import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL
-  || (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish')).replace(/\/$/, '')
+// Override via VITE_PRETTYFISH_RELAY_URL for local dev.
+const DEFAULT_RELAY_URL = (
+  (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL
+  || (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish')
+).replace(/\/$/, '')
 
-// Clear any stale relay URL from localStorage (previously pointed to workers.dev)
+// Migrate: clear any stale relay URL previously stored in localStorage
 try { localStorage.removeItem('prettyfish:relay-url') } catch { /* ignore */ }
 
-const RELAY_URL_KEY = 'prettyfish:relay-url'
-
-// Per-page session keys — parameterised by pageId
+// Per-page session keys — all scoped by pageId
 function sessionIdKey(pageId: string) { return `prettyfish:relay-session-id:${pageId}` }
 function browserTokenKey(pageId: string) { return `prettyfish:relay-browser-token:${pageId}` }
 function agentTokenKey(pageId: string) { return `prettyfish:relay-agent-token:${pageId}` }
-// clientSecret is per-page and never sent to the server — only its HMAC proof is
+// clientSecret never leaves the browser — only its HMAC proof is sent to the relay
 function clientSecretKey(pageId: string) { return `prettyfish:relay-client-secret:${pageId}` }
 
-/** Get or generate the per-page client secret (never leaves the browser) */
+function readStored(key: string): string {
+  try { return localStorage.getItem(key) || '' } catch { return '' }
+}
+
+function persist(key: string, value: string) {
+  try {
+    if (value) localStorage.setItem(key, value)
+    else localStorage.removeItem(key)
+  } catch { /* ignore */ }
+}
+
 function getOrCreateClientSecret(pageId: string): string {
   const key = clientSecretKey(pageId)
   try {
@@ -35,6 +45,17 @@ function getOrCreateClientSecret(pageId: string): string {
   } catch {
     return crypto.randomUUID()
   }
+}
+
+function toWebSocketUrl(sessionId: string, browserToken: string): string {
+  const base = DEFAULT_RELAY_URL.startsWith('https://')
+    ? DEFAULT_RELAY_URL.replace(/^https:\/\//, 'wss://')
+    : DEFAULT_RELAY_URL.replace(/^http:\/\//, 'ws://')
+  return `${base}/api/relay/sessions/${sessionId}/browser?token=${encodeURIComponent(browserToken)}`
+}
+
+function buildConfigSnippet(mcpUrl: string): string {
+  return JSON.stringify({ mcpServers: { prettyfish: { url: mcpUrl } } }, null, 2)
 }
 
 interface RemoteAgentRelayOptions {
@@ -54,18 +75,10 @@ interface RemoteAgentRelayOptions {
 
 export interface RemoteAgentRelayControls {
   status: 'disconnected' | 'connecting' | 'connected' | 'error'
-  relayUrl: string
   sessionId: string
-  browserToken: string
-  agentToken: string
-  browserAttachUrl: string
   mcpUrl: string
   displayId: string | null
   error: string | null
-  setRelayUrl: (value: string) => void
-  setSessionId: (value: string) => void
-  setBrowserToken: (value: string) => void
-  setAgentToken: (value: string) => void
   connect: () => Promise<void>
   disconnect: () => void
   createHostedSession: () => Promise<void>
@@ -73,143 +86,61 @@ export interface RemoteAgentRelayControls {
   getHostedConfigSnippet: () => string
 }
 
-function readStoredValue(key: string, fallback = ''): string {
-  try {
-    return localStorage.getItem(key) || fallback
-  } catch {
-    return fallback
-  }
-}
-
-function persistValue(key: string, value: string) {
-  try {
-    if (value) localStorage.setItem(key, value)
-    else localStorage.removeItem(key)
-  } catch {
-    // ignore
-  }
-}
-
-function toWebSocketUrl(relayUrl: string, sessionId: string, browserToken: string): string {
-  const normalized = relayUrl.replace(/\/$/, '')
-  const base = normalized.startsWith('https://')
-    ? normalized.replace(/^https:\/\//, 'wss://')
-    : normalized.replace(/^http:\/\//, 'ws://')
-  return `${base}/api/relay/sessions/${sessionId}/browser?token=${encodeURIComponent(browserToken)}`
-}
-
-function buildHostedConfigSnippet(mcpUrl: string): string {
-  return `{
-  "mcpServers": {
-    "prettyfish": {
-      "url": "${mcpUrl}"
-    }
-  }
-}`
-}
-
 export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAgentRelayControls {
   const { activePageId } = options
+
   const [status, setStatus] = useState<RemoteAgentRelayControls['status']>('disconnected')
-  const [relayUrl, setRelayUrlState] = useState(() => readStoredValue(RELAY_URL_KEY, DEFAULT_RELAY_URL))
-  const [sessionId, setSessionIdState] = useState(() => readStoredValue(sessionIdKey(activePageId)))
-  const [browserToken, setBrowserTokenState] = useState(() => readStoredValue(browserTokenKey(activePageId)))
-  const [agentToken, setAgentTokenState] = useState(() => readStoredValue(agentTokenKey(activePageId)))
-  const [browserAttachUrl, setBrowserAttachUrl] = useState('')
+  const [sessionId, setSessionId] = useState(() => readStored(sessionIdKey(activePageId)))
+  const [browserToken, setBrowserToken] = useState(() => readStored(browserTokenKey(activePageId)))
+  const [agentToken, setAgentToken] = useState(() => readStored(agentTokenKey(activePageId)))
   const [mcpUrl, setMcpUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
+
   const socketRef = useRef<WebSocket | null>(null)
   const attemptedAutoConnectRef = useRef(false)
   const activePageIdRef = useRef(activePageId)
   const { executeCommand } = useAgentCommandExecutor(options)
 
-  const applySession = useCallback((session: PublicRelaySessionResponse) => {
-    const pageId = activePageIdRef.current
-    setRelayUrlState(session.relayUrl)
-    setSessionIdState(session.sessionId)
-    setBrowserTokenState(session.browserToken)
-    setAgentTokenState(session.agentToken)
-    setBrowserAttachUrl(session.browserAttachUrl)
-    setMcpUrl(session.mcpUrl)
-    persistValue(RELAY_URL_KEY, session.relayUrl)
-    persistValue(sessionIdKey(pageId), session.sessionId)
-    persistValue(browserTokenKey(pageId), session.browserToken)
-    persistValue(agentTokenKey(pageId), session.agentToken)
-  }, [])
-
-  // On page switch: disconnect old WS, load stored session for the new page, auto-reconnect if one exists
+  // ── Page switch: disconnect, load session for new page ─────────────────────
   useEffect(() => {
     if (activePageIdRef.current === activePageId && attemptedAutoConnectRef.current) return
 
     activePageIdRef.current = activePageId
     attemptedAutoConnectRef.current = false
 
-    // Disconnect any existing socket from the previous page
     socketRef.current?.close()
     socketRef.current = null
     setStatus('disconnected')
     setError(null)
 
-    // Load session for this page from localStorage
-    const nextSessionId = readStoredValue(sessionIdKey(activePageId))
-    const nextBrowserToken = readStoredValue(browserTokenKey(activePageId))
-    const nextAgentToken = readStoredValue(agentTokenKey(activePageId))
-    setSessionIdState(nextSessionId)
-    setBrowserTokenState(nextBrowserToken)
-    setAgentTokenState(nextAgentToken)
-    setBrowserAttachUrl('')
+    const nextSessionId = readStored(sessionIdKey(activePageId))
+    const nextBrowserToken = readStored(browserTokenKey(activePageId))
+    const nextAgentToken = readStored(agentTokenKey(activePageId))
+    setSessionId(nextSessionId)
+    setBrowserToken(nextBrowserToken)
+    setAgentToken(nextAgentToken)
     setMcpUrl('')
   }, [activePageId])
 
+  // ── Rebuild mcpUrl whenever session changes ────────────────────────────────
   useEffect(() => {
-    if (!relayUrl || !sessionId || !agentToken) {
-      setBrowserAttachUrl('')
-      setMcpUrl('')
-      return
-    }
+    if (!sessionId || !agentToken) { setMcpUrl(''); return }
+    const url = new URL(`${DEFAULT_RELAY_URL}/api/mcp/sessions/${sessionId}`)
+    url.searchParams.set('token', agentToken)
+    setMcpUrl(url.toString())
+  }, [agentToken, sessionId])
 
-    const attachUrl = new URL('https://pretty.fish/')
-    attachUrl.searchParams.set('relayUrl', relayUrl)
-    attachUrl.searchParams.set('relaySessionId', sessionId)
-    attachUrl.searchParams.set('relayBrowserToken', browserToken)
-    setBrowserAttachUrl(attachUrl.toString())
+  // ── Cleanup on unmount ─────────────────────────────────────────────────────
+  useEffect(() => () => { socketRef.current?.close() }, [])
 
-    const nextMcpUrl = new URL(`${relayUrl}/api/mcp/sessions/${sessionId}`)
-    nextMcpUrl.searchParams.set('token', agentToken)
-    setMcpUrl(nextMcpUrl.toString())
-  }, [agentToken, browserToken, relayUrl, sessionId])
-
-  const setRelayUrl = useCallback((value: string) => {
-    setRelayUrlState(value)
-    persistValue(RELAY_URL_KEY, value)
-  }, [])
-
-  const setSessionId = useCallback((value: string) => {
-    setSessionIdState(value)
-    persistValue(sessionIdKey(activePageIdRef.current), value)
-  }, [])
-
-  const setBrowserToken = useCallback((value: string) => {
-    setBrowserTokenState(value)
-    persistValue(browserTokenKey(activePageIdRef.current), value)
-  }, [])
-
-  const setAgentToken = useCallback((value: string) => {
-    setAgentTokenState(value)
-    persistValue(agentTokenKey(activePageIdRef.current), value)
-  }, [])
-
-  const disconnect = useCallback(() => {
-    socketRef.current?.close()
-    socketRef.current = null
-    setStatus('disconnected')
-    setError(null)
-  }, [])
-
-  const connectWithSession = useCallback(async (nextRelayUrl: string, nextSessionId: string, nextBrowserToken: string) => {
-    if (!nextRelayUrl || !nextSessionId || !nextBrowserToken) {
+  // ── Core WebSocket connect ─────────────────────────────────────────────────
+  const connectWithSession = useCallback(async (
+    nextSessionId: string,
+    nextBrowserToken: string,
+  ) => {
+    if (!nextSessionId || !nextBrowserToken) {
       setStatus('error')
-      setError('Relay URL, session ID, and browser token are required')
+      setError('Session ID and browser token are required')
       return
     }
 
@@ -218,19 +149,16 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     setError(null)
 
     await new Promise<void>((resolve, reject) => {
-      const socket = new WebSocket(toWebSocketUrl(nextRelayUrl, nextSessionId, nextBrowserToken))
+      const socket = new WebSocket(toWebSocketUrl(nextSessionId, nextBrowserToken))
       socketRef.current = socket
 
-      socket.addEventListener('open', () => {
-        setStatus('connected')
-        resolve()
-      }, { once: true })
+      socket.addEventListener('open', () => { setStatus('connected'); resolve() }, { once: true })
 
       socket.addEventListener('error', () => {
         if (socket.readyState !== WebSocket.OPEN) {
           setStatus('error')
-          setError('Failed to connect to relay websocket')
-          reject(new Error('Failed to connect to relay websocket'))
+          setError('Failed to connect to relay WebSocket')
+          reject(new Error('Failed to connect to relay WebSocket'))
         }
       }, { once: true })
 
@@ -246,23 +174,16 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         if (!raw) return
 
         let message: RelayEnvelope
-        try {
-          message = JSON.parse(raw) as RelayEnvelope
-        } catch {
-          return
-        }
+        try { message = JSON.parse(raw) as RelayEnvelope } catch { return }
 
         if (message.type === 'command') {
           void (async () => {
-            // sig = HMAC-SHA256(browserProof, commandId) — the relay signs using
-            // browserProof from session creation. An attacker with only agentToken
-            // cannot forge this since they never see browserProof.
+            // Verify HMAC signature before executing — prevents rogue commands
+            // from anyone who only has the agentToken.
             const clientSecret = getOrCreateClientSecret(activePageIdRef.current)
             const browserProof = await hmacSign(clientSecret, activePageIdRef.current)
             const cmdSig = (message as { sig?: string }).sig
-            const sigValid = cmdSig
-              ? await hmacVerify(browserProof, message.id, cmdSig)
-              : false
+            const sigValid = cmdSig ? await hmacVerify(browserProof, message.id, cmdSig) : false
 
             if (!sigValid) {
               socket.send(JSON.stringify({
@@ -280,18 +201,13 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
                 type: message.command as BrowserCommandEnvelope['type'],
                 args: message.args,
               })
-              socket.send(JSON.stringify({
-                type: 'command_result',
-                id: message.id,
-                ok: true,
-                result,
-              } satisfies RelayEnvelope))
-            } catch (commandError) {
+              socket.send(JSON.stringify({ type: 'command_result', id: message.id, ok: true, result } satisfies RelayEnvelope))
+            } catch (err) {
               socket.send(JSON.stringify({
                 type: 'command_result',
                 id: message.id,
                 ok: false,
-                error: commandError instanceof Error ? commandError.message : 'Unknown relay command error',
+                error: err instanceof Error ? err.message : 'Unknown relay command error',
               } satisfies RelayEnvelope))
             }
           })()
@@ -303,22 +219,36 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     }).catch(() => undefined)
   }, [executeCommand])
 
+  // ── Auto-reconnect on mount / page switch if stored session exists ─────────
+  useEffect(() => {
+    if (attemptedAutoConnectRef.current) return
+    if (!sessionId || !browserToken) return
+    attemptedAutoConnectRef.current = true
+    void connectWithSession(sessionId, browserToken)
+  }, [browserToken, connectWithSession, sessionId])
+
+  const disconnect = useCallback(() => {
+    socketRef.current?.close()
+    socketRef.current = null
+    setStatus('disconnected')
+    setError(null)
+  }, [])
+
+  const connect = useCallback(async () => {
+    await connectWithSession(sessionId, browserToken)
+  }, [browserToken, connectWithSession, sessionId])
+
   const resetSession = useCallback(() => {
     const pageId = activePageIdRef.current
     disconnect()
-    setSessionIdState('')
-    setBrowserTokenState('')
-    setAgentTokenState('')
-    setBrowserAttachUrl('')
+    setSessionId('')
+    setBrowserToken('')
+    setAgentToken('')
     setMcpUrl('')
-    persistValue(sessionIdKey(pageId), '')
-    persistValue(browserTokenKey(pageId), '')
-    persistValue(agentTokenKey(pageId), '')
+    persist(sessionIdKey(pageId), '')
+    persist(browserTokenKey(pageId), '')
+    persist(agentTokenKey(pageId), '')
   }, [disconnect])
-
-  const connect = useCallback(async () => {
-    await connectWithSession(relayUrl, sessionId, browserToken)
-  }, [browserToken, connectWithSession, relayUrl, sessionId])
 
   const createHostedSession = useCallback(async () => {
     disconnect()
@@ -329,99 +259,56 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     try {
       const pageId = activePageIdRef.current
       const clientSecret = getOrCreateClientSecret(pageId)
-      // Compute browserProof = HMAC-SHA256(clientSecret, pageId).
-      // The raw secret never leaves the browser — only this proof is sent.
+      // Send only the HMAC proof — the raw secret never leaves the browser
       const browserProof = await hmacSign(clientSecret, pageId)
 
-      const response = await fetch(`${relayUrl.replace(/\/$/, '')}/api/relay/public/sessions`, {
+      const response = await fetch(`${DEFAULT_RELAY_URL}/api/relay/public/sessions`, {
         method: 'POST',
-        // Use text/plain to avoid a CORS preflight (simple request).
-        // The worker accepts both content-types and parses the body as JSON.
-        headers: {
-          'content-type': 'text/plain;charset=UTF-8',
-        },
+        // text/plain avoids a CORS preflight (simple request)
+        headers: { 'content-type': 'text/plain;charset=UTF-8' },
         body: JSON.stringify({ createdBy: 'prettyfish-web', browserProof }),
       })
 
-      if (!response.ok) {
-        throw new Error(`Failed to create hosted MCP session (${response.status})`)
-      }
+      if (!response.ok) throw new Error(`Failed to create MCP session (${response.status})`)
 
       session = await response.json() as PublicRelaySessionResponse
-      applySession(session)
+
+      // Persist per-page session
+      setSessionId(session.sessionId)
+      setBrowserToken(session.browserToken)
+      setAgentToken(session.agentToken)
+      persist(sessionIdKey(pageId), session.sessionId)
+      persist(browserTokenKey(pageId), session.browserToken)
+      persist(agentTokenKey(pageId), session.agentToken)
     } catch (sessionError) {
       setStatus('error')
       setError(sessionError instanceof Error ? sessionError.message : 'Failed to create hosted session')
       return
     }
 
-    // Session created — now try to attach the browser WebSocket.
-    // A WS failure is non-fatal: the MCP config is still valid and the agent
-    // can call tools as soon as the browser reconnects.
+    // Attach browser WebSocket — non-fatal if it fails (config snippet still usable)
     try {
-      await connectWithSession(session.relayUrl, session.sessionId, session.browserToken)
+      await connectWithSession(session.sessionId, session.browserToken)
     } catch {
-      // WS connect failed — leave status as disconnected so the user can retry,
-      // but don't wipe the session (config snippet is still usable).
       setStatus('disconnected')
       setError('Session created but browser connection failed — click Reconnect to retry.')
     }
-  }, [applySession, connectWithSession, disconnect, relayUrl])
+  }, [connectWithSession, disconnect])
 
-  useEffect(() => () => {
-    socketRef.current?.close()
-  }, [])
-
-  // Auto-reconnect when a stored session is loaded (on mount or page switch)
-  useEffect(() => {
-    if (attemptedAutoConnectRef.current) return
-    if (!relayUrl || !sessionId || !browserToken) return
-    attemptedAutoConnectRef.current = true
-    void connectWithSession(relayUrl, sessionId, browserToken)
-  }, [browserToken, connectWithSession, relayUrl, sessionId])
-
-  // For readable IDs like "velvet-storm-fox-a3f2", show all but the hash suffix.
-  // For legacy UUID IDs, fall back to first 8 chars.
   const displayId = sessionId
     ? (sessionId.match(/^[a-z]+-[a-z]+-[a-z]+-[a-f0-9]{4}$/) ? sessionId : sessionId.slice(0, 8))
     : null
 
   return useMemo(() => ({
     status,
-    relayUrl,
     sessionId,
-    browserToken,
-    agentToken,
-    browserAttachUrl,
     mcpUrl,
     displayId,
     error,
-    setRelayUrl,
-    setSessionId,
-    setBrowserToken,
-    setAgentToken,
     connect,
     disconnect,
     createHostedSession,
     resetSession,
-    getHostedConfigSnippet: () => buildHostedConfigSnippet(mcpUrl),
-  }), [
-    agentToken,
-    browserAttachUrl,
-    browserToken,
-    connect,
-    createHostedSession,
-    disconnect,
-    displayId,
-    error,
-    mcpUrl,
-    relayUrl,
-    resetSession,
-    sessionId,
-    setAgentToken,
-    setBrowserToken,
-    setRelayUrl,
-    setSessionId,
-    status,
-  ])
+    getHostedConfigSnippet: () => buildConfigSnippet(mcpUrl),
+  }), [connect, createHostedSession, disconnect, displayId, error, mcpUrl, resetSession, sessionId, status])
 }

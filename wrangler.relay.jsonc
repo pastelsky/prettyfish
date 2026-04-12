@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "prettyfish-relay",
   "main": "src/relay/worker.ts",
-  "compatibility_date": "2026-04-11",
+  "compatibility_date": "2026-04-12",
   "observability": {
     "enabled": true
   },

@@ -58,7 +58,6 @@ export interface RelayWorkerEnv {
 const SESSION_KEY = 'relay-session-record'
 const MCP_PROTOCOL_VERSION = '2025-03-26'
 const MCP_SERVER_INFO = { name: 'prettyfish-remote-relay', version: '0.1.0' }
-const DEFAULT_APP_URL = 'https://pretty.fish/'
 const PUBLIC_ORIGIN_PATTERNS = [
   /^https:\/\/pretty\.fish$/,
   /^https:\/\/www\.pretty\.fish$/,
@@ -154,14 +153,6 @@ function getWorkerBaseUrl(request: Request): string {
   return new URL(request.url).origin
 }
 
-function buildBrowserAttachUrl(request: Request, session: RelaySessionRecord): string {
-  const url = new URL(DEFAULT_APP_URL)
-  url.searchParams.set('relayUrl', getWorkerBaseUrl(request))
-  url.searchParams.set('relaySessionId', session.sessionId)
-  url.searchParams.set('relayBrowserToken', session.browserToken)
-  return url.toString()
-}
-
 function buildPublicRelaySessionResponse(request: Request, session: RelaySessionRecord): PublicRelaySessionResponse {
   const relayUrl = getWorkerBaseUrl(request)
   const mcpUrl = new URL(`${relayUrl}/api/mcp/sessions/${session.sessionId}`)
@@ -171,7 +162,6 @@ function buildPublicRelaySessionResponse(request: Request, session: RelaySession
     ...session,
     relayUrl,
     mcpUrl: mcpUrl.toString(),
-    browserAttachUrl: buildBrowserAttachUrl(request, session),
   }
 }
 

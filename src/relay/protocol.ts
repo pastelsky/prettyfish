@@ -11,7 +11,6 @@ export interface RelaySessionRecord {
 export interface PublicRelaySessionResponse extends RelaySessionRecord {
   relayUrl: string
   mcpUrl: string
-  browserAttachUrl: string
 }
 
 export interface RelayCommandMessage {

@@ -59,7 +59,7 @@ function StatusDot({ status }: { status: 'disconnected' | 'connecting' | 'connec
 export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null)
 
-  const hasSession = Boolean(remoteRelay.sessionId && remoteRelay.agentToken)
+  const hasSession = Boolean(remoteRelay.sessionId && remoteRelay.mcpUrl)
   const isConnected = remoteRelay.status === 'connected'
   const isBusy = remoteRelay.status === 'connecting'
 
