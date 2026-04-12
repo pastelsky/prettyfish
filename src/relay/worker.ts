@@ -155,7 +155,7 @@ function getWorkerBaseUrl(request: Request): string {
 
 function buildPublicRelaySessionResponse(request: Request, session: RelaySessionRecord): PublicRelaySessionResponse {
   const relayUrl = getWorkerBaseUrl(request)
-  const mcpUrl = new URL(`${relayUrl}/api/mcp/sessions/${session.sessionId}`)
+  const mcpUrl = new URL(`${relayUrl}/mcp/${session.sessionId}`)
   mcpUrl.searchParams.set('token', session.agentToken)
 
   return {
@@ -267,55 +267,49 @@ async function connectPeer(request: Request, env: RelayWorkerEnv, sessionId: str
   return stub.fetch(`https://relay.internal/connect/${role}?token=${encodeURIComponent(token)}`, request)
 }
 
-export default {
-  async fetch(request: Request, env: RelayWorkerEnv): Promise<Response> {
-    const url = new URL(request.url)
-    const requestOrigin = request.headers.get('origin')
+/** Route handler for /relay/* and /mcp/* — called by the main worker */
+export async function handleRelayRequest(request: Request, env: RelayWorkerEnv): Promise<Response> {
+  const url = new URL(request.url)
+  const requestOrigin = request.headers.get('origin')
 
-    // Handle CORS preflight for all public API routes
-    if (request.method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders(requestOrigin),
-      })
+  // CORS preflight
+  if (request.method === 'OPTIONS') {
+    return new Response(null, { status: 204, headers: corsHeaders(requestOrigin) })
+  }
+
+  if (request.method === 'POST' && url.pathname === '/relay/sessions') {
+    return createRelaySession(request, env)
+  }
+
+  if (request.method === 'POST' && url.pathname === '/relay/sessions/public') {
+    return createPublicRelaySession(request, env)
+  }
+
+  const mcpMatch = url.pathname.match(/^\/mcp\/([^/]+)$/)
+  if (mcpMatch) {
+    const [, sessionId] = mcpMatch
+    if (request.method !== 'POST') {
+      return jsonResponse({ error: 'Method not allowed' }, 405)
     }
+    const token = parseAuthToken(request)
+    const stub = getSessionStub(env, sessionId)
+    return stub.fetch(`https://relay.internal/mcp?token=${encodeURIComponent(token)}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: await request.text(),
+    })
+  }
 
-    if (request.method === 'POST' && url.pathname === '/api/relay/sessions') {
-      return createRelaySession(request, env)
+  const match = url.pathname.match(/^\/relay\/sessions\/([^/]+)\/(browser|agent)$/)
+  if (match) {
+    const [, sessionId, role] = match
+    if (request.headers.get('upgrade')?.toLowerCase() !== 'websocket') {
+      return jsonResponse({ error: 'Expected websocket upgrade' }, 426)
     }
+    return connectPeer(request, env, sessionId, role as RelayPeerRole)
+  }
 
-    if (request.method === 'POST' && url.pathname === '/api/relay/public/sessions') {
-      return createPublicRelaySession(request, env)
-    }
-
-    const mcpMatch = url.pathname.match(/^\/api\/mcp\/sessions\/([^/]+)$/)
-    if (mcpMatch) {
-      const [, sessionId] = mcpMatch
-      if (request.method !== 'POST') {
-        return jsonResponse({ error: 'Method not allowed' }, 405)
-      }
-      const token = parseAuthToken(request)
-      const stub = getSessionStub(env, sessionId)
-      return stub.fetch(`https://relay.internal/mcp?token=${encodeURIComponent(token)}`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-        },
-        body: await request.text(),
-      })
-    }
-
-    const match = url.pathname.match(/^\/api\/relay\/sessions\/([^/]+)\/(browser|agent)$/)
-    if (match) {
-      const [, sessionId, role] = match
-      if (request.headers.get('upgrade')?.toLowerCase() !== 'websocket') {
-        return jsonResponse({ error: 'Expected websocket upgrade' }, 426)
-      }
-      return connectPeer(request, env, sessionId, role as RelayPeerRole)
-    }
-
-    return jsonResponse({ error: 'Not found' }, 404)
-  },
+  return jsonResponse({ error: 'Not found' }, 404)
 }
 
 export class RelaySessionDurableObject {

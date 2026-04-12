@@ -6,11 +6,10 @@ import type { PublicRelaySessionResponse, RelayEnvelope } from '@/relay/protocol
 import type { AppStoreState } from '@/state/appStore'
 import type { AppState } from '@/types'
 
-// Relay API is served same-origin (/api/relay/* and /api/mcp/* on pretty.fish).
-// Override via VITE_PRETTYFISH_RELAY_URL for local dev.
+// Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
 const DEFAULT_RELAY_URL = (
   (import.meta as ImportMeta & { env?: Record<string, string> }).env?.VITE_PRETTYFISH_RELAY_URL
-  || 'https://mcp.pretty.fish'
+  || (typeof window !== 'undefined' ? window.location.origin : 'https://pretty.fish')
 ).replace(/\/$/, '')
 
 // Migrate: clear any stale relay URL previously stored in localStorage
@@ -51,7 +50,7 @@ function toWebSocketUrl(sessionId: string, browserToken: string): string {
   const base = DEFAULT_RELAY_URL.startsWith('https://')
     ? DEFAULT_RELAY_URL.replace(/^https:\/\//, 'wss://')
     : DEFAULT_RELAY_URL.replace(/^http:\/\//, 'ws://')
-  return `${base}/api/relay/sessions/${sessionId}/browser?token=${encodeURIComponent(browserToken)}`
+  return `${base}/relay/sessions/${sessionId}/browser?token=${encodeURIComponent(browserToken)}`
 }
 
 function buildConfigSnippet(mcpUrl: string): string {
@@ -125,7 +124,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // ── Rebuild mcpUrl whenever session changes ────────────────────────────────
   useEffect(() => {
     if (!sessionId || !agentToken) { setMcpUrl(''); return }
-    const url = new URL(`${DEFAULT_RELAY_URL}/api/mcp/sessions/${sessionId}`)
+    const url = new URL(`${DEFAULT_RELAY_URL}/mcp/${sessionId}`)
     url.searchParams.set('token', agentToken)
     setMcpUrl(url.toString())
   }, [agentToken, sessionId])
@@ -262,7 +261,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       // Send only the HMAC proof — the raw secret never leaves the browser
       const browserProof = await hmacSign(clientSecret, pageId)
 
-      const response = await fetch(`${DEFAULT_RELAY_URL}/api/relay/public/sessions`, {
+      const response = await fetch(`${DEFAULT_RELAY_URL}/relay/sessions/public`, {
         method: 'POST',
         // text/plain avoids a CORS preflight (simple request)
         headers: { 'content-type': 'text/plain;charset=UTF-8' },
