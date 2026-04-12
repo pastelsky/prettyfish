@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react'
 
+import { captureEvent } from '@/lib/analytics'
 import { buildPngBlob, buildSvgBlob } from '@/lib/export'
 import { DIAGRAM_REFS, getRef } from '@/lib/reference'
 import type { AppStoreState } from '@/state/appStore'
@@ -166,6 +167,7 @@ export function useAgentCommandExecutor({
   }, [])
 
   const executeCommand = useCallback(async (command: BrowserCommandEnvelope) => {
+    captureEvent('mcp_tool_called', { tool: command.type })
     const liveState = stateRef.current
     const args = command.args || {}
 

@@ -124,7 +124,7 @@ function McpButton({ onOpenMcp, mcpConnected, mcpSessionReady, onTripleClick }: 
     clickTimerRef.current = setTimeout(() => {
       const count = clickCountRef.current
       clickCountRef.current = 0
-      if (count === 1) onOpenMcp()
+      if (count === 1) { captureEvent('mcp_panel_opened'); onOpenMcp() }
     }, 300)
   }
 

@@ -7,6 +7,7 @@ import { githubLight, githubDark } from '@uiw/codemirror-theme-github'
 
 import { Button } from '@/components/ui/button'
 import type { RemoteAgentRelayControls } from '@/hooks/useRemoteAgentRelay'
+import { captureEvent } from '@/lib/analytics'
 import { cn } from '@/lib/utils'
 
 interface McpPanelProps {
@@ -27,6 +28,7 @@ function CopyBtn({ value, label }: { value: string; label?: string }) {
         if (!value) return
         await navigator.clipboard.writeText(value)
         setCopied(true)
+        captureEvent('mcp_config_copied', { tab: label ?? 'unknown' })
         window.setTimeout(() => setCopied(false), 1500)
       }}
       title={copied ? 'Copied!' : 'Copy'}
@@ -223,7 +225,7 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
               </div>
               <Button
                 className="w-full h-8 text-xs gap-1.5"
-                onClick={() => void remoteRelay.createHostedSession()}
+                onClick={() => { captureEvent('mcp_session_generate'); void remoteRelay.createHostedSession() }}
               >
                 <PlugsConnected className="h-3.5 w-3.5" />
                 Start session
@@ -255,11 +257,11 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
                 </div>
                 <div className="flex items-center gap-1 shrink-0">
                   {!isConnected && !isBusy && (
-                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => void remoteRelay.connect()} title="Reconnect">
+                    <Button size="sm" variant="ghost" className="h-6 w-6 p-0" onClick={() => { captureEvent('mcp_session_reconnect'); void remoteRelay.connect() }} title="Reconnect">
                       <ArrowsClockwise className="h-3 w-3" />
                     </Button>
                   )}
-                  <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => void remoteRelay.createHostedSession()} disabled={isBusy}>
+                  <Button size="sm" variant="outline" className="h-6 px-2 text-[11px]" onClick={() => { captureEvent('mcp_session_new'); void remoteRelay.createHostedSession() }} disabled={isBusy}>
                     New session
                   </Button>
                 </div>
@@ -279,7 +281,7 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
                         ? 'bg-background text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground',
                     )}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => { captureEvent('mcp_tab_switched', { tab: tab.id }); setActiveTab(tab.id) }}
                   >
                     {tab.label}
                   </button>

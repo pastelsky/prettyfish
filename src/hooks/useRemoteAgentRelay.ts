@@ -143,7 +143,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'ping' } satisfies RelayEnvelope))
       }
-    }, 30_000)
+    }, 55_000) // 55s — safely under Cloudflare's 100s idle timeout, minimizes DO request costs
   }, [])
 
   const stopHeartbeat = useCallback(() => {
