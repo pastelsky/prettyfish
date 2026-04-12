@@ -106,6 +106,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const [browserToken, setBrowserToken] = useState(() => readStored(browserTokenKey(activePageId)))
   const [mcpUrl, setMcpUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const userInitiatedConnectRef = useRef(false)
 
   const socketRef = useRef<WebSocket | null>(null)
   const attemptedAutoConnectRef = useRef(false)
@@ -218,7 +219,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         if (socketRef.current !== socket) return
         if (socket.readyState !== WebSocket.OPEN) {
           setStatus('error')
-          setError('Failed to connect to relay WebSocket')
+          if (userInitiatedConnectRef.current) {
+            setError('Failed to connect to relay WebSocket')
+          } else {
+            setError(null)
+          }
           // If a stored session/token is stale, clear it so the next explicit click
           // starts fresh instead of repeatedly retrying a dead session.
           const pageId = activePageIdRef.current
@@ -318,10 +323,12 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   }, [stopHeartbeat])
 
   const connect = useCallback(async () => {
+    userInitiatedConnectRef.current = true
     await connectWithSession(sessionId, browserToken)
   }, [browserToken, connectWithSession, sessionId])
 
   const resetSession = useCallback(() => {
+    userInitiatedConnectRef.current = false
     const pageId = activePageIdRef.current
     disconnect()
     setSessionId('')
@@ -332,6 +339,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   }, [disconnect])
 
   const createHostedSession = useCallback(async () => {
+    userInitiatedConnectRef.current = true
     disconnect()
     setStatus('connecting')
     setError(null)
