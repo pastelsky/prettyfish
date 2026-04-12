@@ -54,7 +54,7 @@ export function recordNudgeShown() {
 const MESSAGES: [string, string][] = [
   ["Pretty Fish is open-source and lives rent-free in your browser. If it's been useful, throwing a few bucks our way keeps the lights on (and the ", " swimming)."],
   ["Built with too much coffee and genuine love for good diagrams. If Pretty Fish saved you some time, consider tossing a coin to your developer.", ""],
-  ["Pretty Fish is free and open-source, built with love and late nights. If you've enjoyed it, GitHub Sponsors is a lovely way to say so.", ""],
+  ["Pretty Fish is free and open-source, built with love and late nights. If you've enjoyed it, GitHub Sponsors can be a lovely way to say so.", ""],
 ]
 
 function getMessage(showCount: number): [string, string] {
