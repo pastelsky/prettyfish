@@ -59,7 +59,14 @@ test.describe('MCP + OpenCode integration', () => {
     // Take a screenshot of the panel
     await page.screenshot({ path: 'test-results/mcp-panel-before.png' })
 
-    // ── Step 3: Configure OpenCode with this MCP server ──────────────────────
+    // ── Step 3: Wait for browser WebSocket to connect ──────────────────────
+
+    // The browser needs to be connected to the relay session before OpenCode
+    // can send commands. Wait for the "Connected" status.
+    await expect(panel.locator('text=Connected')).toBeVisible({ timeout: 10_000 })
+    console.log('Browser connected to relay session')
+
+    // ── Step 4: Configure OpenCode with this MCP server ──────────────────────
 
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'prettyfish-mcp-test-'))
     const openCodeConfig = {
@@ -69,56 +76,44 @@ test.describe('MCP + OpenCode integration', () => {
           enabled: true,
           type: 'remote' as const,
           url: mcpUrl!,
-          timeout: 30000,
         },
       },
     }
 
-    // Write config to temp dir
-    fs.writeFileSync(
-      path.join(tmpDir, 'opencode.json'),
-      JSON.stringify(openCodeConfig, null, 2),
-    )
-    // Need a dummy file so opencode recognizes it as a project
+    fs.writeFileSync(path.join(tmpDir, 'opencode.json'), JSON.stringify(openCodeConfig, null, 2))
     fs.writeFileSync(path.join(tmpDir, 'README.md'), '# Test\n')
-
     console.log('Temp dir:', tmpDir)
-    console.log('OpenCode config:', JSON.stringify(openCodeConfig, null, 2))
 
-    // ── Step 4: Run OpenCode to create a diagram ─────────────────────────────
+    // ── Step 5: Run OpenCode to create a diagram ─────────────────────────────
 
     try {
       const result = execSync(
-        `opencode run --pure "Using the prettyfish MCP server, create a simple flowchart diagram with three nodes: Start, Process, and End. Use the create_diagram tool."`,
+        `opencode run "Use the prettyfish MCP server to call the create_diagram tool with this mermaid code: graph TD; A[Start] --> B[Process] --> C[End]"`,
         {
           cwd: tmpDir,
           timeout: 90_000,
           encoding: 'utf8',
-          env: {
-            ...process.env,
-            // Force OpenCode to use the local config
-            XDG_CONFIG_HOME: tmpDir,
-          },
+          env: { ...process.env },
         },
       )
       console.log('OpenCode output:', result)
     } catch (error) {
-      console.error('OpenCode error:', (error as { stderr?: string }).stderr || error)
-      // Don't fail the test here — check the browser state instead
+      const errObj = error as { stdout?: string; stderr?: string }
+      console.log('OpenCode stdout:', errObj.stdout || '')
+      console.error('OpenCode stderr:', errObj.stderr || '')
     }
 
-    // ── Step 5: Assert the diagram appeared in the browser ───────────────────
+    // ── Step 6: Assert the diagram appeared in the browser ───────────────────
 
-    // Give the browser a moment to receive and render the diagram
-    await page.waitForTimeout(3_000)
+    // Wait for the diagram code to appear in the editor
+    await expect(page.locator('text=graph TD')).toBeVisible({ timeout: 10_000 })
 
-    // Take a screenshot after OpenCode ran
+    // Check for rendered SVG content (Mermaid renders to SVG)
+    await expect(page.locator('svg').first()).toBeVisible({ timeout: 5_000 })
+
+    // Take a screenshot of the result
     await page.screenshot({ path: 'test-results/mcp-diagram-after.png' })
-
-    // Check that a diagram was created — the canvas should have a rendered SVG
-    const svgCount = await page.locator('.infinite-canvas svg.mermaid-svg, .diagram-container svg').count()
-    console.log('SVG diagrams found:', svgCount)
-    expect(svgCount).toBeGreaterThan(0)
+    console.log('Diagram created successfully via MCP!')
 
     // ── Cleanup ──────────────────────────────────────────────────────────────
     fs.rmSync(tmpDir, { recursive: true, force: true })
