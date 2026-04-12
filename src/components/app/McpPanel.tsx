@@ -168,11 +168,11 @@ export function McpPanel({ open, onClose, remoteRelay, isDark = false }: McpPane
                   <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Quick install</p>
                   <CopyBtn value={addMcpCmd} />
                 </div>
-                <div className="overflow-x-auto rounded-lg bg-black px-3 py-2 dark:bg-black">
+                <div className="overflow-x-auto rounded-lg px-3 py-2 bg-[#0d1117] dark:bg-[#0d1117]">
                   <code className="whitespace-nowrap font-mono text-[11px] leading-relaxed">
-                    <span className="text-amber-300 dark:text-amber-300">npx</span>{' '}
-                    <span className="text-zinc-100 dark:text-zinc-100">add-mcp</span>{' '}
-                    <span className="text-sky-300 dark:text-sky-300">{remoteRelay.mcpUrl}</span>
+                    <span className="text-[#ff7b72]">npx</span>{' '}
+                    <span className="text-[#c9d1d9]">add-mcp</span>{' '}
+                    <span className="text-[#79c0ff]">{remoteRelay.mcpUrl}</span>
                   </code>
                 </div>
               </div>
