@@ -17,14 +17,6 @@
  */
 
 import { test, expect, Page } from '@playwright/test'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-// ── Load theme presets ────────────────────────────────────────────────────────
-// We import the compiled theme variables at runtime by reading the JS module
-// We can't import TS directly in a .spec.ts without additional setup so we
-// define the theme config inline by reading it at test time via dynamic import.
 
 // ── Color utilities ───────────────────────────────────────────────────────────
 
@@ -59,66 +51,38 @@ const WCAG_AA_LARGE = 3.0 // minimum for large/bold text
 
 // ── Mermaid rendering helper ──────────────────────────────────────────────────
 
-const MERMAID_SCRIPT = fs.readFileSync(
-  path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../node_modules/mermaid/dist/mermaid.min.js'),
-  'utf-8'
-)
-
 interface ThemeVars {
   background?: string
   [key: string]: string | undefined
 }
 
+/**
+ * Navigate to the render harness served by contrast-server.mjs, then call
+ * window.renderDiagram() via page.evaluate() to render the diagram.
+ * The harness page already has mermaid.js loaded — we just pass config.
+ */
 async function renderDiagram(
   page: Page,
   code: string,
   themeVars: ThemeVars,
   configOverrides: Record<string, unknown> = {}
 ): Promise<void> {
-  const background = themeVars.background ?? '#ffffff'
-  const html = `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="utf-8">
-<style>
-  html, body { background: ${background}; margin: 0; padding: 20px; }
-</style>
-</head>
-<body>
-<div id="status">loading</div>
-<script>
-${MERMAID_SCRIPT}
-</script>
-<script>
-(async () => {
-  try {
-    const config = {
-      startOnLoad: false,
-      theme: 'base',
-      themeVariables: ${JSON.stringify(themeVars)},
-      ...${JSON.stringify(configOverrides)},
-    };
-    mermaid.initialize(config);
-    const { svg } = await mermaid.render('diagram', ${JSON.stringify(code)});
-    document.body.innerHTML = svg;
-    document.title = 'done';
-  } catch (e) {
-    document.getElementById('status').textContent = 'error: ' + e.message;
-    document.title = 'error';
-    console.error(e);
+  // Navigate to harness (only needed once per page — page is reused within a test)
+  if (!page.url().includes('/render.html')) {
+    await page.goto('/render.html', { waitUntil: 'domcontentloaded' })
+    await page.waitForFunction(() => (window as unknown as { __ready?: boolean }).__ready === true, { timeout: 10000 })
   }
-})();
-</script>
-</body>
-</html>`
-  await page.setContent(html, { waitUntil: 'domcontentloaded' })
-  await page.waitForFunction(
-    () => document.title === 'done' || document.title === 'error',
-    { timeout: 15000 }
+
+  const result = await page.evaluate(
+    async ({ code: c, themeVars: tv, configOverrides: co }) => {
+      return (window as unknown as { renderDiagram: (a: string, b: unknown, c: unknown) => Promise<{ ok: boolean; error?: string }> })
+        .renderDiagram(c, tv, co)
+    },
+    { code, themeVars, configOverrides }
   )
-  const title = await page.title()
-  if (title === 'error') {
-    throw new Error(`Mermaid failed to render diagram`)
+
+  if (!result.ok) {
+    throw new Error(`Mermaid render failed: ${result.error}`)
   }
 }
 

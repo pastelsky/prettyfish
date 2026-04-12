@@ -1,7 +1,8 @@
 /**
  * Playwright config for the rendered contrast audit.
- * Runs WITHOUT a web server — the test renders Mermaid diagrams directly
- * via page.setContent(), no app server needed.
+ * Starts a minimal Express server (scripts/contrast-server.mjs) that serves
+ * mermaid.js and a render harness page. Tests navigate to the harness and
+ * call window.renderDiagram() via page.evaluate() — no app server needed.
  */
 import { defineConfig, devices } from '@playwright/test'
 
@@ -14,7 +15,7 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    // No baseURL needed — tests use page.setContent() directly
+    baseURL: 'http://127.0.0.1:4299',
     trace: 'on-first-retry',
   },
   projects: [
@@ -23,5 +24,10 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
     },
   ],
-  // No webServer — tests are self-contained
+  webServer: {
+    command: 'node scripts/contrast-server.mjs 4299',
+    url: 'http://127.0.0.1:4299/render.html',
+    reuseExistingServer: !process.env.CI,
+    timeout: 10000,
+  },
 })
