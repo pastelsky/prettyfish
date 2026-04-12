@@ -67,9 +67,20 @@ const TOOLS: WebMcpTool[] = [
   },
 ]
 
-/** True when the browser supports the WebMCP API. */
+/** True when the browser supports the WebMCP API (production or testing). */
 export function isWebMcpSupported(): boolean {
-  return typeof navigator !== 'undefined' && 'modelContext' in navigator && navigator.modelContext != null
+  if (typeof navigator === 'undefined') return false
+  return (
+    ('modelContext' in navigator && navigator.modelContext != null)
+    || ('modelContextTesting' in navigator)
+  )
+}
+
+/** Returns the modelContext API if available (production or testing shim). */
+function getModelContext(): ModelContext | undefined {
+  if (typeof navigator === 'undefined') return undefined
+  if ('modelContext' in navigator && navigator.modelContext != null) return navigator.modelContext
+  return undefined
 }
 
 interface UseWebMcpOptions {
@@ -87,13 +98,14 @@ export function useWebMcp({ executeCommand }: UseWebMcpOptions) {
   useEffect(() => { executeRef.current = executeCommand }, [executeCommand])
 
   useEffect(() => {
-    if (!isWebMcpSupported()) return
+    const ctx = getModelContext()
+    if (!ctx) return
 
     const controller = new AbortController()
 
     for (const tool of TOOLS) {
       try {
-        navigator.modelContext!.registerTool(
+        ctx.registerTool(
           {
             name: tool.name,
             title: tool.title,

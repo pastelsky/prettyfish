@@ -272,13 +272,12 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
                     </span>
                   </div>
                   <p className="text-[10px] text-muted-foreground">
-                    Your browser supports WebMCP. Any AI agent connected to this browser can discover and call Pretty Fish tools directly, with zero setup.
+                    Your browser supports{' '}
+                    <a href="https://webmachinelearning.github.io/webmcp/" target="_blank" rel="noopener noreferrer" className="underline hover:text-foreground">WebMCP</a>.
+                    Tools like <code className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">create_diagram</code> and <code className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">export_png</code> are registered on this page and available to Chrome's built-in AI agents (e.g. Gemini).
                   </p>
                   <p className="text-[10px] text-muted-foreground">
-                    Agents that support WebMCP will automatically see tools like <code className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">create_diagram</code> and <code className="rounded bg-muted px-1 py-0.5 font-mono text-[9px]">export_png</code> when they connect to Chrome.
-                  </p>
-                  <p className="text-[10px] text-muted-foreground">
-                    For agents that don't support WebMCP yet, use the other tabs to connect via MCP over HTTP.
+                    CLI agents like Claude Code, Cursor, and OpenCode don't support WebMCP yet. Use the other tabs to connect them via MCP over HTTP.
                   </p>
                 </div>
               )}
