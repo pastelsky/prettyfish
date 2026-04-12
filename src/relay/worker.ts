@@ -22,9 +22,15 @@ interface DurableObjectStateLike {
     get: <T>(key: string) => Promise<T | undefined>
     put: (key: string, value: unknown) => Promise<void>
   }
+  blockConcurrencyWhile: <T>(callback: () => Promise<T>) => Promise<T>
   acceptWebSocket: (ws: WebSocket, tags?: string[]) => void
   getWebSockets: (tag?: string) => WebSocket[]
-  setWebSocketAutoResponse: (pair: { request: string; response: string }) => void
+  getTags: (ws: WebSocket) => string[]
+  /** Replies to matching messages WITHOUT waking the DO — zero cost keepalive. */
+  setWebSocketAutoResponse: (pair?: WebSocketRequestResponsePair) => void
+  getWebSocketAutoResponse: () => WebSocketRequestResponsePair | null
+  getWebSocketAutoResponseTimestamp: (ws: WebSocket) => Date | null
+  setHibernatableWebSocketEventTimeout: (timeout?: number) => void
 }
 
 interface JsonRpcRequest {
@@ -338,6 +344,12 @@ export class RelaySessionDurableObject {
 
   constructor(state: DurableObjectStateLike) {
     this.state = state
+    // Set up zero-cost ping/pong once for the entire DO instance.
+    // Any WebSocket accepted via acceptWebSocket will auto-reply to {"type":"ping"}
+    // with {"type":"pong"} WITHOUT waking the DO — zero CPU, zero duration, zero request cost.
+    this.state.setWebSocketAutoResponse(
+      new WebSocketRequestResponsePair('{"type":"ping"}', '{"type":"pong"}'),
+    )
   }
 
   // ── Helpers ────────────────────────────────────────────────────────────────
@@ -600,12 +612,7 @@ export class RelaySessionDurableObject {
       const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
 
       // Use hibernation API so the DO can sleep between messages.
-      // setWebSocketAutoResponse: when the browser sends {"type":"ping"}, the DO
-      // automatically replies {"type":"pong"} WITHOUT waking up (zero CPU, zero duration charge).
-      // This is the cheapest possible keepalive pattern for hibernatable WebSockets.
-      this.state.setWebSocketAutoResponse(
-        { request: '{"type":"ping"}', response: '{"type":"pong"}' },
-      )
+      // ping/pong auto-response is configured once in the constructor — zero wake-up cost.
       this.state.acceptWebSocket(server, [role])
 
       // Greet the new peer
