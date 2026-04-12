@@ -139,6 +139,9 @@ function McpButton({ onOpenMcp, mcpConnected, mcpSessionReady, onTripleClick }: 
       >
         <PlugsConnected className="w-3.5 h-3.5" />
         <span className="hidden lg:inline">{mcpConnected ? 'Agent Connected' : mcpSessionReady ? 'Waiting for Agent' : 'Connect AI Agent'}</span>
+        {!mcpConnected && !mcpSessionReady && (
+          <span className="hidden lg:inline text-[9px] font-semibold tracking-wide uppercase px-1 py-0.5 rounded bg-amber-400/20 text-amber-600 dark:text-amber-400 leading-none">beta</span>
+        )}
       </ChromeTextButton>
     </div>
   )
