@@ -38,8 +38,8 @@ function ct(label: string, detail: string, boost = 0): Completion {
   return { label, detail, type: 'constant', boost }
 }
 
-/** Snippet that only shows on Ctrl+Space (low boost, won't match word filter) */
-function snip(template: string, label: string, detail: string, boost = -10): Completion {
+/** Snippet completion with tab-stop placeholders */
+function snip(template: string, label: string, detail: string, boost = 0): Completion {
   return snippetCompletion(template, { label, detail, type: 'text', boost })
 }
 
@@ -124,14 +124,14 @@ const DIAGRAM_STARTERS: Completion[] = [
 
 const KEYWORDS: Record<string, Completion[]> = {
   flowchart: [
-    kw('subgraph', 'Start a subgraph', 10),
+    snip('subgraph ${1:Title}\n  ${2}\nend', 'subgraph', 'Start a subgraph', 10),
     kw('end', 'End a subgraph or block', 9),
-    kw('direction', 'Set layout direction', 5),
-    kw('click', 'Add click handler to node', 3),
-    kw('style', 'Style a node', 3),
-    kw('classDef', 'Define a CSS class', 3),
-    kw('class', 'Apply a class to node(s)', 3),
-    kw('linkStyle', 'Style a link by index', 2),
+    snip('direction ${1:LR}', 'direction', 'Set layout direction', 5),
+    snip('click ${1:nodeId} "${2:url}"', 'click', 'Add click handler to node', 3),
+    snip('style ${1:nodeId} fill:${2:#f9f},stroke:${3:#333}', 'style', 'Style a node', 3),
+    snip('classDef ${1:className} fill:${2:#f9f},stroke:${3:#333}', 'classDef', 'Define a CSS class', 3),
+    snip('class ${1:nodeId} ${2:className}', 'class', 'Apply a class to node(s)', 3),
+    snip('linkStyle ${1:0} stroke:${2:#ff3},stroke-width:${3:2px}', 'linkStyle', 'Style a link by index', 2),
     ct('LR', 'Left to right', 4),
     ct('RL', 'Right to left', 4),
     ct('TD', 'Top down', 4),
@@ -140,46 +140,43 @@ const KEYWORDS: Record<string, Completion[]> = {
   ],
 
   sequence: [
-    kw('participant', 'Declare a participant', 10),
-    kw('actor', 'Declare an actor (stick figure)', 9),
-    kw('activate', 'Activate a participant', 7),
-    kw('deactivate', 'Deactivate a participant', 7),
-    kw('loop', 'Start a loop block', 8),
+    snip('participant ${1:Name}', 'participant', 'Declare a participant', 10),
+    snip('actor ${1:Name}', 'actor', 'Declare an actor (stick figure)', 9),
+    snip('activate ${1:Name}', 'activate', 'Activate a participant', 7),
+    snip('deactivate ${1:Name}', 'deactivate', 'Deactivate a participant', 7),
+    snip('loop ${1:Condition}\n  ${2}\nend', 'loop', 'Start a loop block', 8),
     kw('end', 'End a block', 9),
-    kw('alt', 'Alternative block', 7),
+    snip('alt ${1:Condition}\n  ${2}\nelse ${3:Otherwise}\n  ${4}\nend', 'alt', 'Alternative block', 7),
     kw('else', 'Else branch in alt block', 6),
-    kw('opt', 'Optional block', 6),
-    kw('par', 'Parallel block', 6),
+    snip('opt ${1:Condition}\n  ${2}\nend', 'opt', 'Optional block', 6),
+    snip('par ${1:Label}\n  ${2}\nand ${3:Label}\n  ${4}\nend', 'par', 'Parallel block', 6),
     kw('and', 'And branch in par block', 5),
-    kw('critical', 'Critical block', 5),
-    kw('break', 'Break block', 4),
-    kw('rect', 'Highlight region with color', 4),
-    kw('note', 'Add a note', 7),
+    snip('critical ${1:Label}\n  ${2}\nend', 'critical', 'Critical block', 5),
+    snip('break ${1:Condition}\n  ${2}\nend', 'break', 'Break block', 4),
+    snip('rect rgb(${1:200}, ${2:220}, ${3:255})\n  ${4}\nend', 'rect', 'Highlight region with color', 4),
+    snip('note right of ${1:A}: ${2:text}', 'note right of', 'Note to the right', 7),
+    snip('note left of ${1:A}: ${2:text}', 'note left of', 'Note to the left', 7),
+    snip('note over ${1:A},${2:B}: ${3:text}', 'note over', 'Note spanning participants', 6),
     kw('autonumber', 'Auto-number messages', 3),
-    kw('title', 'Set diagram title', 5),
-    kw('create', 'Create a participant mid-diagram', 3),
-    kw('destroy', 'Destroy a participant mid-diagram', 3),
-    // Snippets — only on Ctrl+Space
-    snip('note right of ${1:A}: ${2:text}', 'note right of…', 'Note to the right'),
-    snip('note over ${1:A},${2:B}: ${3:text}', 'note over…', 'Note spanning participants'),
+    snip('title ${1:Diagram Title}', 'title', 'Set diagram title', 5),
+    snip('create participant ${1:Name}', 'create', 'Create a participant mid-diagram', 3),
+    snip('destroy ${1:Name}', 'destroy', 'Destroy a participant mid-diagram', 3),
   ],
 
   classDiagram: [
-    kw('class', 'Define a class', 10),
+    snip('class ${1:Name} {\n  +${2:field} ${3:Type}\n  +${4:method}() ${5:ReturnType}\n}', 'class', 'Define a class with members', 10),
     kw('interface', 'Define an interface', 7),
     kw('abstract', 'Mark as abstract', 5),
     kw('enum', 'Define an enum', 5),
-    kw('namespace', 'Define a namespace', 5),
-    kw('direction', 'Set layout direction', 4),
-    kw('note', 'Add a note', 4),
-    kw('link', 'Add a hyperlink to a class', 3),
-    kw('callback', 'Add a callback to a class', 3),
-    kw('click', 'Add click handler', 3),
-    // Snippets
-    snip('class ${1:Name} {\n  +${2:field} ${3:Type}\n  +${4:method}() ${5:ReturnType}\n}', 'class {…}', 'Class with fields/methods'),
+    snip('namespace ${1:Name} {\n  ${2}\n}', 'namespace', 'Define a namespace', 5),
+    snip('direction ${1:LR}', 'direction', 'Set layout direction', 4),
+    snip('note for ${1:ClassName} "${2:note text}"', 'note', 'Add a note', 4),
+    snip('link ${1:ClassName} "${2:url}"', 'link', 'Add a hyperlink to a class', 3),
+    snip('click ${1:ClassName} ${2:callbackName}', 'click', 'Add click handler', 3),
   ],
 
   erDiagram: [
+    snip('${1:ENTITY} {\n  ${2:string} ${3:id} PK\n  ${4:string} ${5:name}\n}', 'entity', 'Entity definition with attributes', 10),
     ct('PK', 'Primary key', 5),
     ct('FK', 'Foreign key', 5),
     ct('UK', 'Unique key', 4),
@@ -188,68 +185,64 @@ const KEYWORDS: Record<string, Completion[]> = {
     ct('float', 'Float attribute', 2),
     ct('boolean', 'Boolean attribute', 2),
     ct('date', 'Date attribute', 2),
-    // Snippets
-    snip('${1:ENTITY} {\n  ${2:string} ${3:id} PK\n  ${4:string} ${5:name}\n}', 'entity {…}', 'Entity definition'),
   ],
 
   stateDiagram: [
-    kw('state', 'Define a named state', 10),
-    kw('note', 'Add a note to a state', 5),
-    kw('direction', 'Set layout direction', 5),
-    // Snippets
-    snip('[*] --> ${1:State}', '[*] → start', 'Start transition'),
-    snip('${1:State} --> [*]', '→ [*] end', 'End transition'),
-    snip('state ${1:Compound} {\n  ${2:A} --> ${3:B}\n}', 'state {…}', 'Compound/nested state'),
+    snip('state ${1:Name}', 'state', 'Define a named state', 10),
+    snip('state ${1:Compound} {\n  ${2:A} --> ${3:B}\n}', 'state {…}', 'Compound/nested state', 9),
+    snip('[*] --> ${1:State}', '[*] → start', 'Start transition', 8),
+    snip('${1:State} --> [*]', '→ [*] end', 'End transition', 7),
+    snip('note right of ${1:State}: ${2:text}', 'note', 'Add a note to a state', 5),
+    snip('direction ${1:LR}', 'direction', 'Set layout direction', 5),
   ],
 
   gantt: [
-    kw('title', 'Set the chart title', 10),
-    kw('dateFormat', 'Set date format (e.g. YYYY-MM-DD)', 9),
-    kw('axisFormat', 'Format for axis labels', 7),
-    kw('tickInterval', 'Tick interval for the axis', 5),
-    kw('section', 'Start a new section', 8),
-    kw('excludes', 'Exclude days from timeline', 4),
+    snip('title ${1:Project Name}', 'title', 'Set the chart title', 10),
+    snip('dateFormat ${1:YYYY-MM-DD}', 'dateFormat', 'Set date format', 9),
+    snip('section ${1:Phase Name}', 'section', 'Start a new section', 8),
+    snip('axisFormat ${1:%Y-%m-%d}', 'axisFormat', 'Format for axis labels', 7),
+    snip('tickInterval ${1:1week}', 'tickInterval', 'Tick interval for the axis', 5),
+    snip('excludes ${1:weekends}', 'excludes', 'Exclude days from timeline', 4),
     kw('todayMarker', 'Show/hide today marker', 3),
+    kw('after', 'Task starts after another', 4),
     ct('done', 'Mark task as done', 5),
     ct('active', 'Mark task as active', 5),
     ct('crit', 'Mark task as critical', 5),
     ct('milestone', 'Create a milestone', 4),
-    kw('after', 'Task starts after another', 4),
   ],
 
   pie: [
+    snip('title ${1:Chart Title}', 'title', 'Set the chart title', 10),
     kw('showData', 'Show values on pie slices', 8),
-    kw('title', 'Set the chart title', 10),
+    snip('"${1:Label}" : ${2:value}', '"label" : value', 'Pie slice entry', 6),
   ],
 
   gitgraph: [
     kw('commit', 'Add a commit', 10),
-    kw('branch', 'Create a branch', 9),
-    kw('checkout', 'Switch to a branch', 8),
-    kw('merge', 'Merge a branch', 8),
-    kw('cherry-pick', 'Cherry-pick a commit', 5),
-    // Snippets
-    snip('commit id: "${1:label}" tag: "${2:tag}"', 'commit id+tag', 'Labeled commit with tag'),
-    snip('commit type: ${1:HIGHLIGHT}', 'commit type…', 'Styled commit (HIGHLIGHT/REVERSE/NORMAL)'),
+    snip('commit id: "${1:label}" tag: "${2:tag}"', 'commit id+tag', 'Labeled commit with tag', 9),
+    snip('commit type: ${1:HIGHLIGHT}', 'commit type', 'Styled commit (HIGHLIGHT/REVERSE/NORMAL)', 8),
+    snip('branch ${1:feature}', 'branch', 'Create a branch', 9),
+    snip('checkout ${1:feature}', 'checkout', 'Switch to a branch', 8),
+    snip('merge ${1:feature}', 'merge', 'Merge a branch', 8),
+    snip('cherry-pick id: "${1:commitId}"', 'cherry-pick', 'Cherry-pick a commit', 5),
   ],
 
   mindmap: [
-    snip('root((${1:Root Topic}))', 'root((…))', 'Root node (circle)'),
+    snip('root((${1:Root Topic}))', 'root', 'Root node (circle)', 10),
   ],
 
   xychart: [
-    kw('title', 'Set chart title', 10),
-    kw('x-axis', 'Define the X axis', 9),
-    kw('y-axis', 'Define the Y axis', 9),
-    kw('bar', 'Bar chart data series', 7),
-    kw('line', 'Line chart data series', 7),
+    snip('title "${1:Chart Title}"', 'title', 'Set chart title', 10),
+    snip('x-axis [${1:Jan, Feb, Mar}]', 'x-axis', 'Define the X axis', 9),
+    snip('y-axis "${1:Label}" ${2:0} --> ${3:100}', 'y-axis', 'Define the Y axis', 9),
+    snip('bar [${1:100, 200, 300}]', 'bar', 'Bar chart data series', 7),
+    snip('line [${1:100, 200, 300}]', 'line', 'Line chart data series', 7),
   ],
 
   architecture: [
-    kw('group', 'Define a group/container', 10),
-    kw('service', 'Define a service', 9),
-    kw('junction', 'Define a junction point', 5),
-    kw('in', 'Place component inside group', 7),
+    snip('group ${1:id}[${2:Label}]', 'group', 'Define a group/container', 10),
+    snip('service ${1:id}(${2:icon})[${3:Label}] in ${4:group}', 'service', 'Define a service', 9),
+    snip('junction ${1:id} in ${2:group}', 'junction', 'Define a junction point', 5),
     ct('cloud', 'Cloud icon', 3),
     ct('server', 'Server icon', 3),
     ct('database', 'Database icon', 3),
@@ -258,69 +251,74 @@ const KEYWORDS: Record<string, Completion[]> = {
   ],
 
   timeline: [
-    kw('title', 'Set the timeline title', 10),
-    kw('section', 'Start a new section', 8),
+    snip('title ${1:Timeline Title}', 'title', 'Set the timeline title', 10),
+    snip('section ${1:Era Name}', 'section', 'Start a new section', 8),
+    snip('${1:2024} : ${2:Event description}', 'year : event', 'Timeline entry', 6),
   ],
 
   quadrant: [
-    kw('title', 'Set chart title', 10),
-    kw('x-axis', 'Label the X axis', 9),
-    kw('y-axis', 'Label the Y axis', 9),
-    kw('quadrant-1', 'Label top-right quadrant', 5),
-    kw('quadrant-2', 'Label top-left quadrant', 5),
-    kw('quadrant-3', 'Label bottom-left quadrant', 5),
-    kw('quadrant-4', 'Label bottom-right quadrant', 5),
+    snip('title ${1:Chart Title}', 'title', 'Set chart title', 10),
+    snip('x-axis ${1:Low} --> ${2:High}', 'x-axis', 'Label the X axis', 9),
+    snip('y-axis ${1:Low} --> ${2:High}', 'y-axis', 'Label the Y axis', 9),
+    snip('quadrant-1 ${1:Label}', 'quadrant-1', 'Label top-right quadrant', 5),
+    snip('quadrant-2 ${1:Label}', 'quadrant-2', 'Label top-left quadrant', 5),
+    snip('quadrant-3 ${1:Label}', 'quadrant-3', 'Label bottom-left quadrant', 5),
+    snip('quadrant-4 ${1:Label}', 'quadrant-4', 'Label bottom-right quadrant', 5),
+    snip('${1:Point}: [${2:0.5}, ${3:0.5}]', 'point', 'Plot a data point', 4),
   ],
 
   journey: [
-    kw('title', 'Set journey title', 10),
-    kw('section', 'Start a section', 8),
+    snip('title ${1:Journey Title}', 'title', 'Set journey title', 10),
+    snip('section ${1:Phase Name}', 'section', 'Start a section', 8),
+    snip('${1:Task}: ${2:5}: ${3:Person1}', 'task', 'Journey task (name: score: actors)', 6),
   ],
 
   requirement: [
-    kw('requirement', 'Define a requirement', 10),
+    snip('requirement ${1:name} {\n  id: ${2:1}\n  text: ${3:Description}\n  risk: ${4:high}\n  verifyMethod: ${5:test}\n}', 'requirement', 'Define a requirement', 10),
+    snip('element ${1:name} {\n  type: ${2:component}\n}', 'element', 'Define an element', 8),
     kw('functionalRequirement', 'Functional requirement', 7),
     kw('interfaceRequirement', 'Interface requirement', 6),
     kw('performanceRequirement', 'Performance requirement', 6),
     kw('physicalRequirement', 'Physical requirement', 6),
     kw('designConstraint', 'Design constraint', 6),
-    kw('element', 'Define an element', 8),
     kw('satisfies', 'Satisfies relationship', 4),
     kw('traces', 'Traces relationship', 4),
     kw('contains', 'Contains relationship', 4),
     ct('high', 'High risk/priority', 3),
     ct('medium', 'Medium risk/priority', 3),
     ct('low', 'Low risk/priority', 3),
-    ct('test', 'Verify by test', 2),
-    ct('analysis', 'Verify by analysis', 2),
-    ct('inspection', 'Verify by inspection', 2),
-    ct('demonstration', 'Verify by demonstration', 2),
   ],
 
-  sankey: [],
+  sankey: [
+    snip('${1:Source},${2:Target},${3:10}', 'flow', 'Sankey flow entry', 5),
+  ],
 
   block: [
-    kw('columns', 'Set number of columns', 8),
+    snip('columns ${1:3}', 'columns', 'Set number of columns', 8),
     kw('space', 'Empty space in grid', 5),
     kw('end', 'End a block', 7),
+    snip('${1:id}["${2:Label}"]', 'block', 'Block with label', 6),
   ],
 
-  kanban: [],
+  kanban: [
+    snip('${1:Column Title}\n  ${2:taskId}["${3:Task label}"]', 'column', 'Kanban column with task', 8),
+    snip('@{ ticket: ${1:MC-123}, priority: ${2:High} }', 'metadata', 'Task metadata', 5),
+  ],
 
-  packet: [],
+  packet: [
+    snip('${1:0}-${2:15}: "${3:Field Name}"', 'field', 'Packet field definition', 8),
+  ],
 
   radar: [
-    kw('axis', 'Define radar axes', 10),
-    kw('curve', 'Define a data curve', 9),
-    snip('axis ${1:A}, ${2:B}, ${3:C}', 'axis …', 'Axis label list'),
-    snip('curve ${1:Series} { ${2:80}, ${3:60}, ${4:90} }', 'curve {…}', 'Data series'),
+    snip('axis ${1:A}, ${2:B}, ${3:C}', 'axis', 'Define radar axes', 10),
+    snip('curve ${1:Series} { ${2:80}, ${3:60}, ${4:90} }', 'curve', 'Define a data curve', 9),
   ],
 }
 
 // Universal completions — always available regardless of diagram type
 const UNIVERSAL: Completion[] = [
-  snip('%%{init: {${1:"theme": "base"}}}%%', '%%{init:}%%', 'Init directive (theme, config)', -20),
-  snip('%% ${1:comment}', '%%…', 'Comment', -20),
+  snip('%%{init: {${1:"theme": "base"}}}%%', '%%{init:}%%', 'Init directive (theme, config)', -5),
+  snip('%% ${1:comment}', '%%…', 'Comment', -5),
 ]
 
 // ── CompletionSource ──────────────────────────────────────────────────────────
