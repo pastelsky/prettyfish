@@ -30,6 +30,15 @@ const blueprint: ThemePresetDef = {
 
     /* ── Gantt ── */
     .task { rx: 3; ry: 3; }
+
+    /* ── Pie chart — refined stroke and label styling ── */
+    .pieOuterCircle { stroke-width: 1.5px; opacity: 0.9; }
+    .slice { stroke: #f5f8ff; stroke-width: 2px; }
+    .pieTitleText { font-weight: 600; font-size: 1.1em; }
+    .legend text { font-size: 0.9em; }
+
+    /* ── Mindmap ── */
+    .mindmap-node rect, .mindmap-node circle { rx: 8; ry: 8; }
   `,
   configOverrides: {
     look: 'classic' as const,

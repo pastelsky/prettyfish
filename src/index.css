@@ -357,6 +357,175 @@
   border-color: oklch(0.35 0.015 260);
 }
 
+/* ── CodeMirror autocomplete tooltip ──────────────────────────────────────── */
+
+.cm-tooltip.cm-tooltip-autocomplete {
+  border: 1px solid oklch(0.90 0.005 270);
+  border-radius: 10px;
+  background: oklch(0.99 0.001 270);
+  box-shadow: 0 4px 24px oklch(0.18 0.02 280 / 10%), 0 1px 4px oklch(0.18 0.02 280 / 7%);
+  overflow: hidden;
+  padding: 3px;
+  font-family: var(--font-sans);
+  min-width: 220px;
+  max-width: 380px;
+}
+
+.dark .cm-tooltip.cm-tooltip-autocomplete {
+  border-color: oklch(1 0 0 / 9%);
+  background: oklch(0.19 0.014 280);
+  box-shadow: 0 4px 24px oklch(0 0 0 / 40%), 0 1px 4px oklch(0 0 0 / 30%);
+}
+
+.cm-tooltip-autocomplete > ul {
+  font-family: var(--font-sans) !important;
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: oklch(0.85 0.005 270) transparent;
+}
+
+.dark .cm-tooltip-autocomplete > ul {
+  scrollbar-color: oklch(0.30 0.012 280) transparent;
+}
+
+.cm-tooltip-autocomplete > ul > li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 9px;
+  border-radius: 7px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  cursor: pointer;
+  color: oklch(0.30 0.018 280);
+  transition: background 0.1s ease;
+}
+
+.dark .cm-tooltip-autocomplete > ul > li {
+  color: oklch(0.88 0.006 270);
+}
+
+.cm-tooltip-autocomplete > ul > li[aria-selected],
+.cm-tooltip-autocomplete > ul > li:hover {
+  background: oklch(0.94 0.008 270) !important;
+  color: oklch(0.18 0.02 280) !important;
+}
+
+.dark .cm-tooltip-autocomplete > ul > li[aria-selected],
+.dark .cm-tooltip-autocomplete > ul > li:hover {
+  background: oklch(0.26 0.016 280) !important;
+  color: oklch(0.96 0.004 270) !important;
+}
+
+/* Icon column */
+.cm-completionIcon {
+  font-size: 11px;
+  width: 16px;
+  flex-shrink: 0;
+  opacity: 0.55;
+  color: oklch(0.50 0.12 270);
+  font-style: normal;
+}
+
+.dark .cm-completionIcon {
+  color: oklch(0.68 0.14 270);
+  opacity: 0.7;
+}
+
+/* Label */
+.cm-completionLabel {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  color: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+/* Matched text highlight */
+.cm-completionMatchedText {
+  text-decoration: none !important;
+  color: oklch(0.48 0.22 270);
+  font-weight: 700;
+}
+
+.dark .cm-completionMatchedText {
+  color: oklch(0.78 0.18 270);
+}
+
+/* Detail / type hint */
+.cm-completionDetail {
+  font-size: 11px;
+  font-family: var(--font-sans);
+  font-style: normal;
+  color: oklch(0.58 0.01 270);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  max-width: 140px;
+}
+
+.dark .cm-completionDetail {
+  color: oklch(0.62 0.012 270);
+}
+
+/* "More items" indicator */
+.cm-completionListIncompleteTop::before,
+.cm-completionListIncompleteBottom::after {
+  content: '↕ more…';
+  display: block;
+  padding: 3px 10px;
+  font-size: 10.5px;
+  color: oklch(0.60 0.01 270);
+  text-align: center;
+}
+
+/* Info panel (shown to the right for longer docs) */
+.cm-completionInfo {
+  border: 1px solid oklch(0.90 0.005 270);
+  border-radius: 10px;
+  background: oklch(0.985 0.002 270);
+  box-shadow: 0 4px 16px oklch(0.18 0.02 280 / 8%);
+  padding: 8px 12px;
+  font-size: 12px;
+  font-family: var(--font-sans);
+  color: oklch(0.35 0.015 280);
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+.dark .cm-completionInfo {
+  border-color: oklch(1 0 0 / 9%);
+  background: oklch(0.21 0.014 280);
+  color: oklch(0.80 0.008 270);
+  box-shadow: 0 4px 16px oklch(0 0 0 / 35%);
+}
+
+/* Snippet tab-stop fields */
+.cm-snippetField {
+  background: oklch(0.72 0.16 270 / 18%);
+  border-radius: 3px;
+  outline: 1.5px solid oklch(0.55 0.22 270 / 45%);
+}
+
+.dark .cm-snippetField {
+  background: oklch(0.60 0.18 270 / 20%);
+  outline-color: oklch(0.72 0.18 270 / 50%);
+}
+
+.cm-snippetFieldPosition {
+  border-left: 2px solid oklch(0.55 0.22 270);
+}
+
+.dark .cm-snippetFieldPosition {
+  border-left-color: oklch(0.72 0.18 270);
+}
+
 /* ── SVG diagram container ─────────────────────────────────────────────────── */
 
 .diagram-svg-container svg {
