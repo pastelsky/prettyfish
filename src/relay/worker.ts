@@ -340,7 +340,7 @@ export class RelaySessionDurableObject {
   ) {
     const browserSocket = this.getBrowserSocket()
     if (!browserSocket || browserSocket.readyState !== WebSocket.OPEN) {
-      throw new Error('Pretty Fish browser is not attached to this relay session')
+      throw new Error('Pretty Fish browser is not attached to this relay session. Ask the user to refresh the page or click Reconnect in the Connect AI Agent panel, then try again.')
     }
 
     const id = crypto.randomUUID()

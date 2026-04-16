@@ -5,7 +5,7 @@
  * Clicking it selects it (opens the sidebar editor).
  */
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { NodeResizeControl, ResizeControlVariant, type Node } from '@xyflow/react'
+import { NodeResizeControl, type Node } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { Diagram } from '@/types'
 
@@ -153,29 +153,13 @@ export const DiagramNode = memo(function DiagramNode({
         cursor: 'grab',
       }}
     >
-      {/* Horizontal-only resize controls so the affordance matches the width-only data model. */}
+      {/* Corner-only proportional scaling so the affordance matches resizing the rendered diagram itself. */}
       {selected === true && (
         <>
           <NodeResizeControl
             minWidth={320}
-            resizeDirection="horizontal"
-            position="left"
-            variant={ResizeControlVariant.Line}
-            className="diagram-resize-line"
-            style={{ borderColor: 'var(--color-primary, #4f46e5)' }}
-          />
-          <NodeResizeControl
-            minWidth={320}
-            resizeDirection="horizontal"
-            position="right"
-            variant={ResizeControlVariant.Line}
-            className="diagram-resize-line"
-            style={{ borderColor: 'var(--color-primary, #4f46e5)' }}
-          />
-          <NodeResizeControl
-            minWidth={320}
-            resizeDirection="horizontal"
-            position="left"
+            keepAspectRatio
+            position="top-left"
             className="diagram-resize-handle"
             style={{
               background: 'var(--color-primary, #4f46e5)',
@@ -187,8 +171,34 @@ export const DiagramNode = memo(function DiagramNode({
           />
           <NodeResizeControl
             minWidth={320}
-            resizeDirection="horizontal"
-            position="right"
+            keepAspectRatio
+            position="top-right"
+            className="diagram-resize-handle"
+            style={{
+              background: 'var(--color-primary, #4f46e5)',
+              borderColor: '#fff',
+              width: 14,
+              height: 14,
+              borderWidth: 2,
+            }}
+          />
+          <NodeResizeControl
+            minWidth={320}
+            keepAspectRatio
+            position="bottom-left"
+            className="diagram-resize-handle"
+            style={{
+              background: 'var(--color-primary, #4f46e5)',
+              borderColor: '#fff',
+              width: 14,
+              height: 14,
+              borderWidth: 2,
+            }}
+          />
+          <NodeResizeControl
+            minWidth={320}
+            keepAspectRatio
+            position="bottom-right"
             className="diagram-resize-handle"
             style={{
               background: 'var(--color-primary, #4f46e5)',
