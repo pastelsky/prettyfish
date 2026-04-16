@@ -137,8 +137,8 @@ const mermaidEditorHighlightStyle = HighlightStyle.define([
   { tag: tags.className, color: '#0f5c7a' },
   { tag: tags.modifier, color: '#6b52a3', fontStyle: 'italic' },
   { tag: [tags.comment, tags.lineComment], color: '#8a5a00', fontStyle: 'italic' },
-  { tag: [tags.operator, tags.punctuation, tags.separator], color: '#6b7280' },
-  { tag: [tags.bracket, tags.paren, tags.squareBracket, tags.brace, tags.angleBracket], color: '#7c8495' },
+  { tag: [tags.operator, tags.punctuation, tags.separator], color: '#9ca3af' },
+  { tag: [tags.bracket, tags.paren, tags.squareBracket, tags.brace, tags.angleBracket], color: '#a3aab8' },
   { tag: tags.number, color: '#b35c00' },
   { tag: tags.meta, color: '#7c6f8a' },
 ])
