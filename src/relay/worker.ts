@@ -287,12 +287,39 @@ export class RelaySessionDurableObject {
     return this.session
   }
 
+  private getRoleSockets(role: RelayPeerRole): WebSocket[] {
+    return this.state.getWebSockets(role)
+  }
+
+  private getOpenRoleSocket(role: RelayPeerRole): WebSocket | null {
+    const sockets = this.getRoleSockets(role)
+    for (let i = sockets.length - 1; i >= 0; i -= 1) {
+      if (sockets[i]?.readyState === WebSocket.OPEN) return sockets[i]
+    }
+    return null
+  }
+
+  private hasOpenRoleSocket(role: RelayPeerRole): boolean {
+    return this.getOpenRoleSocket(role) !== null
+  }
+
+  private closeSupersededSockets(role: RelayPeerRole, current: WebSocket) {
+    for (const socket of this.getRoleSockets(role)) {
+      if (socket === current) continue
+      try {
+        socket.close(1012, 'Superseded by a newer relay connection')
+      } catch {
+        // Ignore close failures for stale sockets.
+      }
+    }
+  }
+
   private getBrowserSocket(): WebSocket | null {
-    return this.state.getWebSockets('browser')[0] ?? null
+    return this.getOpenRoleSocket('browser')
   }
 
   private getAgentSocket(): WebSocket | null {
-    return this.state.getWebSockets('agent')[0] ?? null
+    return this.getOpenRoleSocket('agent')
   }
 
   private sendTo(socket: WebSocket | null, message: RelayEnvelope): boolean {
@@ -452,6 +479,7 @@ export class RelaySessionDurableObject {
       const pair = new WebSocketPair()
       const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
       this.state.acceptWebSocket(server, [role])
+      this.closeSupersededSockets(role, server)
 
       // Return the 101 upgrade response first, then send the initial hello on the
       // next turn. Sending immediately during attach can produce a half-open state
@@ -534,7 +562,7 @@ export class RelaySessionDurableObject {
   async webSocketClose(ws: WebSocket) {
     const tags = this.state.getTags(ws)
     const role = tags[0] as RelayPeerRole | undefined
-    if (role) this.notifyPeerStatus(role, false)
+    if (role && !this.hasOpenRoleSocket(role)) this.notifyPeerStatus(role, false)
   }
 
   async webSocketError(ws: WebSocket) {

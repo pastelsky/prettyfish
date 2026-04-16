@@ -287,6 +287,15 @@ class CanvasSurface {
     await expect(this.page.getByTestId('context-paste-button')).toBeEnabled()
     await expect(this.page.getByTestId('context-new-diagram-button')).toBeVisible()
   }
+
+  async shouldShowHorizontalResizeOnly() {
+    await expect(this.page.locator('.react-flow__resize-control.diagram-resize-line.left')).toHaveCount(1)
+    await expect(this.page.locator('.react-flow__resize-control.diagram-resize-line.right')).toHaveCount(1)
+    await expect(this.page.locator('.react-flow__resize-control.diagram-resize-handle.left')).toHaveCount(1)
+    await expect(this.page.locator('.react-flow__resize-control.diagram-resize-handle.right')).toHaveCount(1)
+    await expect(this.page.locator('.react-flow__resize-control.top')).toHaveCount(0)
+    await expect(this.page.locator('.react-flow__resize-control.bottom')).toHaveCount(0)
+  }
 }
 
 class EditorSidebar {

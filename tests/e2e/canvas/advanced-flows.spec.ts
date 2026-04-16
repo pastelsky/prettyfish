@@ -102,4 +102,13 @@ test.describe('Advanced flows', () => {
     await app.diagramPicker.shouldShowCurrentDiagramNamed('Overview')
     await app.canvas.shouldBringDiagramIntoView(1)
   })
+
+  test('shows horizontal-only resize controls for selected diagrams', async ({ page }) => {
+    const app = createApp(page)
+
+    await app.createFlowchartDiagram()
+    await app.canvas.selectDiagram(1)
+
+    await app.canvas.shouldShowHorizontalResizeOnly()
+  })
 })

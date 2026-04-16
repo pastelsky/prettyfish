@@ -8,6 +8,67 @@ import type { AppState } from '@/types'
 
 // Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
 const MAX_AUTO_RECONNECT_ATTEMPTS = 3
+const RELAY_DEBUG_STORAGE_KEY = 'prettyfish:relay-debug'
+const RELAY_DEBUG_HISTORY_LIMIT = 120
+
+type RelayConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
+
+interface RelayConnectionDebugEvent {
+  at: string
+  type: string
+  reason: string
+  details?: Record<string, unknown>
+}
+
+interface RelayConnectionDebugStats {
+  connectStarts: number
+  wsOpenCount: number
+  wsHelloCount: number
+  wsCloseCount: number
+  wsErrorCount: number
+  wsMessageCount: number
+  reconnectScheduleCount: number
+  createSessionCount: number
+  lastConnectStartedAt: string | null
+  lastOpenAt: string | null
+  lastHelloAt: string | null
+  lastCloseAt: string | null
+  lastErrorAt: string | null
+  lastSessionCreatedAt: string | null
+}
+
+interface RelayConnectionDebugState {
+  activePageId: string
+  agentConnected: boolean
+  error: string | null
+  hasBrowserToken: boolean
+  intentionalDisconnect: boolean
+  lastEventAt: string | null
+  lastEventType: string | null
+  lastReason: string | null
+  mcpUrl: string
+  reconnectAttempts: number
+  sessionId: string
+  socketReadyState: string
+  status: RelayConnectionStatus
+  stats: RelayConnectionDebugStats
+  tokenSuffix: string | null
+}
+
+interface RelayConnectionDebugStore {
+  verbose: boolean
+  state: RelayConnectionDebugState
+  history: RelayConnectionDebugEvent[]
+  enableVerbose: () => void
+  disableVerbose: () => void
+  clearHistory: () => void
+}
+
+declare global {
+  interface Window {
+    __prettyfishConnection?: RelayConnectionDebugStore
+  }
+}
 
 /**
  * Returns the relay base URL.
@@ -28,6 +89,104 @@ function getRelayBaseUrl(): string {
     return resolveRelayBaseUrlForHost(window.location.hostname, envUrl, window.location.origin)
   }
   return resolveRelayBaseUrlForHost('pretty.fish', envUrl, 'https://pretty.fish')
+}
+
+function nowIso(): string {
+  return new Date().toISOString()
+}
+
+function socketReadyStateLabel(socket: WebSocket | null): string {
+  if (!socket) return 'none'
+  switch (socket.readyState) {
+    case WebSocket.CONNECTING:
+      return 'connecting'
+    case WebSocket.OPEN:
+      return 'open'
+    case WebSocket.CLOSING:
+      return 'closing'
+    case WebSocket.CLOSED:
+      return 'closed'
+    default:
+      return `unknown:${socket.readyState}`
+  }
+}
+
+function maskTokenSuffix(token: string): string | null {
+  if (!token) return null
+  return token.length <= 8 ? token : token.slice(-8)
+}
+
+function relayDebugVerboseEnabled(): boolean {
+  if (typeof window === 'undefined') return false
+  try {
+    if (window.location.search.includes('relayDebug=0')) return false
+    return localStorage.getItem(RELAY_DEBUG_STORAGE_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
+
+function createEmptyRelayDebugStats(): RelayConnectionDebugStats {
+  return {
+    connectStarts: 0,
+    wsOpenCount: 0,
+    wsHelloCount: 0,
+    wsCloseCount: 0,
+    wsErrorCount: 0,
+    wsMessageCount: 0,
+    reconnectScheduleCount: 0,
+    createSessionCount: 0,
+    lastConnectStartedAt: null,
+    lastOpenAt: null,
+    lastHelloAt: null,
+    lastCloseAt: null,
+    lastErrorAt: null,
+    lastSessionCreatedAt: null,
+  }
+}
+
+function createEmptyRelayDebugState(): RelayConnectionDebugState {
+  return {
+    activePageId: '',
+    agentConnected: false,
+    error: null,
+    hasBrowserToken: false,
+    intentionalDisconnect: false,
+    lastEventAt: null,
+    lastEventType: null,
+    lastReason: null,
+    mcpUrl: '',
+    reconnectAttempts: 0,
+    sessionId: '',
+    socketReadyState: 'none',
+    status: 'disconnected',
+    stats: createEmptyRelayDebugStats(),
+    tokenSuffix: null,
+  }
+}
+
+function ensureRelayDebugStore(): RelayConnectionDebugStore | null {
+  if (typeof window === 'undefined') return null
+  if (!window.__prettyfishConnection) {
+    window.__prettyfishConnection = {
+      verbose: relayDebugVerboseEnabled(),
+      state: createEmptyRelayDebugState(),
+      history: [],
+      enableVerbose: () => {
+        try { localStorage.setItem(RELAY_DEBUG_STORAGE_KEY, '1') } catch { /* ignore */ }
+        if (window.__prettyfishConnection) window.__prettyfishConnection.verbose = true
+      },
+      disableVerbose: () => {
+        try { localStorage.removeItem(RELAY_DEBUG_STORAGE_KEY) } catch { /* ignore */ }
+        if (window.__prettyfishConnection) window.__prettyfishConnection.verbose = false
+      },
+      clearHistory: () => {
+        if (window.__prettyfishConnection) window.__prettyfishConnection.history = []
+      },
+    }
+  }
+  window.__prettyfishConnection.verbose = relayDebugVerboseEnabled()
+  return window.__prettyfishConnection
 }
 
 // Migrate: clear any stale relay URL previously stored in localStorage
@@ -122,11 +281,82 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const [mcpUrl, setMcpUrl] = useState('')
   const [error, setError] = useState<string | null>(null)
   const userInitiatedConnectRef = useRef(false)
+  const lastReasonRef = useRef<string | null>('initial')
+  const statsRef = useRef<RelayConnectionDebugStats>(createEmptyRelayDebugStats())
 
   const socketRef = useRef<WebSocket | null>(null)
   const attemptedAutoConnectRef = useRef(false)
   const activePageIdRef = useRef(activePageId)
   const { executeCommand } = useAgentCommandExecutor(options)
+
+  const syncDebugState = useCallback((overrides: Partial<RelayConnectionDebugState> = {}) => {
+    const store = ensureRelayDebugStore()
+    if (!store) return
+    store.state = {
+      activePageId: activePageIdRef.current,
+      agentConnected,
+      error,
+      hasBrowserToken: Boolean(browserToken),
+      intentionalDisconnect: intentionalDisconnectRef.current,
+      lastEventAt: store.state.lastEventAt,
+      lastEventType: store.state.lastEventType,
+      lastReason: lastReasonRef.current,
+      mcpUrl,
+      reconnectAttempts: reconnectAttemptsRef.current,
+      sessionId,
+      socketReadyState: socketReadyStateLabel(socketRef.current),
+      status,
+      stats: { ...statsRef.current },
+      tokenSuffix: maskTokenSuffix(browserToken),
+      ...overrides,
+    }
+  }, [agentConnected, browserToken, error, mcpUrl, sessionId, status])
+
+  const recordDebugEvent = useCallback((type: string, reason: string, details: Record<string, unknown> = {}) => {
+    const store = ensureRelayDebugStore()
+    const at = nowIso()
+    lastReasonRef.current = reason
+    if (store) {
+      const event: RelayConnectionDebugEvent = {
+        at,
+        type,
+        reason,
+        details: {
+          activePageId: activePageIdRef.current,
+          reconnectAttempts: reconnectAttemptsRef.current,
+          sessionId: sessionId || readStored(sessionIdKey(activePageIdRef.current)) || '',
+          socketReadyState: socketReadyStateLabel(socketRef.current),
+          ...details,
+        },
+      }
+      store.history = [...store.history, event].slice(-RELAY_DEBUG_HISTORY_LIMIT)
+      store.state = {
+        ...store.state,
+        activePageId: activePageIdRef.current,
+        agentConnected,
+        error,
+        hasBrowserToken: Boolean(browserToken),
+        intentionalDisconnect: intentionalDisconnectRef.current,
+        lastEventAt: at,
+        lastEventType: type,
+        lastReason: reason,
+        mcpUrl,
+        reconnectAttempts: reconnectAttemptsRef.current,
+        sessionId,
+        socketReadyState: socketReadyStateLabel(socketRef.current),
+        status,
+        stats: { ...statsRef.current },
+        tokenSuffix: maskTokenSuffix(browserToken),
+      }
+      if (store.verbose) {
+        console.info(`[prettyfish:relay] ${type}: ${reason}`, event.details)
+      }
+    }
+  }, [agentConnected, browserToken, error, mcpUrl, sessionId, status])
+
+  useEffect(() => {
+    syncDebugState()
+  }, [syncDebugState])
 
   // ── Page switch: disconnect, load session for new page ─────────────────────
   useEffect(() => {
@@ -146,6 +376,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     setSessionId(nextSessionId)
     setBrowserToken(nextBrowserToken)
     setMcpUrl('')
+    recordDebugEvent('page-switch', 'loaded stored relay state for active page', {
+      activePageId,
+      hasStoredBrowserToken: Boolean(nextBrowserToken),
+      storedSessionId: nextSessionId || null,
+    })
   }, [activePageId])
 
   // ── Rebuild mcpUrl whenever session changes ────────────────────────────────
@@ -161,20 +396,23 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // Cloudflare drops idle WebSockets after 100s; most browsers/proxies after ~60s.
   const startHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current)
+    recordDebugEvent('heartbeat-start', 'started relay heartbeat')
     heartbeatIntervalRef.current = setInterval(() => {
       const socket = socketRef.current
       if (socket?.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'ping' }))
+        recordDebugEvent('heartbeat-ping', 'sent heartbeat ping')
       }
     }, 55_000) // 55s — safely under Cloudflare's 100s idle timeout, minimizes DO request costs
-  }, [])
+  }, [recordDebugEvent])
 
   const stopHeartbeat = useCallback(() => {
     if (heartbeatIntervalRef.current) {
       clearInterval(heartbeatIntervalRef.current)
       heartbeatIntervalRef.current = null
+      recordDebugEvent('heartbeat-stop', 'stopped relay heartbeat')
     }
-  }, [])
+  }, [recordDebugEvent])
 
   // ── Auto-reconnect — exponential backoff, max 3 attempts ──────────────────
   // Use a ref to hold the latest connectWithSession to avoid circular dep.
@@ -188,19 +426,27 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       if (userInitiatedConnectRef.current) {
         setError('Unable to connect after 3 attempts. Please try again.')
       }
+      recordDebugEvent('reconnect-stop', 'reconnect attempts exhausted', {
+        maxAttempts: MAX_AUTO_RECONNECT_ATTEMPTS,
+      })
       return
     }
     const delay = Math.min(1_000 * Math.pow(1.5, attempts), 30_000)
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+    statsRef.current.reconnectScheduleCount += 1
+    recordDebugEvent('reconnect-scheduled', 'scheduled reconnect attempt', {
+      attempt: attempts + 1,
+      delayMs: delay,
+    })
     reconnectTimerRef.current = setTimeout(() => {
       const sid = readStored(sessionIdKey(activePageIdRef.current))
       const tok = readStored(browserTokenKey(activePageIdRef.current))
       if (sid && tok && connectWithSessionRef.current) {
         reconnectAttemptsRef.current += 1
-        void connectWithSessionRef.current(sid, tok)
+        void connectWithSessionRef.current(sid, tok).catch(() => undefined)
       }
     }, delay)
-  }, [])
+  }, [recordDebugEvent])
 
   // Cleanup heartbeat and reconnect timer on unmount
   useEffect(() => () => {
@@ -216,30 +462,55 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     if (!nextSessionId || !nextBrowserToken) {
       setStatus('error')
       setError('Session ID and browser token are required')
-      return
+      recordDebugEvent('connect-invalid', 'missing session id or browser token', {
+        hasSessionId: Boolean(nextSessionId),
+        hasBrowserToken: Boolean(nextBrowserToken),
+      })
+      throw new Error('Session ID and browser token are required')
     }
 
     socketRef.current?.close()
     setStatus('connecting')
     setError(null)
+    statsRef.current.connectStarts += 1
+    statsRef.current.lastConnectStartedAt = nowIso()
+    recordDebugEvent('connect-start', 'opening relay websocket', {
+      sessionId: nextSessionId,
+      tokenSuffix: maskTokenSuffix(nextBrowserToken),
+      wsUrl: toWebSocketUrl(nextSessionId, nextBrowserToken),
+    })
 
     await new Promise<void>((resolve, reject) => {
       const socket = new WebSocket(toWebSocketUrl(nextSessionId, nextBrowserToken))
       socketRef.current = socket
+      let settled = false
+
+      const finishResolve = () => {
+        if (settled) return
+        settled = true
+        resolve()
+      }
+
+      const finishReject = (reason: Error) => {
+        if (settled) return
+        settled = true
+        reject(reason)
+      }
 
       socket.addEventListener('open', () => {
         if (socketRef.current !== socket) return
-        reconnectAttemptsRef.current = 0 // reset backoff on successful connect
-        setStatus('connected')
-        setError(null)
-        startHeartbeat()
-        resolve()
+        statsRef.current.wsOpenCount += 1
+        statsRef.current.lastOpenAt = nowIso()
+        recordDebugEvent('ws-open', 'websocket transport opened')
+        // Wait for relay hello before marking the session connected.
       }, { once: true })
 
       socket.addEventListener('error', () => {
         // Ignore errors from stale sockets that have already been replaced.
         if (socketRef.current !== socket) return
         if (socket.readyState !== WebSocket.OPEN) {
+          statsRef.current.wsErrorCount += 1
+          statsRef.current.lastErrorAt = nowIso()
           setStatus('error')
           // Keep the existing per-page session sticky. A deploy/reload or transient WS
           // failure should not destroy the user's session ID; auto-reattach will repair it.
@@ -248,24 +519,34 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
           } else {
             setError(null)
           }
-          reject(new Error('Failed to connect to relay WebSocket'))
+          recordDebugEvent('ws-error', 'websocket transport error before relay hello', {
+            readyState: socket.readyState,
+          })
+          finishReject(new Error('Failed to connect to relay WebSocket'))
         }
       }, { once: true }) 
 
       socket.addEventListener('close', () => {
         if (socketRef.current === socket) {
+          statsRef.current.wsCloseCount += 1
+          statsRef.current.lastCloseAt = nowIso()
           socketRef.current = null
           stopHeartbeat()
           setStatus('disconnected')
           setAgentConnected(false)
+          recordDebugEvent('ws-close', 'websocket closed', {
+            readyState: socket.readyState,
+          })
           // Auto-reconnect after unexpected close (not triggered by user)
           scheduleReconnect()
         }
+        finishReject(new Error('Relay WebSocket closed before the session became ready'))
       }) 
 
       socket.addEventListener('message', (event) => {
         const raw = typeof event.data === 'string' ? event.data : ''
         if (!raw) return
+        statsRef.current.wsMessageCount += 1
 
         let message: RelayEnvelope
         try { message = JSON.parse(raw) as RelayEnvelope } catch { return }
@@ -304,14 +585,35 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
               } satisfies RelayEnvelope))
             }
           })()
+        } else if (message.type === 'hello') {
+          if (socketRef.current !== socket) return
+          statsRef.current.wsHelloCount += 1
+          statsRef.current.lastHelloAt = nowIso()
+          reconnectAttemptsRef.current = 0
+          setStatus('connected')
+          setError(null)
+          recordDebugEvent('relay-hello', 'relay handshake completed', {
+            role: message.role,
+            relaySessionId: message.sessionId,
+          })
+          startHeartbeat()
+          finishResolve()
         } else if (message.type === 'peer_status') {
           setAgentConnected((message as { connected: boolean }).connected)
+          recordDebugEvent('peer-status', 'peer status updated', {
+            role: message.role,
+            connected: message.connected,
+          })
         } else if (message.type === 'error') {
           setStatus('error')
           setError(message.message)
-        }
+          recordDebugEvent('relay-error', 'relay sent error envelope', {
+            message: message.message,
+          })
+          finishReject(new Error(message.message))
+        } 
       })
-    }).catch(() => undefined)
+    })
   }, [executeCommand, scheduleReconnect, startHeartbeat, stopHeartbeat])
 
   // Keep ref updated so scheduleReconnect can call it without circular dep
@@ -324,7 +626,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     attemptedAutoConnectRef.current = true
     // Passive self-healing: re-attach the browser tab silently for existing sessions.
     // Do not show scary errors here; user-visible errors are gated on explicit intent.
-    void connectWithSession(sessionId, browserToken)
+    recordDebugEvent('auto-attach', 'attempting passive browser re-attach', {
+      sessionId,
+      tokenSuffix: maskTokenSuffix(browserToken),
+    })
+    void connectWithSession(sessionId, browserToken).catch(() => undefined)
   }, [browserToken, connectWithSession, sessionId])
 
   // ── If a session exists but browser is detached, attempt bounded re-attach ───
@@ -342,6 +648,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     intentionalDisconnectRef.current = true
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
     reconnectAttemptsRef.current = 0
+    recordDebugEvent('disconnect', 'manual disconnect invoked')
     stopHeartbeat()
     socketRef.current?.close()
     socketRef.current = null
@@ -354,13 +661,25 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
 
   const connect = useCallback(async () => {
     userInitiatedConnectRef.current = true
-    await connectWithSession(sessionId, browserToken)
+    recordDebugEvent('connect-manual', 'manual connect requested', {
+      sessionId,
+      tokenSuffix: maskTokenSuffix(browserToken),
+    })
+    try {
+      await connectWithSession(sessionId, browserToken)
+    } catch {
+      // connectWithSession already updated the visible failure state.
+    }
   }, [browserToken, connectWithSession, sessionId])
 
   const resetSession = useCallback(() => {
     userInitiatedConnectRef.current = false
     const pageId = activePageIdRef.current
     reconnectAttemptsRef.current = 0
+    recordDebugEvent('session-reset', 'clearing stored relay session', {
+      pageId,
+      sessionId,
+    })
     disconnect()
     setSessionId('')
     setBrowserToken('')
@@ -374,6 +693,9 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     disconnect()
     setStatus('connecting')
     setError(null)
+    statsRef.current.createSessionCount += 1
+    statsRef.current.lastSessionCreatedAt = nowIso()
+    recordDebugEvent('session-create-start', 'creating hosted relay session')
 
     let session: PublicRelaySessionResponse
     try {
@@ -400,9 +722,17 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       setBrowserToken(session.browserToken)
       persist(sessionIdKey(pageId), session.sessionId)
       persist(browserTokenKey(pageId), session.browserToken)
+      recordDebugEvent('session-create-success', 'hosted relay session created', {
+        sessionId: session.sessionId,
+        tokenSuffix: maskTokenSuffix(session.browserToken),
+        mcpUrl: session.mcpUrl,
+      })
     } catch (sessionError) {
       setStatus('error')
       setError(sessionError instanceof Error ? sessionError.message : 'Failed to create hosted session')
+      recordDebugEvent('session-create-failure', 'failed to create hosted relay session', {
+        error: sessionError instanceof Error ? sessionError.message : 'unknown',
+      })
       return
     }
 
@@ -414,6 +744,9 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     } catch {
       setStatus('disconnected')
       setError('Browser connection dropped — retrying in the background.')
+      recordDebugEvent('session-create-attach-failure', 'new session created but initial attach failed', {
+        sessionId: session.sessionId,
+      })
     }
   }, [connectWithSession, disconnect])
 

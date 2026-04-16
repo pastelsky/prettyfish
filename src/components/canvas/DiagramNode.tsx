@@ -5,7 +5,7 @@
  * Clicking it selects it (opens the sidebar editor).
  */
 import { memo, useCallback, useEffect, useRef } from 'react'
-import { NodeResizer, type Node } from '@xyflow/react'
+import { NodeResizeControl, ResizeControlVariant, type Node } from '@xyflow/react'
 import type { NodeProps } from '@xyflow/react'
 import type { Diagram } from '@/types'
 
@@ -153,22 +153,53 @@ export const DiagramNode = memo(function DiagramNode({
         cursor: 'grab',
       }}
     >
-      {/* Node resizer (shows handles on select) */}
-      <NodeResizer
-        minWidth={320}
-        minHeight={200}
-        isVisible={selected === true}
-        handleClassName="diagram-resize-handle"
-        lineClassName="diagram-resize-line"
-        lineStyle={{ borderColor: 'var(--color-primary, #4f46e5)' }}
-        handleStyle={{
-          background: 'var(--color-primary, #4f46e5)',
-          borderColor: '#fff',
-          width: 14,
-          height: 14,
-          borderWidth: 2,
-        }}
-      />
+      {/* Horizontal-only resize controls so the affordance matches the width-only data model. */}
+      {selected === true && (
+        <>
+          <NodeResizeControl
+            minWidth={320}
+            resizeDirection="horizontal"
+            position="left"
+            variant={ResizeControlVariant.Line}
+            className="diagram-resize-line"
+            style={{ borderColor: 'var(--color-primary, #4f46e5)' }}
+          />
+          <NodeResizeControl
+            minWidth={320}
+            resizeDirection="horizontal"
+            position="right"
+            variant={ResizeControlVariant.Line}
+            className="diagram-resize-line"
+            style={{ borderColor: 'var(--color-primary, #4f46e5)' }}
+          />
+          <NodeResizeControl
+            minWidth={320}
+            resizeDirection="horizontal"
+            position="left"
+            className="diagram-resize-handle"
+            style={{
+              background: 'var(--color-primary, #4f46e5)',
+              borderColor: '#fff',
+              width: 14,
+              height: 14,
+              borderWidth: 2,
+            }}
+          />
+          <NodeResizeControl
+            minWidth={320}
+            resizeDirection="horizontal"
+            position="right"
+            className="diagram-resize-handle"
+            style={{
+              background: 'var(--color-primary, #4f46e5)',
+              borderColor: '#fff',
+              width: 14,
+              height: 14,
+              borderWidth: 2,
+            }}
+          />
+        </>
+      )}
 
       {/* Diagram label bar — draggable (except the text input) */}
       <div
