@@ -40,9 +40,9 @@ export default {
     // index.html and manifests must revalidate on every load.
     const isHashedAsset = /\/assets\/[^/]+-[A-Za-z0-9_-]{8,}\.(js|css|woff2?|png|svg|ico)$/.test(url.pathname)
     if (isHashedAsset && assetResponse.status === 200) {
-      const res = new Response(assetResponse.body, assetResponse)
-      res.headers.set('cache-control', 'public, max-age=31536000, immutable')
-      return res
+      const headers = new Headers(assetResponse.headers)
+      headers.set('cache-control', 'public, max-age=31536000, immutable')
+      return new Response(assetResponse.body, { status: assetResponse.status, statusText: assetResponse.statusText, headers })
     }
 
     return assetResponse
