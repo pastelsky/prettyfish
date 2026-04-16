@@ -366,6 +366,13 @@
   margin: 0 auto;
 }
 
+/* ── React Flow canvas — suppress native iOS callout on long-press ────── */
+.react-flow {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* ── React Flow node overrides ───────────────────────────────────────────── */
 /* Remove default React Flow node border/selection ring (we draw our own) */
 .react-flow__node {

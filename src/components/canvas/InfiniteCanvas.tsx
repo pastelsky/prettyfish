@@ -341,57 +341,102 @@ function InnerCanvas({
   const bgColor = isDark ? 'oklch(0.13 0.015 260)' : '#f3f3f4'
   const dotColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.10)'
 
+  // ── Long-press on canvas background for touch devices ───────────────────────
+  // React Flow's onPaneContextMenu only fires on right-click (contextmenu event).
+  // On iOS Safari, long-press does NOT fire contextmenu — so we detect it manually.
+  const canvasLongPressRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const canvasLongPressFiredRef = useRef(false)
+
+  const handleCanvasTouchStart = useCallback((e: React.TouchEvent<HTMLDivElement>) => {
+    // Only fire on the pane itself, not on diagram nodes
+    const target = e.target as HTMLElement
+    if (target.closest('[data-diagram-id]')) return
+    if (e.touches.length !== 1) return
+
+    const touch = e.touches[0]!
+    const x = touch.clientX
+    const y = touch.clientY
+    canvasLongPressFiredRef.current = false
+
+    canvasLongPressRef.current = setTimeout(() => {
+      canvasLongPressFiredRef.current = true
+      onOpenCanvasContextMenu(x, y)
+    }, 500)
+  }, [onOpenCanvasContextMenu])
+
+  const handleCanvasTouchEnd = useCallback(() => {
+    if (canvasLongPressRef.current) {
+      clearTimeout(canvasLongPressRef.current)
+      canvasLongPressRef.current = null
+    }
+  }, [])
+
+  const handleCanvasTouchMove = useCallback(() => {
+    // Cancel long-press if the user starts panning
+    if (canvasLongPressRef.current) {
+      clearTimeout(canvasLongPressRef.current)
+      canvasLongPressRef.current = null
+    }
+  }, [])
+
   return (
-    <ReactFlow
-      nodes={nodes}
-      edges={[]}
-      nodeTypes={nodeTypes}
-      onNodesChange={handleNodesChange}
-      onPaneClick={handlePaneClick}
-      onPaneContextMenu={handlePaneContextMenu}
-      minZoom={0.1}
-      maxZoom={2.5}
-      snapToGrid
-      snapGrid={[20, 20]}
-      panOnScroll
-      panOnScrollMode={PanOnScrollMode.Free}
-      zoomOnScroll={false}
-      zoomOnPinch
-      // Enforce single-selection semantics at the React Flow layer too.
-      selectionOnDrag={false}
-      multiSelectionKeyCode={null}
-      // Diagrams are not connectable — disable handles entirely
-      nodesConnectable={false}
-      // Don't auto-select nodes when dragging — only on click
-      selectNodesOnDrag={false}
-      // Require a small drag threshold to prevent accidental drags on click
-      nodeDragThreshold={5}
-      style={{ background: bgColor }}
-      deleteKeyCode={null} // We handle delete ourselves
-      proOptions={{ hideAttribution: true }}
+    <div
+      style={{ width: '100%', height: '100%' }}
+      onTouchStart={handleCanvasTouchStart}
+      onTouchEnd={handleCanvasTouchEnd}
+      onTouchMove={handleCanvasTouchMove}
     >
-      <Background
-        variant={BackgroundVariant.Dots}
-        gap={24}
-        size={1.5}
-        color={dotColor}
-      />
-      {!isMobile && (
-        <Controls
-          position="bottom-right"
-          showInteractive={false}
-          style={{
-            background: isDark ? 'oklch(0.20 0.015 260)' : '#ffffff',
-            border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
-            borderRadius: 10,
-            overflow: 'hidden',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-            marginBottom: 20,
-            marginRight: 16,
-          }}
+      <ReactFlow
+        nodes={nodes}
+        edges={[]}
+        nodeTypes={nodeTypes}
+        onNodesChange={handleNodesChange}
+        onPaneClick={handlePaneClick}
+        onPaneContextMenu={handlePaneContextMenu}
+        minZoom={0.1}
+        maxZoom={2.5}
+        snapToGrid
+        snapGrid={[20, 20]}
+        panOnScroll
+        panOnScrollMode={PanOnScrollMode.Free}
+        zoomOnScroll={false}
+        zoomOnPinch
+        // Enforce single-selection semantics at the React Flow layer too.
+        selectionOnDrag={false}
+        multiSelectionKeyCode={null}
+        // Diagrams are not connectable — disable handles entirely
+        nodesConnectable={false}
+        // Don't auto-select nodes when dragging — only on click
+        selectNodesOnDrag={false}
+        // Require a small drag threshold to prevent accidental drags on click
+        nodeDragThreshold={5}
+        style={{ background: bgColor }}
+        deleteKeyCode={null} // We handle delete ourselves
+        proOptions={{ hideAttribution: true }}
+      >
+        <Background
+          variant={BackgroundVariant.Dots}
+          gap={24}
+          size={1.5}
+          color={dotColor}
         />
-      )}
-    </ReactFlow>
+        {!isMobile && (
+          <Controls
+            position="bottom-right"
+            showInteractive={false}
+            style={{
+              background: isDark ? 'oklch(0.20 0.015 260)' : '#ffffff',
+              border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
+              borderRadius: 10,
+              overflow: 'hidden',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+              marginBottom: 20,
+              marginRight: 16,
+            }}
+          />
+        )}
+      </ReactFlow>
+    </div>
   )
 }
 
