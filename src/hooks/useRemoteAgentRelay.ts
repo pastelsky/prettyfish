@@ -8,11 +8,16 @@ import type { AppState } from '@/types'
 
 // Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
 const MAX_AUTO_RECONNECT_ATTEMPTS = 3
+const MAX_BACKGROUND_RECONNECT_ATTEMPTS = 10
+const RELAY_BACKGROUND_RECONNECT_DELAY_MS = 30_000
+const RELAY_HEARTBEAT_INTERVAL_MS = 55_000
+const RELAY_PONG_STALE_MS = RELAY_HEARTBEAT_INTERVAL_MS * 2 + 5_000
 const RELAY_HANDSHAKE_TIMEOUT_MS = 5_000
 const RELAY_DEBUG_STORAGE_KEY = 'prettyfish:relay-debug'
 const RELAY_DEBUG_HISTORY_LIMIT = 120
 
 type RelayConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error'
+type RelayClientEnvelope = RelayEnvelope | { type: 'pong' }
 
 interface RelayConnectionDebugEvent {
   at: string
@@ -30,11 +35,13 @@ interface RelayConnectionDebugStats {
   wsMessageCount: number
   reconnectScheduleCount: number
   createSessionCount: number
+  wsPongCount: number
   lastConnectStartedAt: string | null
   lastOpenAt: string | null
   lastHelloAt: string | null
   lastCloseAt: string | null
   lastErrorAt: string | null
+  lastPongAt: string | null
   lastSessionCreatedAt: string | null
 }
 
@@ -48,6 +55,7 @@ interface RelayConnectionDebugState {
   lastEventType: string | null
   lastReason: string | null
   mcpUrl: string
+  backgroundReconnectAttempts: number
   reconnectAttempts: number
   sessionId: string
   socketReadyState: string
@@ -137,11 +145,13 @@ function createEmptyRelayDebugStats(): RelayConnectionDebugStats {
     wsMessageCount: 0,
     reconnectScheduleCount: 0,
     createSessionCount: 0,
+    wsPongCount: 0,
     lastConnectStartedAt: null,
     lastOpenAt: null,
     lastHelloAt: null,
     lastCloseAt: null,
     lastErrorAt: null,
+    lastPongAt: null,
     lastSessionCreatedAt: null,
   }
 }
@@ -157,6 +167,7 @@ function createEmptyRelayDebugState(): RelayConnectionDebugState {
     lastEventType: null,
     lastReason: null,
     mcpUrl: '',
+    backgroundReconnectAttempts: 0,
     reconnectAttempts: 0,
     sessionId: '',
     socketReadyState: 'none',
@@ -276,9 +287,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const [sessionId, setSessionId] = useState(() => readStored(sessionIdKey(activePageId)))
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectAttemptsRef = useRef(0)
+  const backgroundReconnectAttemptsRef = useRef(0)
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const connectPromiseRef = useRef<Promise<void> | null>(null)
   const connectTargetRef = useRef<{ sessionId: string; browserToken: string } | null>(null)
+  const lastPongAtRef = useRef<number | null>(null)
   const intentionalDisconnectRef = useRef(false)
   const [browserToken, setBrowserToken] = useState(() => readStored(browserTokenKey(activePageId)))
   const [mcpUrl, setMcpUrl] = useState('')
@@ -305,6 +318,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       lastEventType: store.state.lastEventType,
       lastReason: lastReasonRef.current,
       mcpUrl,
+      backgroundReconnectAttempts: backgroundReconnectAttemptsRef.current,
       reconnectAttempts: reconnectAttemptsRef.current,
       sessionId,
       socketReadyState: socketReadyStateLabel(socketRef.current),
@@ -337,17 +351,18 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         ...store.state,
         activePageId: activePageIdRef.current,
         agentConnected,
-        error,
-        hasBrowserToken: Boolean(browserToken),
-        intentionalDisconnect: intentionalDisconnectRef.current,
-        lastEventAt: at,
-        lastEventType: type,
-        lastReason: reason,
-        mcpUrl,
-        reconnectAttempts: reconnectAttemptsRef.current,
-        sessionId,
-        socketReadyState: socketReadyStateLabel(socketRef.current),
-        status,
+          error,
+          hasBrowserToken: Boolean(browserToken),
+          intentionalDisconnect: intentionalDisconnectRef.current,
+          lastEventAt: at,
+          lastEventType: type,
+          lastReason: reason,
+          mcpUrl,
+          backgroundReconnectAttempts: backgroundReconnectAttemptsRef.current,
+          reconnectAttempts: reconnectAttemptsRef.current,
+          sessionId,
+          socketReadyState: socketReadyStateLabel(socketRef.current),
+          status,
         stats: { ...statsRef.current },
         tokenSuffix: maskTokenSuffix(browserToken),
       }
@@ -377,6 +392,8 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     socketRef.current?.close()
     socketRef.current = null
     reconnectAttemptsRef.current = 0
+    backgroundReconnectAttemptsRef.current = 0
+    lastPongAtRef.current = null
     setStatus('disconnected')
     setError(null)
 
@@ -409,10 +426,19 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     heartbeatIntervalRef.current = setInterval(() => {
       const socket = socketRef.current
       if (socket?.readyState === WebSocket.OPEN) {
+        const lastPongAt = lastPongAtRef.current
+        if (lastPongAt && Date.now() - lastPongAt > RELAY_PONG_STALE_MS) {
+          recordDebugEvent('heartbeat-stale', 'relay heartbeat pong is stale; closing websocket', {
+            staleForMs: Date.now() - lastPongAt,
+            staleThresholdMs: RELAY_PONG_STALE_MS,
+          })
+          socket.close()
+          return
+        }
         socket.send(JSON.stringify({ type: 'ping' }))
         recordDebugEvent('heartbeat-ping', 'sent heartbeat ping')
       }
-    }, 55_000) // 55s — safely under Cloudflare's 100s idle timeout, minimizes DO request costs
+    }, RELAY_HEARTBEAT_INTERVAL_MS) // Safely under Cloudflare's idle timeout; pong auto-response avoids extra DO invocations.
   }, [recordDebugEvent])
 
   const stopHeartbeat = useCallback(() => {
@@ -454,22 +480,29 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       })
       return
     }
-    const attempts = reconnectAttemptsRef.current
-    if (attempts >= MAX_AUTO_RECONNECT_ATTEMPTS) {
+    const fastAttempts = reconnectAttemptsRef.current
+    const useBackgroundRetry = fastAttempts >= MAX_AUTO_RECONNECT_ATTEMPTS
+    const backgroundAttempts = backgroundReconnectAttemptsRef.current
+
+    if (useBackgroundRetry && backgroundAttempts >= MAX_BACKGROUND_RECONNECT_ATTEMPTS) {
       setStatus('error')
-      if (userInitiatedConnectRef.current) {
-        setError('Unable to connect after 3 attempts. Please try again.')
-      }
+      setError('Browser connection was lost. Refresh the page or click Reconnect to try again.')
       recordDebugEvent('reconnect-stop', 'reconnect attempts exhausted', {
-        maxAttempts: MAX_AUTO_RECONNECT_ATTEMPTS,
+        fastAttempts: MAX_AUTO_RECONNECT_ATTEMPTS,
+        backgroundAttempts: MAX_BACKGROUND_RECONNECT_ATTEMPTS,
       })
       return
     }
-    const delay = Math.min(1_000 * Math.pow(1.5, attempts), 30_000)
+    const delay = useBackgroundRetry
+      ? RELAY_BACKGROUND_RECONNECT_DELAY_MS
+      : Math.min(1_000 * Math.pow(1.5, fastAttempts), 30_000)
+    const phase = useBackgroundRetry ? 'background' : 'fast'
+    const attempt = useBackgroundRetry ? backgroundAttempts + 1 : fastAttempts + 1
     statsRef.current.reconnectScheduleCount += 1
     recordDebugEvent('reconnect-scheduled', 'scheduled reconnect attempt', {
+      phase,
       reason,
-      attempt: attempts + 1,
+      attempt,
       delayMs: delay,
     })
     reconnectTimerRef.current = setTimeout(() => {
@@ -477,7 +510,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       const sid = readStored(sessionIdKey(activePageIdRef.current))
       const tok = readStored(browserTokenKey(activePageIdRef.current))
       if (sid && tok && connectWithSessionRef.current) {
-        reconnectAttemptsRef.current += 1
+        if (useBackgroundRetry) {
+          backgroundReconnectAttemptsRef.current += 1
+        } else {
+          reconnectAttemptsRef.current += 1
+        }
         void connectWithSessionRef.current(sid, tok).catch(() => undefined)
       }
     }, delay)
@@ -532,6 +569,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     const connectPromise = new Promise<void>((resolve, reject) => {
       const socket = new WebSocket(toWebSocketUrl(nextSessionId, nextBrowserToken))
       socketRef.current = socket
+      lastPongAtRef.current = null
       let settled = false
       const handshakeTimer = setTimeout(() => {
         if (socketRef.current !== socket || settled) return
@@ -622,8 +660,8 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         if (!raw) return
         statsRef.current.wsMessageCount += 1
 
-        let message: RelayEnvelope
-        try { message = JSON.parse(raw) as RelayEnvelope } catch { return }
+        let message: RelayClientEnvelope
+        try { message = JSON.parse(raw) as RelayClientEnvelope } catch { return }
 
         if (message.type === 'command') {
           void (async () => {
@@ -664,6 +702,8 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
           statsRef.current.wsHelloCount += 1
           statsRef.current.lastHelloAt = nowIso()
           reconnectAttemptsRef.current = 0
+          backgroundReconnectAttemptsRef.current = 0
+          lastPongAtRef.current = Date.now()
           setStatus('connected')
           setError(null)
           recordDebugEvent('relay-hello', 'relay handshake completed', {
@@ -672,7 +712,12 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
           })
           startHeartbeat()
           finishResolve()
+        } else if (message.type === 'pong') {
+          statsRef.current.wsPongCount += 1
+          statsRef.current.lastPongAt = nowIso()
+          lastPongAtRef.current = Date.now()
         } else if (message.type === 'peer_status') {
+          lastPongAtRef.current = Date.now()
           setAgentConnected((message as { connected: boolean }).connected)
           recordDebugEvent('peer-status', 'peer status updated', {
             role: message.role,
@@ -719,10 +764,44 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     void connectWithSession(sessionId, browserToken).catch(() => undefined)
   }, [browserToken, connectWithSession, sessionId])
 
+  useEffect(() => {
+    const tryLifecycleReconnect = (reason: string) => {
+      if (!sessionId || !browserToken) return
+      if (status === 'connected' || status === 'connecting') return
+      reconnectAttemptsRef.current = 0
+      backgroundReconnectAttemptsRef.current = 0
+      recordDebugEvent('lifecycle-reconnect', reason, {
+        sessionId,
+        tokenSuffix: maskTokenSuffix(browserToken),
+      })
+      clearReconnectTimer('lifecycle reconnect cleared pending reconnect timer')
+      void connectWithSession(sessionId, browserToken).catch(() => undefined)
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        tryLifecycleReconnect('page became visible; retrying relay attach')
+      }
+    }
+
+    const handleOnline = () => {
+      tryLifecycleReconnect('browser came back online; retrying relay attach')
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('online', handleOnline)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('online', handleOnline)
+    }
+  }, [browserToken, clearReconnectTimer, connectWithSession, recordDebugEvent, sessionId, status])
+
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
     clearReconnectTimer('manual disconnect cleared pending reconnect')
     reconnectAttemptsRef.current = 0
+    backgroundReconnectAttemptsRef.current = 0
+    lastPongAtRef.current = null
     recordDebugEvent('disconnect', 'manual disconnect invoked')
     stopHeartbeat()
     socketRef.current?.close()
@@ -751,6 +830,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     userInitiatedConnectRef.current = false
     const pageId = activePageIdRef.current
     reconnectAttemptsRef.current = 0
+    backgroundReconnectAttemptsRef.current = 0
     recordDebugEvent('session-reset', 'clearing stored relay session', {
       pageId,
       sessionId,
