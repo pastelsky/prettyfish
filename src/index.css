@@ -369,78 +369,89 @@
 
 /* ── CodeMirror documentation hover tooltip ──────────────────────────────── */
 
+.cm-tooltip:has(.cm-mermaid-doc-tooltip) {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
 .cm-mermaid-doc-tooltip {
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  padding: 10px 12px;
-  border-radius: 9px;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 10px;
   font-family: var(--font-sans);
   line-height: 1.45;
-  max-width: 320px;
+  max-width: 340px;
+  min-width: 200px;
   background: oklch(0.995 0.001 270);
   color: oklch(0.30 0.015 280);
   border: 1px solid oklch(0.90 0.005 270);
-  box-shadow: 0 4px 20px oklch(0.18 0.02 280 / 10%), 0 1px 4px oklch(0.18 0.02 280 / 6%);
+  box-shadow: 0 6px 28px oklch(0.18 0.02 280 / 12%), 0 1px 4px oklch(0.18 0.02 280 / 7%);
   z-index: 9999 !important;
 }
 
-.cm-mermaid-doc-tooltip[data-theme='dark'] {
-  background: oklch(0.19 0.014 280);
+.dark .cm-mermaid-doc-tooltip {
+  background: oklch(0.17 0.014 280);
   color: oklch(0.88 0.006 270);
-  border-color: oklch(1 0 0 / 10%);
-  box-shadow: 0 4px 20px oklch(0 0 0 / 40%), 0 1px 4px oklch(0 0 0 / 28%);
+  border-color: oklch(1 0 0 / 12%);
+  box-shadow: 0 6px 28px oklch(0 0 0 / 45%), 0 1px 4px oklch(0 0 0 / 30%);
 }
 
 .cm-mermaid-doc-title {
   font-size: 12.5px;
   font-weight: 600;
-  color: oklch(0.45 0.18 270);
+  letter-spacing: -0.01em;
+  color: oklch(0.40 0.20 270);
 }
 
-.cm-mermaid-doc-tooltip[data-theme='dark'] .cm-mermaid-doc-title {
-  color: oklch(0.75 0.16 270);
+.dark .cm-mermaid-doc-title {
+  color: oklch(0.78 0.16 270);
 }
 
 .cm-mermaid-doc-syntax {
   display: block;
   font-family: var(--font-mono);
-  font-size: 11.5px;
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: oklch(0.96 0.004 270);
-  color: oklch(0.35 0.015 280);
-  border: 1px solid oklch(0.92 0.004 270);
+  font-size: 11px;
+  padding: 5px 8px;
+  border-radius: 6px;
+  background: oklch(0.965 0.004 270);
+  color: oklch(0.32 0.015 280);
+  border: 1px solid oklch(0.92 0.005 270);
   white-space: pre-wrap;
   word-break: break-all;
+  line-height: 1.5;
 }
 
-.cm-mermaid-doc-tooltip[data-theme='dark'] .cm-mermaid-doc-syntax {
-  background: oklch(0.15 0.012 280);
-  color: oklch(0.82 0.008 270);
+.dark .cm-mermaid-doc-syntax {
+  background: oklch(0.13 0.012 280);
+  color: oklch(0.84 0.008 270);
   border-color: oklch(1 0 0 / 8%);
 }
 
 .cm-mermaid-doc-desc {
   font-size: 11.5px;
-  color: oklch(0.42 0.01 280);
-  line-height: 1.5;
+  color: oklch(0.40 0.01 280);
+  line-height: 1.55;
 }
 
-.cm-mermaid-doc-tooltip[data-theme='dark'] .cm-mermaid-doc-desc {
-  color: oklch(0.68 0.01 270);
+.dark .cm-mermaid-doc-desc {
+  color: oklch(0.70 0.01 270);
 }
 
 .cm-mermaid-doc-hint {
   font-size: 10px;
-  color: oklch(0.55 0.01 270);
-  border-top: 1px solid oklch(0.92 0.004 270);
-  padding-top: 4px;
-  margin-top: 1px;
+  color: oklch(0.55 0.008 270);
+  border-top: 1px solid oklch(0.93 0.004 270);
+  padding-top: 5px;
+  margin-top: 2px;
+  letter-spacing: 0.01em;
 }
 
-.cm-mermaid-doc-tooltip[data-theme='dark'] .cm-mermaid-doc-hint {
-  color: oklch(0.50 0.01 270);
+.dark .cm-mermaid-doc-hint {
+  color: oklch(0.48 0.008 270);
   border-top-color: oklch(1 0 0 / 8%);
 }
 
