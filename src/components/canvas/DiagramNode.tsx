@@ -158,7 +158,7 @@ export const DiagramNode = memo(function DiagramNode({
         <>
           <NodeResizeControl
             minWidth={320}
-            keepAspectRatio
+            // keepAspectRatio — disabled: Mermaid diagrams have content-driven height
             position="top-left"
             className="diagram-resize-handle"
             style={{
@@ -171,7 +171,7 @@ export const DiagramNode = memo(function DiagramNode({
           />
           <NodeResizeControl
             minWidth={320}
-            keepAspectRatio
+            // keepAspectRatio — disabled: Mermaid diagrams have content-driven height
             position="top-right"
             className="diagram-resize-handle"
             style={{
@@ -184,7 +184,7 @@ export const DiagramNode = memo(function DiagramNode({
           />
           <NodeResizeControl
             minWidth={320}
-            keepAspectRatio
+            // keepAspectRatio — disabled: Mermaid diagrams have content-driven height
             position="bottom-left"
             className="diagram-resize-handle"
             style={{
@@ -197,7 +197,7 @@ export const DiagramNode = memo(function DiagramNode({
           />
           <NodeResizeControl
             minWidth={320}
-            keepAspectRatio
+            // keepAspectRatio — disabled: Mermaid diagrams have content-driven height
             position="bottom-right"
             className="diagram-resize-handle"
             style={{
