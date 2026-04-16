@@ -200,6 +200,12 @@ export function McpPanel({ open, onClose, remoteRelay, webMcpSupported = false, 
 
         {/* Body */}
         <div className="space-y-2.5 p-3.5">
+          <div className="rounded-lg border border-amber-300/70 bg-amber-50 px-2.5 py-2 text-[11px] leading-snug text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-200">
+            <p className="font-semibold">Quick heads-up</p>
+            <p>
+              We are currently adding more capacity to improve reliability. Agent attachment may be temporarily inconsistent until tomorrow while this upgrade is in progress.
+            </p>
+          </div>
 
           {/* Error */}
           {remoteRelay.error && (
