@@ -249,6 +249,16 @@
   background: oklch(0.8 0.05 250 / 4%) !important;
 }
 
+/* Selection match highlights — when you select a word, other occurrences glow */
+.cm-editor .cm-selectionMatch {
+  background-color: oklch(0.80 0.08 270 / 22%) !important;
+  border-radius: 2px;
+}
+
+.dark .cm-editor .cm-selectionMatch {
+  background-color: oklch(0.70 0.10 270 / 20%) !important;
+}
+
 /* ─── Panel resize handle ─── */
 .panel-resize-handle {
   position: relative;
