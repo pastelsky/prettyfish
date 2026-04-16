@@ -410,8 +410,8 @@ export default function App() {
           className={isMobile ? 'absolute left-0 right-0 bottom-0 z-30 rounded-t-2xl overflow-hidden' : 'absolute top-16 bottom-4 left-4 z-20'}
           style={isMobile
             ? {
-                height: mobileSidebarCollapsed ? '3.5rem' : '80vh',
-                maxHeight: mobileSidebarCollapsed ? '3.5rem' : '80vh',
+                height: mobileSidebarCollapsed ? '3.5rem' : '80dvh',
+                maxHeight: mobileSidebarCollapsed ? '3.5rem' : '80dvh',
                 transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1), max-height 0.3s cubic-bezier(0.4,0,0.2,1)',
               }
             : { width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }}
@@ -464,7 +464,7 @@ export default function App() {
             'bg-white/95 backdrop-blur-sm border-black/6 [box-shadow:0_4px_24px_rgba(0,0,0,0.08)]',
             'dark:bg-[oklch(0.16_0.015_260)]/95 dark:border-white/8 dark:[box-shadow:0_4px_24px_rgba(0,0,0,0.35)]',
           )}
-          style={isMobile ? { height: '75vh', maxHeight: '75vh' } : undefined}
+          style={isMobile ? { height: '75dvh', maxHeight: '75dvh' } : undefined}
         >
           <ErrorBoundary label="Reference docs failed to load">
             <Suspense fallback={<div className={cn('h-full w-full animate-pulse', mode === 'dark' ? 'bg-white/5' : 'bg-black/3')} />}>
@@ -518,7 +518,7 @@ export default function App() {
       {isMobile && !docsOpen && (
         <div
           className="absolute right-4 z-40 pointer-events-none transition-all duration-300"
-          style={{ bottom: (sidebarOpen && !mobileSidebarCollapsed) ? 'calc(80vh + 1rem)' : '1.25rem' }}
+          style={{ bottom: (sidebarOpen && !mobileSidebarCollapsed) ? 'calc(80dvh + 1rem)' : '1.25rem' }}
         >
           <Button
             data-testid="mobile-add-diagram-button"
