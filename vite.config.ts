@@ -25,7 +25,7 @@ export default defineConfig({
         })
       : null,
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       // Include all built assets + public files for precaching
       includeAssets: [
         'favicon.svg',
@@ -112,9 +112,8 @@ export default defineConfig({
         ],
         // Clean up old caches on activate
         cleanupOutdatedCaches: true,
-        // In prompt mode the new SW stays in 'waiting' state until the user
-        // clicks "Restart" in the ReloadPrompt toast, which calls skipWaiting.
-        // Do NOT set skipWaiting/clientsClaim here — they would bypass the prompt.
+        // autoUpdate mode: new SW activates immediately via skipWaiting + clientsClaim.
+        // No stale versions — users always get the latest code on next navigation.
       },
       devOptions: {
         // Enable SW in dev mode for testing (optional, off by default)
