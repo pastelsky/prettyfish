@@ -127,12 +127,16 @@ const lightEditorTheme = EditorView.theme({}, { dark: false })
 
 const mermaidEditorHighlightStyle = HighlightStyle.define([
   { tag: tags.keyword, color: '#5f3dc4', fontWeight: 'bold' },
+  { tag: tags.controlKeyword, color: '#7048a6', fontWeight: 'bold' },
   { tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName], color: '#173b8c' },
   { tag: [tags.literal, tags.inserted], color: '#005c41' },
   { tag: [tags.string, tags.deleted], color: '#9f1c1c' },
+  { tag: tags.content, color: '#4a5568' },
+  { tag: tags.variableName, color: '#1a6b5a' },
   { tag: [tags.typeName, tags.namespace], color: '#0f5c7a' },
   { tag: tags.className, color: '#0f5c7a' },
-  { tag: tags.comment, color: '#8a5a00', fontStyle: 'italic' },
+  { tag: tags.modifier, color: '#6b52a3', fontStyle: 'italic' },
+  { tag: [tags.comment, tags.lineComment], color: '#8a5a00', fontStyle: 'italic' },
   { tag: [tags.operator, tags.punctuation, tags.separator], color: '#6b7280' },
   { tag: [tags.bracket, tags.paren, tags.squareBracket, tags.brace, tags.angleBracket], color: '#7c8495' },
   { tag: tags.number, color: '#b35c00' },
