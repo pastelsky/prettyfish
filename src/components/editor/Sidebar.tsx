@@ -86,8 +86,8 @@ const errorLineField = StateField.define({
 
 const errorLineDeco = Decoration.line({ class: 'cm-errorLine' })
 
-const errorLineTheme = EditorView.theme({
-  '.cm-errorLine': {
+const errorLineTheme = EditorView.baseTheme({
+  '&light .cm-errorLine': {
     backgroundColor: 'oklch(0.57 0.19 25 / 10%)',
     outline: '1px solid oklch(0.57 0.19 25 / 15%)',
     borderRadius: '2px',
@@ -95,6 +95,7 @@ const errorLineTheme = EditorView.theme({
   '&dark .cm-errorLine': {
     backgroundColor: 'oklch(0.65 0.16 25 / 12%)',
     outline: '1px solid oklch(0.65 0.16 25 / 18%)',
+    borderRadius: '2px',
   },
 })
 
