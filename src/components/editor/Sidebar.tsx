@@ -70,7 +70,7 @@ const MONO_FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'C
 // Override CodeMirror's built-in fontFamily: "monospace" via the theme API
 const editorFontTheme = EditorView.theme({
   '&': { fontFamily: MONO_FONT },
-  '.cm-content': { fontFamily: MONO_FONT, lineHeight: '1.75' },
+  '.cm-content': { fontFamily: MONO_FONT, lineHeight: '1.75', fontVariantLigatures: 'common-ligatures', fontFeatureSettings: '"liga" 1, "calt" 1' },
   '.cm-gutters': { fontFamily: MONO_FONT },
 })
 

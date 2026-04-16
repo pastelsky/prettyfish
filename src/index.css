@@ -204,8 +204,6 @@
   }
   code, kbd, pre, .cm-editor {
     font-family: var(--font-mono) !important;
-    font-feature-settings: normal !important;
-    font-variant-ligatures: none !important;
   }
 }
 
