@@ -7,7 +7,7 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist', 'playwright-report', 'test-results', '.wrangler']),
+  globalIgnores(['dist', 'playwright-report', 'test-results', '.wrangler', 'coverage']),
   {
     files: ['**/*.{ts,tsx}'],
     extends: [

@@ -407,7 +407,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       hasStoredBrowserToken: Boolean(nextBrowserToken),
       storedSessionId: nextSessionId || null,
     })
-  }, [activePageId])
+  }, [activePageId, recordDebugEvent])
 
   // ── Rebuild mcpUrl whenever session changes ────────────────────────────────
   useEffect(() => {
@@ -762,7 +762,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       tokenSuffix: maskTokenSuffix(browserToken),
     })
     void connectWithSession(sessionId, browserToken).catch(() => undefined)
-  }, [browserToken, connectWithSession, sessionId])
+  }, [browserToken, connectWithSession, recordDebugEvent, sessionId])
 
   useEffect(() => {
     const tryLifecycleReconnect = (reason: string) => {
@@ -794,7 +794,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       document.removeEventListener('visibilitychange', handleVisibilityChange)
       window.removeEventListener('online', handleOnline)
     }
-  }, [browserToken, clearReconnectTimer, connectWithSession, recordDebugEvent, sessionId, status])
+  }, [browserToken, clearReconnectTimer, connectWithSession, recordDebugEvent, sessionId, status]) // recordDebugEvent intentionally included — stable useCallback
 
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
@@ -824,7 +824,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     } catch {
       // connectWithSession already updated the visible failure state.
     }
-  }, [browserToken, connectWithSession, sessionId])
+  }, [browserToken, connectWithSession, recordDebugEvent, sessionId])
 
   const resetSession = useCallback(() => {
     userInitiatedConnectRef.current = false
@@ -841,7 +841,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     setMcpUrl('')
     persist(sessionIdKey(pageId), '')
     persist(browserTokenKey(pageId), '')
-  }, [disconnect])
+  }, [disconnect, recordDebugEvent, sessionId])
 
   const createHostedSession = useCallback(async () => {
     userInitiatedConnectRef.current = true
@@ -903,7 +903,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         sessionId: session.sessionId,
       })
     }
-  }, [connectWithSession, disconnect])
+  }, [connectWithSession, disconnect, recordDebugEvent])
 
   const displayId = sessionId
     ? (sessionId.match(/^[a-z]+-[a-z]+-[a-z]+-[a-f0-9]{4}$/) ? sessionId : sessionId.slice(0, 8))

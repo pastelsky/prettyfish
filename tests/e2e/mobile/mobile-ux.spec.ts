@@ -5,7 +5,7 @@
  * Run with:
  *   PLAYWRIGHT=true LOCAL_APP_ONLY=true npx playwright test tests/e2e/mobile/mobile-ux.spec.ts --reporter=line
  */
-import { test, expect, devices } from '@playwright/test'
+import { test, expect } from '@playwright/test'
 import path from 'path'
 import fs from 'fs'
 
