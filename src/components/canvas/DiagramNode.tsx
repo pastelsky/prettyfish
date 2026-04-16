@@ -253,33 +253,32 @@ export const DiagramNode = memo(function DiagramNode({
         )}
       </div>
 
-      {/* Description — visible when active */}
-      {isActive && (
-        <div style={{ padding: '0 10px 3px', height: 16, marginTop: 0, display: 'flex' }} className="nodrag">
-          <input
-            data-testid="diagram-description-input"
-            aria-label="Diagram description"
-            title="Diagram description"
-            ref={descInputRef}
-            defaultValue={diagram.description ?? ''}
-            key={diagram.description ?? ''}
-            onBlur={handleDescBlur}
-            onKeyDown={handleDescKeyDown}
-            placeholder="Add description…"
-            style={{
-              width: '100%',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              fontSize: 10,
-              fontWeight: 500,
-              color: mode === 'dark' ? 'rgba(255,255,255,0.72)' : 'rgba(17,24,39,0.66)',
-              fontFamily: 'inherit',
-              cursor: 'text',
-            }}
-          />
-        </div>
-      )}
+      {/* Description — always rendered to reserve space; visible when active */}
+      <div style={{ padding: '0 10px 3px', height: 16, marginTop: 0, display: 'flex', visibility: isActive ? 'visible' : 'hidden' }} className="nodrag">
+        <input
+          data-testid="diagram-description-input"
+          aria-label="Diagram description"
+          title="Diagram description"
+          ref={descInputRef}
+          defaultValue={diagram.description ?? ''}
+          key={diagram.description ?? ''}
+          onBlur={handleDescBlur}
+          onKeyDown={handleDescKeyDown}
+          placeholder="Add description…"
+          tabIndex={isActive ? 0 : -1}
+          style={{
+            width: '100%',
+            background: 'transparent',
+            border: 'none',
+            outline: 'none',
+            fontSize: 10,
+            fontWeight: 500,
+            color: mode === 'dark' ? 'rgba(255,255,255,0.72)' : 'rgba(17,24,39,0.66)',
+            fontFamily: 'inherit',
+            cursor: isActive ? 'text' : 'default',
+          }}
+        />
+      </div>
 
       {/* Diagram preview area */}
       <div
