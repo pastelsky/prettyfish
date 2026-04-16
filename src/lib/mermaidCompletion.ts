@@ -368,7 +368,7 @@ export function mermaidCompletionExtension(): Extension {
       defaultKeymap: true,
       activateOnTyping: true,
       maxRenderedOptions: 20,
-      icons: true,
+      icons: false,
     }),
   ]
 }

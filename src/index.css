@@ -367,8 +367,8 @@
   overflow: hidden;
   padding: 3px;
   font-family: var(--font-sans);
-  min-width: 180px;
-  max-width: 280px;
+  min-width: 200px;
+  max-width: 320px;
   z-index: 9999 !important;
 }
 
@@ -380,7 +380,7 @@
 
 .cm-tooltip-autocomplete > ul {
   font-family: var(--font-sans) !important;
-  max-height: 260px;
+  max-height: 280px;
   overflow-y: auto;
   scrollbar-width: thin;
   scrollbar-color: oklch(0.85 0.005 270) transparent;
@@ -390,14 +390,14 @@
   scrollbar-color: oklch(0.30 0.012 280) transparent;
 }
 
+/* Each completion item — stacked layout: label on top, detail below */
 .cm-tooltip-autocomplete > ul > li {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 5px 9px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 5px 10px;
   border-radius: 7px;
-  font-size: 12.5px;
-  line-height: 1.45;
   cursor: pointer;
   color: oklch(0.30 0.018 280);
   transition: background 0.1s ease;
@@ -419,32 +419,22 @@
   color: oklch(0.96 0.004 270) !important;
 }
 
-/* Icon column */
+/* Hide the default unicode emoji icons — they look bad */
 .cm-completionIcon {
-  font-size: 11px;
-  width: 16px;
-  flex-shrink: 0;
-  opacity: 0.55;
-  color: oklch(0.50 0.12 270);
-  font-style: normal;
+  display: none !important;
 }
 
-.dark .cm-completionIcon {
-  color: oklch(0.68 0.14 270);
-  opacity: 0.7;
-}
-
-/* Label */
+/* Label — monospace, prominent */
 .cm-completionLabel {
-  flex: 1;
   font-size: 12.5px;
   font-weight: 500;
   font-family: var(--font-mono);
   color: inherit;
+  line-height: 1.45;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 0;
+  max-width: 100%;
 }
 
 /* Matched text highlight */
@@ -458,21 +448,34 @@
   color: oklch(0.78 0.18 270);
 }
 
-/* Detail / type hint */
+/* Detail — secondary line below label, wraps naturally, never truncated */
 .cm-completionDetail {
-  font-size: 11px;
+  display: block;
+  font-size: 10.5px;
   font-family: var(--font-sans);
   font-style: normal;
-  color: oklch(0.58 0.01 270);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  flex-shrink: 0;
-  max-width: 100px;
+  font-weight: 400;
+  color: oklch(0.52 0.01 270);
+  line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  padding: 0;
 }
 
 .dark .cm-completionDetail {
-  color: oklch(0.62 0.012 270);
+  color: oklch(0.58 0.012 270);
+}
+
+/* Selected state — keep detail readable */
+.cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail,
+.cm-tooltip-autocomplete > ul > li:hover .cm-completionDetail {
+  color: oklch(0.42 0.01 270);
+}
+
+.dark .cm-tooltip-autocomplete > ul > li[aria-selected] .cm-completionDetail,
+.dark .cm-tooltip-autocomplete > ul > li:hover .cm-completionDetail {
+  color: oklch(0.72 0.012 270);
 }
 
 /* "More items" indicator */
