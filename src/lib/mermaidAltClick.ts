@@ -12,7 +12,18 @@ import type { Extension } from '@codemirror/state'
 import { lookupTokenAt, type TokenRef } from './mermaidTokenLookup'
 import { getRef } from './reference'
 import type { RefElement } from './reference'
-import { detectDiagramType } from './detectDiagram'
+import { detectDiagramType, type DiagramType } from './detectDiagram'
+
+// Map detectDiagramType() return values to referenceData keys
+const DIAGRAM_TYPE_TO_REF_KEY: Partial<Record<DiagramType, string>> = {
+  sequence:     'sequenceDiagram',
+  gitgraph:     'gitGraph',
+  quadrant:     'quadrantChart',
+}
+
+function getRefKey(diagType: DiagramType): string {
+  return DIAGRAM_TYPE_TO_REF_KEY[diagType] ?? diagType
+}
 
 /**
  * Try the AST-based lookup first, then fall back to keyword-text matching
@@ -44,16 +55,28 @@ function lookupRefAt(state: import('@codemirror/state').EditorState, pos: number
   const diagType = detectDiagramType(fullText)
   if (diagType === 'other') return null
 
-  const diagramRef = getRef(diagType)
-  // Try exact match on element name, then partial match
-  const element = diagramRef.elements.find(e =>
-    e.name.toLowerCase() === word.toLowerCase() ||
-    e.name.toLowerCase().startsWith(word.toLowerCase()) ||
-    e.syntax.toLowerCase().startsWith(word.toLowerCase())
-  )
+  const refKey = getRefKey(diagType)
+  const diagramRef = getRef(refKey)
+
+  // Prioritized matching:
+  // 1. Exact match on element name
+  // 2. Exact match on first word of syntax
+  // 3. Syntax starts with the word (but not partial name matches like "state" → "stateDiagram-v2")
+  const wordLower = word.toLowerCase()
+  const element =
+    diagramRef.elements.find(e => e.name.toLowerCase() === wordLower) ??
+    diagramRef.elements.find(e => e.syntax.split(/\s/)[0]?.toLowerCase() === wordLower) ??
+    diagramRef.elements.find(e => {
+      // Only match if the syntax starts with the word followed by a word boundary
+      const syntaxLower = e.syntax.toLowerCase()
+      return syntaxLower.startsWith(wordLower) && (
+        syntaxLower.length === wordLower.length ||
+        /[\s\[({|<]/.test(syntaxLower[wordLower.length]!)
+      )
+    })
   if (!element) return null
 
-  return { ref: { diagramType: diagType, elementName: element.name }, element }
+  return { ref: { diagramType: refKey, elementName: element.name }, element }
 }
 
 export function mermaidAltClickExtension(
