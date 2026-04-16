@@ -61,39 +61,43 @@ export function highlightMermaidCode(code: string, isDark: boolean): Array<{ tex
 export function getHighlightStyle(isDark: boolean): string {
   if (isDark) {
     return `
-      .tok-keyword { color: #569cd6; font-weight: bold; }
-      .tok-string { color: #ce9178; }
-      .tok-comment { color: #6a9955; font-style: italic; }
-      .tok-number { color: #b5cea8; }
-      .tok-operator { color: #d4d4d4; }
-      .tok-punctuation { color: #808080; }
-      .tok-variableName { color: #9cdcfe; }
-      .tok-typeName { color: #4ec9b0; }
-      .tok-className { color: #4ec9b0; }
+      .tok-keyword { color: #b39ddb; font-weight: bold; }
+      .tok-string { color: #f48fb1; }
+      .tok-comment { color: #d4a054; font-style: italic; }
+      .tok-number { color: #e0a050; }
+      .tok-operator { color: #9ca3af; }
+      .tok-punctuation { color: #9ca3af; }
+      .tok-variableName { color: #6dc9a8; }
+      .tok-typeName { color: #5db8c9; }
+      .tok-className { color: #5db8c9; }
       .tok-definition { color: #dcdcaa; }
-      .tok-propertyName { color: #9cdcfe; }
-      .tok-literal { color: #ce9178; }
+      .tok-propertyName { color: #6dc9a8; }
+      .tok-literal { color: #6dc9a8; }
       .tok-name { color: #c8c8c8; }
-      .tok-labelName { color: #c8c8c8; }
-      .tok-atom { color: #569cd6; }
+      .tok-labelName { color: #80a8c8; }
+      .tok-atom { color: #80a8c8; }
+      .tok-content { color: #a0aab4; }
+      .tok-modifier { color: #b39ddb; font-style: italic; }
     `
   } else {
     return `
-      .tok-keyword { color: #0000ff; font-weight: bold; }
-      .tok-string { color: #a31515; }
-      .tok-comment { color: #008000; font-style: italic; }
-      .tok-number { color: #098658; }
-      .tok-operator { color: #000000; }
-      .tok-punctuation { color: #666666; }
-      .tok-variableName { color: #001080; }
-      .tok-typeName { color: #267f99; }
-      .tok-className { color: #267f99; }
+      .tok-keyword { color: #5f3dc4; font-weight: bold; }
+      .tok-string { color: #9f1c1c; }
+      .tok-comment { color: #8a5a00; font-style: italic; }
+      .tok-number { color: #b35c00; }
+      .tok-operator { color: #9ca3af; }
+      .tok-punctuation { color: #a3aab8; }
+      .tok-variableName { color: #1a6b5a; }
+      .tok-typeName { color: #0f5c7a; }
+      .tok-className { color: #0f5c7a; }
       .tok-definition { color: #795e26; }
-      .tok-propertyName { color: #001080; }
-      .tok-literal { color: #a31515; }
+      .tok-propertyName { color: #1a6b5a; }
+      .tok-literal { color: #005c41; }
       .tok-name { color: #333333; }
-      .tok-labelName { color: #333333; }
-      .tok-atom { color: #0000ff; }
+      .tok-labelName { color: #173b8c; }
+      .tok-atom { color: #173b8c; }
+      .tok-content { color: #4a5568; }
+      .tok-modifier { color: #6b52a3; font-style: italic; }
     `
   }
 }
