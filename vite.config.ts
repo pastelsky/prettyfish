@@ -29,7 +29,6 @@ export default defineConfig({
       // Include all built assets + public files for precaching
       includeAssets: [
         'favicon.svg',
-        'apple-touch-icon.svg',
         'apple-touch-icon.png',
         'icon-192.png',
         'icon-512.png',
@@ -56,13 +55,13 @@ export default defineConfig({
             src: '/icon-512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'maskable',
+            purpose: 'any',
           },
           {
-            src: '/apple-touch-icon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any',
+            src: '/icon-512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
           {
             src: '/favicon.svg',
@@ -76,6 +75,8 @@ export default defineConfig({
       workbox: {
         // Precache all JS/CSS/HTML/WOFF2 assets from the build
         globPatterns: ['**/*.{js,css,html,svg,png,woff2,webmanifest}'],
+        // SPA fallback — serve index.html for all navigations not in precache
+        navigateFallback: 'index.html',
         // Maximum file size to precache (5 MB — mermaid chunks are large)
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Runtime caching strategies for anything not precached
