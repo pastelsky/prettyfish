@@ -71,7 +71,7 @@ function lookupRefAt(state: import('@codemirror/state').EditorState, pos: number
       const syntaxLower = e.syntax.toLowerCase()
       return syntaxLower.startsWith(wordLower) && (
         syntaxLower.length === wordLower.length ||
-        /[\s\[({|<]/.test(syntaxLower[wordLower.length]!)
+        /[\s[({|<]/.test(syntaxLower[wordLower.length]!)
       )
     })
   if (!element) return null
