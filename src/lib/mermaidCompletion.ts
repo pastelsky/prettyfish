@@ -346,6 +346,104 @@ const UNIVERSAL_KEYWORDS: Completion[] = [
 
 // ── Keyword map by diagram type ───────────────────────────────────────────────
 
+const TIMELINE_KEYWORDS: Completion[] = [
+  { label: 'title', detail: 'Set the timeline title', type: 'keyword' },
+  { label: 'section', detail: 'Start a new section', type: 'keyword' },
+  snippetCompletion('section ${1:Era Name}\n  ${2:Year} : ${3:Event}', {
+    label: 'section + event',
+    detail: 'Section with event',
+    type: 'text',
+  }),
+]
+
+const QUADRANT_KEYWORDS: Completion[] = [
+  { label: 'title', detail: 'Set chart title', type: 'keyword' },
+  { label: 'x-axis', detail: 'Label the X axis', type: 'keyword' },
+  { label: 'y-axis', detail: 'Label the Y axis', type: 'keyword' },
+  { label: 'quadrant-1', detail: 'Label top-right quadrant', type: 'keyword' },
+  { label: 'quadrant-2', detail: 'Label top-left quadrant', type: 'keyword' },
+  { label: 'quadrant-3', detail: 'Label bottom-left quadrant', type: 'keyword' },
+  { label: 'quadrant-4', detail: 'Label bottom-right quadrant', type: 'keyword' },
+  snippetCompletion('${1:Point}: [${2:0.5}, ${3:0.5}]', {
+    label: 'point',
+    detail: 'Plot a point [x, y]',
+    type: 'text',
+  }),
+]
+
+const JOURNEY_KEYWORDS: Completion[] = [
+  { label: 'title', detail: 'Set journey title', type: 'keyword' },
+  { label: 'section', detail: 'Start a section', type: 'keyword' },
+  snippetCompletion('${1:Task}: ${2:5}: ${3:Person1}, ${4:Person2}', {
+    label: 'task : score : actors',
+    detail: 'Journey task',
+    type: 'text',
+  }),
+]
+
+const REQUIREMENT_KEYWORDS: Completion[] = [
+  { label: 'requirement', detail: 'Define a requirement', type: 'keyword' },
+  { label: 'functionalRequirement', detail: 'Functional requirement', type: 'keyword' },
+  { label: 'interfaceRequirement', detail: 'Interface requirement', type: 'keyword' },
+  { label: 'performanceRequirement', detail: 'Performance requirement', type: 'keyword' },
+  { label: 'physicalRequirement', detail: 'Physical requirement', type: 'keyword' },
+  { label: 'designConstraint', detail: 'Design constraint', type: 'keyword' },
+  { label: 'element', detail: 'Define an element', type: 'keyword' },
+  { label: 'satisfies', detail: 'Satisfies relationship', type: 'keyword' },
+  { label: 'traces', detail: 'Traces relationship', type: 'keyword' },
+  { label: 'contains', detail: 'Contains relationship', type: 'keyword' },
+  { label: 'high', detail: 'High risk/priority', type: 'constant' },
+  { label: 'medium', detail: 'Medium risk/priority', type: 'constant' },
+  { label: 'low', detail: 'Low risk/priority', type: 'constant' },
+  { label: 'test', detail: 'Verify by test', type: 'constant' },
+  { label: 'analysis', detail: 'Verify by analysis', type: 'constant' },
+  { label: 'inspection', detail: 'Verify by inspection', type: 'constant' },
+  { label: 'demonstration', detail: 'Verify by demonstration', type: 'constant' },
+]
+
+const SANKEY_KEYWORDS: Completion[] = [
+  snippetCompletion('${1:Source},${2:Target},${3:value}', {
+    label: 'Source,Target,value',
+    detail: 'Sankey flow row',
+    type: 'text',
+  }),
+]
+
+const BLOCK_KEYWORDS: Completion[] = [
+  { label: 'columns', detail: 'Set number of columns', type: 'keyword' },
+  { label: 'space', detail: 'Empty space in grid', type: 'keyword' },
+  snippetCompletion('${1:id}["${2:Label}"]', { label: 'block', detail: 'Block with label', type: 'text' }),
+  snippetCompletion('block:${1:id}\n  ${2:A} --> ${3:B}\nend', { label: 'block group', detail: 'Nested block group', type: 'keyword' }),
+]
+
+const KANBAN_KEYWORDS: Completion[] = [
+  snippetCompletion('${1:Column Title}\n  ${2:taskId}["${3:Task label}"]', {
+    label: 'column + task',
+    detail: 'Kanban column with task',
+    type: 'text',
+  }),
+  snippetCompletion('@{ ticket: ${1:MC-123}, priority: ${2:Very High} }', {
+    label: '@{ ticket }',
+    detail: 'Task metadata',
+    type: 'text',
+  }),
+]
+
+const PACKET_KEYWORDS: Completion[] = [
+  snippetCompletion('${1:0}-${2:15}: "${3:Field Name}"', {
+    label: 'bit-range: "field"',
+    detail: 'Packet field definition',
+    type: 'text',
+  }),
+]
+
+const RADAR_KEYWORDS: Completion[] = [
+  { label: 'axis', detail: 'Define radar axes', type: 'keyword' },
+  { label: 'curve', detail: 'Define a data curve', type: 'keyword' },
+  snippetCompletion('axis ${1:A}, ${2:B}, ${3:C}', { label: 'axis list', detail: 'Axis labels', type: 'text' }),
+  snippetCompletion('curve ${1:Series} { ${2:80}, ${3:60}, ${4:90} }', { label: 'curve { }', detail: 'Data series', type: 'text' }),
+]
+
 const DIAGRAM_KEYWORDS: Record<string, Completion[]> = {
   flowchart:    FLOWCHART_KEYWORDS,
   sequence:     SEQUENCE_KEYWORDS,
@@ -358,6 +456,15 @@ const DIAGRAM_KEYWORDS: Record<string, Completion[]> = {
   mindmap:      MINDMAP_KEYWORDS,
   xychart:      XYCHART_KEYWORDS,
   architecture: ARCHITECTURE_KEYWORDS,
+  timeline:     TIMELINE_KEYWORDS,
+  quadrant:     QUADRANT_KEYWORDS,
+  journey:      JOURNEY_KEYWORDS,
+  requirement:  REQUIREMENT_KEYWORDS,
+  sankey:       SANKEY_KEYWORDS,
+  block:        BLOCK_KEYWORDS,
+  kanban:       KANBAN_KEYWORDS,
+  packet:       PACKET_KEYWORDS,
+  radar:        RADAR_KEYWORDS,
 }
 
 // ── CompletionSource ──────────────────────────────────────────────────────────
@@ -372,29 +479,21 @@ function mermaidCompletionSource(context: CompletionContext) {
   // Get the word/token being typed
   const word = context.matchBefore(/[\w-]/)
 
-  // ── First line: offer diagram type starters ──
-  if (lineNumber === 1) {
-    const lineText = line.text.trim()
-    // Only offer if line is blank or partially typed (not already a full declaration)
-    const from = word ? word.from : pos
-    return {
-      from,
-      options: DIAGRAM_STARTERS,
-      filter: true,
-    }
-    // Suppress unused warning — lineText is used for intent clarity
-    void lineText
-  }
-
-  // ── Subsequent lines: offer diagram-specific keywords ──
-  // Only trigger if explicitly requested (Ctrl+Space) or typing a word
-  if (!word && !context.explicit) return null
-
-  const from = word ? word.from : pos
-
   // Detect diagram type from full document text
   const fullText = state.doc.toString()
   const diagType = detectDiagramType(fullText)
+
+  // ── First line: offer diagram type starters only if no type is declared yet ──
+  if (lineNumber === 1 && diagType === 'other') {
+    const from = word ? word.from : pos
+    return { from, options: DIAGRAM_STARTERS, filter: true }
+  }
+
+  // ── Subsequent lines (or line 1 already has a type): diagram-specific keywords ──
+  // Only trigger on explicit Ctrl+Space or when actively typing a word
+  if (!word && !context.explicit) return null
+
+  const from = word ? word.from : pos
 
   const diagramKws = diagType !== 'other' ? (DIAGRAM_KEYWORDS[diagType] ?? []) : []
   const options = [...UNIVERSAL_KEYWORDS, ...diagramKws]
