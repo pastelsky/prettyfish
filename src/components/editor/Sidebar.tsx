@@ -133,6 +133,10 @@ const mermaidEditorHighlightStyle = HighlightStyle.define([
   { tag: [tags.typeName, tags.namespace], color: '#0f5c7a' },
   { tag: tags.className, color: '#0f5c7a' },
   { tag: tags.comment, color: '#8a5a00', fontStyle: 'italic' },
+  { tag: [tags.operator, tags.punctuation, tags.separator], color: '#6b7280' },
+  { tag: [tags.bracket, tags.paren, tags.squareBracket, tags.brace, tags.angleBracket], color: '#7c8495' },
+  { tag: tags.number, color: '#b35c00' },
+  { tag: tags.meta, color: '#7c6f8a' },
 ])
 
 interface SidebarProps {
