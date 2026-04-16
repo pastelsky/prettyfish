@@ -317,6 +317,11 @@ export default function App() {
     }
   }, [addDiagram, dispatch, isMobile, selectDiagram])
 
+  const handleAltClick = useCallback((ref: { diagramType: string; elementName: string }) => {
+    dispatch({ type: 'ui/set-docs-open', open: true })
+    setTimeout(() => referenceDocsRef.current?.scrollToElement(ref.diagramType, ref.elementName), 50)
+  }, [dispatch])
+
   const handleDiagramCodeChange = useCallback((value: string) => {
     if (isMobile && sidebarOpen && !activeDiagram?.code?.trim() && value.trim()) {
       setMobileSidebarCollapsed(true)
@@ -443,10 +448,7 @@ export default function App() {
                 editorLigatures={editorLigatures}
                 onFocusReady={handleFocusReady}
                 onInsertReady={handleInsertReady}
-                onAltClick={(ref) => {
-                  dispatch({ type: 'ui/set-docs-open', open: true })
-                  setTimeout(() => referenceDocsRef.current?.scrollToElement(ref.diagramType, ref.elementName), 50)
-                }}
+                onAltClick={handleAltClick}
                 onChange={handleDiagramCodeChange}
                 mermaidTheme={mermaidTheme}
                 onConfigChange={setDiagramConfig}
