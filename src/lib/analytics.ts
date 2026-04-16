@@ -1,6 +1,6 @@
-const analyticsKey = import.meta.env.VITE_POSTHOG_KEY
-const analyticsHost = import.meta.env.VITE_POSTHOG_HOST ?? 'https://a.pretty.fish'
-const analyticsUiHost = import.meta.env.VITE_POSTHOG_UI_HOST ?? 'https://us.posthog.com'
+const analyticsKey = 'phc_uJGijY8E6V8Wge3PddD2bs6zKkK89hegJAaYVxgMYGW9'
+const analyticsHost = 'https://a.pretty.fish'
+const analyticsUiHost = 'https://us.posthog.com'
 
 let initialized = false
 let posthogPromise: Promise<typeof import('posthog-js')['default']> | null = null
