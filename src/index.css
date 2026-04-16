@@ -367,8 +367,9 @@
   overflow: hidden;
   padding: 3px;
   font-family: var(--font-sans);
-  min-width: 220px;
-  max-width: 380px;
+  min-width: 180px;
+  max-width: 280px;
+  z-index: 9999 !important;
 }
 
 .dark .cm-tooltip.cm-tooltip-autocomplete {
@@ -467,7 +468,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   flex-shrink: 0;
-  max-width: 140px;
+  max-width: 100px;
 }
 
 .dark .cm-completionDetail {

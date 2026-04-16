@@ -14,6 +14,7 @@
 import { autocompletion } from '@codemirror/autocomplete'
 import type { CompletionContext, Completion } from '@codemirror/autocomplete'
 import { snippetCompletion } from '@codemirror/autocomplete'
+import { tooltips } from '@codemirror/view'
 import type { Extension } from '@codemirror/state'
 import { detectDiagramType } from './detectDiagram'
 
@@ -506,11 +507,15 @@ function mermaidCompletionSource(context: CompletionContext) {
 // ── Exported extension ────────────────────────────────────────────────────────
 
 export function mermaidCompletionExtension(): Extension {
-  return autocompletion({
-    override: [mermaidCompletionSource],
-    defaultKeymap: true,
-    activateOnTyping: true,
-    maxRenderedOptions: 30,
-    icons: true,
-  })
+  return [
+    // Force fixed positioning so the dropdown escapes overflow:hidden containers
+    tooltips({ position: 'fixed' }),
+    autocompletion({
+      override: [mermaidCompletionSource],
+      defaultKeymap: true,
+      activateOnTyping: true,
+      maxRenderedOptions: 30,
+      icons: true,
+    }),
+  ]
 }
