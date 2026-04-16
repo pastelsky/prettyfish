@@ -366,8 +366,8 @@ function getKeywordsForType(diagType: DiagramType): Completion[] {
 
 export function mermaidCompletionExtension(): Extension {
   return [
-    // Fixed positioning so the dropdown escapes overflow:hidden containers
-    tooltips({ position: 'fixed' }),
+    // Render tooltips in document.body so they escape overflow:hidden containers
+    tooltips({ position: 'fixed', parent: document.body }),
     autocompletion({
       override: [mermaidCompletionSource],
       defaultKeymap: true,
