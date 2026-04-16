@@ -65,7 +65,17 @@ import type { AppMode, Diagram, DiagramConfig, MermaidRenderError } from '@/type
 // ── CodeMirror error line highlighting ──
 
 
+const MONO_FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', ui-monospace, monospace"
+
+// Override CodeMirror's built-in fontFamily: "monospace" via the theme API
+const editorFontTheme = EditorView.theme({
+  '&': { fontFamily: MONO_FONT },
+  '.cm-content': { fontFamily: MONO_FONT },
+  '.cm-gutters': { fontFamily: MONO_FONT },
+})
+
 const EXTENSIONS_BASE = [
+  editorFontTheme,
   EditorView.lineWrapping,
   EditorView.contentAttributes.of({
     'aria-label': 'Mermaid code editor',
