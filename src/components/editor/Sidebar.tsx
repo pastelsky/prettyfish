@@ -6,9 +6,10 @@ import { mermaidAltClickExtension } from '@/lib/mermaidAltClick'
 import { mermaidCompletionExtension } from '@/lib/mermaidCompletion'
 import type { TokenRef } from '@/lib/mermaidTokenLookup'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { insertNewlineKeepIndent } from '@codemirror/commands'
 import { tags } from '@lezer/highlight'
 import { vscodeDark } from '@uiw/codemirror-theme-vscode'
-import { EditorView } from '@codemirror/view'
+import { EditorView, keymap } from '@codemirror/view'
 import { Button } from '@/components/ui/button'
 import {
   GearSix,
@@ -68,6 +69,8 @@ const EXTENSIONS_BASE = [
   EditorView.contentAttributes.of({
     'aria-label': 'Mermaid code editor',
   }),
+  // Preserve indentation when pressing Enter — matches current line's indent
+  keymap.of([{ key: 'Enter', run: insertNewlineKeepIndent }]),
 ]
 
 const lightEditorTheme = EditorView.theme({}, { dark: false })
