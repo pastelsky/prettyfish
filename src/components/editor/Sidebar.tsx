@@ -382,7 +382,7 @@ export function Sidebar({
                 height="100%"
                 style={{
                   height: '100%',
-                  fontSize: '14px',
+                  fontSize: '13.5px',
                   lineHeight: '1.7',
                   paddingTop: '6px',
                   fontVariantLigatures: editorLigatures ? 'common-ligatures' : 'none',
