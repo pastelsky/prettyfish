@@ -21,9 +21,15 @@ export function ReloadPrompt() {
       if (import.meta.env.DEV) {
         console.log('[SW] Registered:', r?.scope)
       }
-      // Periodic update check
       if (r) {
+        // Periodic update check
         setInterval(() => { r.update() }, INTERVAL_MS)
+        // Also check for updates when the user returns to the tab after being away
+        document.addEventListener('visibilitychange', () => {
+          if (document.visibilityState === 'visible') {
+            r.update()
+          }
+        })
       }
     },
     onRegisterError(error) {
