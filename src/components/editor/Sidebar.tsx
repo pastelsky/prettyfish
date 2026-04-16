@@ -329,7 +329,7 @@ export function Sidebar({
                 onCreateEditor={handleCreateEditor}
                 basicSetup={{
                   lineNumbers: true,
-                  foldGutter: false,
+                  foldGutter: true,
                   dropCursor: false,
                   allowMultipleSelections: false,
                   indentOnInput: true,

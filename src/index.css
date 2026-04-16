@@ -533,6 +533,185 @@
   border-left-color: oklch(0.72 0.18 270);
 }
 
+/* ── CodeMirror search panel ──────────────────────────────────────────────── */
+
+.cm-panel.cm-search {
+  background: oklch(0.97 0.003 270) !important;
+  border-bottom: 1px solid oklch(0.90 0.005 270) !important;
+  padding: 8px 12px !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 6px;
+}
+
+.dark .cm-panel.cm-search {
+  background: oklch(0.17 0.014 280) !important;
+  border-bottom-color: oklch(1 0 0 / 10%) !important;
+}
+
+/* Text inputs */
+.cm-panel.cm-search .cm-textfield {
+  font-family: var(--font-mono) !important;
+  font-size: 12px !important;
+  padding: 4px 8px !important;
+  border-radius: 6px !important;
+  border: 1px solid oklch(0.88 0.005 270) !important;
+  background: oklch(0.995 0.001 270) !important;
+  color: oklch(0.20 0.02 280) !important;
+  outline: none !important;
+  min-width: 120px;
+  transition: border-color 0.15s ease;
+}
+
+.cm-panel.cm-search .cm-textfield:focus {
+  border-color: oklch(0.55 0.24 270) !important;
+  box-shadow: 0 0 0 2px oklch(0.55 0.24 270 / 15%) !important;
+}
+
+.dark .cm-panel.cm-search .cm-textfield {
+  border-color: oklch(1 0 0 / 12%) !important;
+  background: oklch(0.14 0.015 280) !important;
+  color: oklch(0.92 0.005 270) !important;
+}
+
+.dark .cm-panel.cm-search .cm-textfield:focus {
+  border-color: oklch(0.70 0.18 270) !important;
+  box-shadow: 0 0 0 2px oklch(0.70 0.18 270 / 20%) !important;
+}
+
+/* Buttons */
+.cm-panel.cm-search .cm-button {
+  font-family: var(--font-sans) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  padding: 3px 10px !important;
+  border-radius: 6px !important;
+  border: 1px solid oklch(0.88 0.005 270) !important;
+  background: oklch(0.98 0.002 270) !important;
+  color: oklch(0.30 0.015 280) !important;
+  cursor: pointer !important;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+
+.cm-panel.cm-search .cm-button:hover {
+  background: oklch(0.94 0.005 270) !important;
+  border-color: oklch(0.82 0.006 270) !important;
+}
+
+.dark .cm-panel.cm-search .cm-button {
+  border-color: oklch(1 0 0 / 12%) !important;
+  background: oklch(0.22 0.015 280) !important;
+  color: oklch(0.88 0.006 270) !important;
+}
+
+.dark .cm-panel.cm-search .cm-button:hover {
+  background: oklch(0.28 0.015 280) !important;
+  border-color: oklch(1 0 0 / 18%) !important;
+}
+
+/* Labels (match case, regex) */
+.cm-panel.cm-search label {
+  font-size: 11px !important;
+  font-family: var(--font-sans) !important;
+  color: oklch(0.45 0.01 280) !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+}
+
+.dark .cm-panel.cm-search label {
+  color: oklch(0.68 0.01 270) !important;
+}
+
+/* Checkboxes */
+.cm-panel.cm-search input[type="checkbox"] {
+  accent-color: oklch(0.55 0.24 270);
+  margin-right: 2px !important;
+}
+
+/* Close button */
+.cm-panel.cm-search [name="close"] {
+  font-size: 16px !important;
+  color: oklch(0.50 0.01 270) !important;
+  opacity: 0.7;
+  cursor: pointer;
+  top: 6px !important;
+  right: 8px !important;
+  transition: opacity 0.1s ease;
+}
+
+.cm-panel.cm-search [name="close"]:hover {
+  opacity: 1;
+}
+
+.dark .cm-panel.cm-search [name="close"] {
+  color: oklch(0.75 0.01 270) !important;
+}
+
+/* Search match highlights in the editor */
+.cm-editor .cm-searchMatch {
+  background-color: oklch(0.85 0.14 85 / 40%) !important;
+  border-radius: 2px;
+}
+
+.cm-editor .cm-searchMatch-selected {
+  background-color: oklch(0.75 0.16 85 / 55%) !important;
+  border-radius: 2px;
+}
+
+.dark .cm-editor .cm-searchMatch {
+  background-color: oklch(0.65 0.12 85 / 30%) !important;
+}
+
+.dark .cm-editor .cm-searchMatch-selected {
+  background-color: oklch(0.72 0.14 85 / 45%) !important;
+}
+
+/* ── CodeMirror fold gutter ──────────────────────────────────────────────── */
+
+.cm-editor .cm-foldGutter .cm-gutterElement {
+  color: oklch(0.60 0.01 270);
+  font-size: 11px;
+  line-height: 1.7;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: color 0.1s ease;
+}
+
+.cm-editor .cm-foldGutter .cm-gutterElement:hover {
+  color: oklch(0.35 0.015 280);
+}
+
+.dark .cm-editor .cm-foldGutter .cm-gutterElement {
+  color: oklch(0.55 0.01 270);
+}
+
+.dark .cm-editor .cm-foldGutter .cm-gutterElement:hover {
+  color: oklch(0.85 0.005 270);
+}
+
+/* Fold placeholder */
+.cm-editor .cm-foldPlaceholder {
+  background: oklch(0.94 0.005 270) !important;
+  border: 1px solid oklch(0.88 0.005 270) !important;
+  border-radius: 4px !important;
+  color: oklch(0.50 0.01 270) !important;
+  font-size: 10px !important;
+  padding: 0 4px !important;
+  margin: 0 2px !important;
+  cursor: pointer;
+}
+
+.dark .cm-editor .cm-foldPlaceholder {
+  background: oklch(0.22 0.015 280) !important;
+  border-color: oklch(1 0 0 / 10%) !important;
+  color: oklch(0.62 0.01 270) !important;
+}
+
 /* ── SVG diagram container ─────────────────────────────────────────────────── */
 
 .diagram-svg-container svg {
