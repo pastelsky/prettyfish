@@ -3,6 +3,7 @@ import { Accordion } from '@base-ui/react/accordion'
 import CodeMirror from '@uiw/react-codemirror'
 import { mermaidFallbackLanguage } from '@/lib/mermaidHighlight'
 import { mermaidAltClickExtension } from '@/lib/mermaidAltClick'
+import { mermaidCompletionExtension } from '@/lib/mermaidCompletion'
 import type { TokenRef } from '@/lib/mermaidTokenLookup'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags } from '@lezer/highlight'
@@ -137,9 +138,12 @@ export function Sidebar({
     [onAltClick, isDark],
   )
 
+  // Mermaid-aware autocompletion — stable, no deps needed
+  const completionExt = useMemo(() => mermaidCompletionExtension(), [])
+
   const extensions = useMemo(
-    () => [...EXTENSIONS_BASE, langExtension, altClickExt],
-    [langExtension, altClickExt],
+    () => [...EXTENSIONS_BASE, langExtension, altClickExt, completionExt],
+    [langExtension, altClickExt, completionExt],
   )
 
 
@@ -325,7 +329,7 @@ export function Sidebar({
                   indentOnInput: true,
                   bracketMatching: true,
                   closeBrackets: true,
-                  autocompletion: true,
+                  autocompletion: false, // provided by mermaidCompletionExtension
                   highlightActiveLine: true,
                   highlightSelectionMatches: true,
                 }}

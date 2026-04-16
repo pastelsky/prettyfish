@@ -138,6 +138,7 @@ export async function renderDiagram(diagram: Diagram): Promise<MermaidRenderResu
       : effectiveTheme === 'base'
         ? { ...diagramConfig.themeVariables, fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr }
         : { fontFamily: diagramConfig.fontFamily, fontSize: fontSizeStr },
+    themeCSS: customPreset?.themeCSS ?? '',
     flowchart: diagramConfig.flowchart,
     sequence: diagramConfig.sequence,
     gantt: diagramConfig.gantt,

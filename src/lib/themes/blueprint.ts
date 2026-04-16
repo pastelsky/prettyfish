@@ -3,6 +3,34 @@ import type { ThemePresetDef } from '../themePresetDefs'
 const blueprint: ThemePresetDef = {
   label: 'Blueprint',
   description: 'Technical blueprint with deep navy borders and monospace font',
+  themeCSS: `
+    /* ── Flowchart nodes — rounded corners ── */
+    .node rect, .node circle, .node ellipse, .node path {
+      rx: 6; ry: 6;
+    }
+    /* Polygons (parallelogram, trapezoid, diamond) don't support rx/ry —
+       use round line joins to soften the sharp corners instead. */
+    .node polygon { stroke-linejoin: round; }
+
+    /* ── Cluster / subgraph borders ── */
+    .cluster rect { rx: 8; ry: 8; }
+
+    /* ── Sequence diagram ── */
+    .note rect, .note path { rx: 4; ry: 4; }
+    .activation0, .activation1, .activation2 { rx: 3; ry: 3; }
+
+    /* ── State diagram ── */
+    .stateGroup rect { rx: 6; ry: 6; }
+
+    /* ── Class diagram ── */
+    g.classGroup rect { rx: 4; ry: 4; }
+
+    /* ── ER diagram ── */
+    .entityBox { rx: 4; ry: 4; }
+
+    /* ── Gantt ── */
+    .task { rx: 3; ry: 3; }
+  `,
   configOverrides: {
     look: 'classic' as const,
     fontFamily: '"JetBrains Mono", monospace',

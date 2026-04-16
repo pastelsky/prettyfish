@@ -19,11 +19,7 @@ export const DIAGRAM_TEMPLATES: DiagramTemplate[] = [
     C -->|No| E[Show Error]
     E --> B
     D --> F[(Save to DB)]
-    F --> G([End])
-
-    style A fill:#6366f1,color:#fff,stroke:none
-    style G fill:#6366f1,color:#fff,stroke:none
-    style C fill:#f59e0b,color:#fff,stroke:none`,
+    F --> G([End])`,
   },
   {
     id: 'sequence',

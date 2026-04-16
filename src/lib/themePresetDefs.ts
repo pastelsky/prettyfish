@@ -22,6 +22,8 @@ export interface ThemePresetDef {
   /** If true, this theme is hidden from the UI and cannot be selected. The definition is kept for backwards compatibility with saved documents. */
   disabled?: boolean
   vars: ThemeVariablesByDiagram
+  /** Raw CSS injected into Mermaid's SVG for per-theme visual refinements (shadows, border-radius, stroke-width, etc.) */
+  themeCSS?: string
   configOverrides: Partial<{
     look: MermaidLook
     fontFamily: string

@@ -5,6 +5,7 @@ export interface ThemePreset {
   label: string
   description: string
   themeVariables: Record<string, string>
+  themeCSS?: string
   configOverrides: ThemePresetDef['configOverrides']
 }
 
@@ -13,6 +14,7 @@ function toPreset(def: ThemePresetDef): ThemePreset {
     label: def.label,
     description: def.description,
     themeVariables: flattenThemeVariables(def.vars) as unknown as Record<string, string>,
+    themeCSS: def.themeCSS,
     configOverrides: def.configOverrides,
   }
 }
