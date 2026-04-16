@@ -477,8 +477,8 @@ function mermaidCompletionSource(context: CompletionContext) {
   const line = state.doc.lineAt(pos)
   const lineNumber = line.number
 
-  // Get the word/token being typed
-  const word = context.matchBefore(/[\w-]/)
+  // Get the word/token being typed — must match the full word so filtering works correctly
+  const word = context.matchBefore(/[\w-]+/)
 
   // Detect diagram type from full document text
   const fullText = state.doc.toString()
