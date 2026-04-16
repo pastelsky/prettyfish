@@ -7,6 +7,7 @@ import type { AppStoreState } from '@/state/appStore'
 import type { AppState } from '@/types'
 
 // Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
+const MAX_AUTO_RECONNECT_ATTEMPTS = 3
 
 /**
  * Returns the relay base URL.
@@ -136,6 +137,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
 
     socketRef.current?.close()
     socketRef.current = null
+    reconnectAttemptsRef.current = 0
     setStatus('disconnected')
     setError(null)
 
@@ -174,14 +176,20 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     }
   }, [])
 
-  // ── Auto-reconnect — exponential backoff, max 10 attempts ─────────────────
+  // ── Auto-reconnect — exponential backoff, max 3 attempts ──────────────────
   // Use a ref to hold the latest connectWithSession to avoid circular dep.
   const connectWithSessionRef = useRef<((sid: string, token: string) => Promise<void>) | undefined>(undefined)
 
   const scheduleReconnect = useCallback(() => {
     if (intentionalDisconnectRef.current) return
     const attempts = reconnectAttemptsRef.current
-    if (attempts >= 10) return // ~5 min total, give up
+    if (attempts >= MAX_AUTO_RECONNECT_ATTEMPTS) {
+      setStatus('error')
+      if (userInitiatedConnectRef.current) {
+        setError('Unable to connect after 3 attempts. Please try again.')
+      }
+      return
+    }
     const delay = Math.min(1_000 * Math.pow(1.5, attempts), 30_000)
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
     reconnectTimerRef.current = setTimeout(() => {
@@ -319,19 +327,21 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     void connectWithSession(sessionId, browserToken)
   }, [browserToken, connectWithSession, sessionId])
 
-  // ── If a session exists but browser is detached, keep trying to re-attach ────
+  // ── If a session exists but browser is detached, attempt bounded re-attach ───
   useEffect(() => {
     if (!sessionId || !browserToken) return
     if (status === 'connected' || status === 'connecting') return
-    const timer = setTimeout(() => {
-      void connectWithSession(sessionId, browserToken)
-    }, 1200)
-    return () => clearTimeout(timer)
-  }, [browserToken, connectWithSession, sessionId, status])
+    scheduleReconnect()
+    return () => {
+      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
+  }, [browserToken, scheduleReconnect, sessionId, status])
 
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
     if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+    reconnectAttemptsRef.current = 0
     stopHeartbeat()
     socketRef.current?.close()
     socketRef.current = null
@@ -350,6 +360,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const resetSession = useCallback(() => {
     userInitiatedConnectRef.current = false
     const pageId = activePageIdRef.current
+    reconnectAttemptsRef.current = 0
     disconnect()
     setSessionId('')
     setBrowserToken('')
