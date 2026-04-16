@@ -7,7 +7,7 @@
 @theme inline {
     --font-sans: 'DM Sans', system-ui, sans-serif;
     --font-serif: 'Instrument Serif', Georgia, serif;
-    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', ui-monospace, monospace;
     --font-heading: var(--font-serif);
     --color-ui-surface-soft: var(--ui-surface-soft);
     --color-ui-surface-elevated: var(--ui-surface-elevated);
