@@ -111,4 +111,17 @@ test.describe('Advanced flows', () => {
 
     await app.canvas.shouldShowCornerResizeOnly()
   })
+
+  test('pans on scroll without changing zoom', async ({ page }) => {
+    const app = createApp(page)
+
+    await app.createFlowchartDiagram()
+
+    const before = await app.canvas.getViewportTransform()
+    await app.canvas.scrollCanvas(0, 500)
+    const after = await app.canvas.getViewportTransform()
+
+    expect(after.zoom).toBeCloseTo(before.zoom, 5)
+    expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeGreaterThan(0)
+  })
 })

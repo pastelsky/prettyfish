@@ -215,6 +215,30 @@ class CanvasSurface {
     }).toBe(true)
   }
 
+  async getViewportTransform() {
+    const viewport = this.page.locator('.react-flow__viewport').first()
+    await expect(viewport).toBeVisible()
+    return viewport.evaluate((el) => {
+      const transform = window.getComputedStyle(el).transform
+      if (!transform || transform === 'none') return { x: 0, y: 0, zoom: 1 }
+
+      const match = transform.match(/^matrix\((.+)\)$/)
+      if (!match) throw new Error(`Unexpected viewport transform: ${transform}`)
+
+      const values = match[1]!.split(',').map(value => Number.parseFloat(value.trim()))
+      return { x: values[4] ?? 0, y: values[5] ?? 0, zoom: ((values[0] ?? 1) + (values[3] ?? 1)) / 2 }
+    })
+  }
+
+  async scrollCanvas(deltaX: number, deltaY: number) {
+    const pane = this.page.locator('.react-flow__pane').first()
+    await expect(pane).toBeVisible()
+    const box = await pane.boundingBox()
+    expect(box).toBeTruthy()
+    await this.page.mouse.move((box?.x ?? 0) + (box?.width ?? 0) / 2, (box?.y ?? 0) + (box?.height ?? 0) / 2)
+    await this.page.mouse.wheel(deltaX, deltaY)
+  }
+
   async openDiagramContextMenu(node?: Locator) {
     const target = node ?? this.firstNode
     await target.evaluate((el) => {

@@ -204,8 +204,11 @@ async function connectPeer(request: Request, env: RelayWorkerEnv, sessionId: str
   // Rebuilding from raw headers can lead to a half-open handshake where frames arrive
   // but the browser never reaches a stable OPEN state.
   const doRequest = new Request(doUrl, request)
-  console.log('[relay] connectPeer', JSON.stringify({ sessionId, role, reqUrl: request.url, doUrl }))
-  return stub.fetch(doRequest)
+  const response = await stub.fetch(doRequest)
+  if (response.status !== 101) {
+    console.warn('[relay] attach_rejected', JSON.stringify({ sessionId, role, status: response.status }))
+  }
+  return response
 }
  
 
@@ -303,15 +306,18 @@ export class RelaySessionDurableObject {
     return this.getOpenRoleSocket(role) !== null
   }
 
-  private closeSupersededSockets(role: RelayPeerRole, current: WebSocket) {
+  private closeSupersededSockets(role: RelayPeerRole, current: WebSocket): number {
+    let closed = 0
     for (const socket of this.getRoleSockets(role)) {
       if (socket === current) continue
       try {
         socket.close(1012, 'Superseded by a newer relay connection')
+        closed += 1
       } catch {
         // Ignore close failures for stale sockets.
       }
     }
+    return closed
   }
 
   private getBrowserSocket(): WebSocket | null {
@@ -456,22 +462,32 @@ export class RelaySessionDurableObject {
       return jsonResponse({ ok: true })
     }
 
-    const session = await this.ensureSessionLoaded()
-    if (!session) return jsonResponse({ error: 'Relay session not initialized' }, 404)
-
     const connectMatch = url.pathname.match(/^\/connect\/(browser|agent)$/)
     if (connectMatch) {
+      const session = await this.ensureSessionLoaded()
+      if (!session) {
+        console.warn('[relay-do] attach_session_missing', JSON.stringify({
+          role: connectMatch[1],
+          path: url.pathname,
+        }))
+        return jsonResponse({ error: 'Relay session not initialized' }, 404)
+      }
+
       // DOs receive this request via stub.fetch() from the main Worker.
       // Cloudflare strips the Upgrade header on this internal hop, so we do NOT
       // re-check it here. The main Worker has already verified it was a WS upgrade.
       const role = connectMatch[1] as RelayPeerRole
-      console.log('[relay-do] connect', JSON.stringify({ role, path: url.pathname, token: url.searchParams.get('token') ? 'present' : 'missing' }))
 
       // NOTE: Because this route is exclusively used for WS attach after the main
       // worker validated the upgrade, returning 101 here is safe and correct.
       if (role === 'browser') {
         const token = url.searchParams.get('token') || ''
         if (!token || token !== session.browserToken) {
+          console.warn('[relay-do] invalid_browser_token', JSON.stringify({
+            sessionId: session.sessionId,
+            path: url.pathname,
+            hasToken: Boolean(token),
+          }))
           return jsonResponse({ error: 'Invalid relay token' }, 403)
         }
       }
@@ -479,12 +495,18 @@ export class RelaySessionDurableObject {
       const pair = new WebSocketPair()
       const [client, server] = Object.values(pair) as [WebSocket, WebSocket]
       this.state.acceptWebSocket(server, [role])
-      this.closeSupersededSockets(role, server)
+      const supersededSockets = this.closeSupersededSockets(role, server)
 
       // Return the 101 upgrade response first, then send the initial hello on the
       // next turn. Sending immediately during attach can produce a half-open state
       // where the browser receives a frame but never reaches stable OPEN.
-      console.log('[relay-do] accepted websocket', JSON.stringify({ role, sessionId: session.sessionId }))
+      if (supersededSockets > 0) {
+        console.warn('[relay-do] superseded_sockets_closed', JSON.stringify({
+          role,
+          sessionId: session.sessionId,
+          supersededSockets,
+        }))
+      }
       const response = new Response(null, {
         status: 101,
         // @ts-expect-error Cloudflare-specific
@@ -500,7 +522,10 @@ export class RelaySessionDurableObject {
           } satisfies RelayEnvelope))
           this.notifyPeerStatus(role, true)
         } catch {
-          // If the socket closes during establishment, the browser will reconnect.
+          console.warn('[relay-do] hello_send_failed', JSON.stringify({
+            role,
+            sessionId: session.sessionId,
+          }))
         }
       })
 
@@ -508,6 +533,9 @@ export class RelaySessionDurableObject {
     }
 
     if (url.pathname === '/mcp' || url.pathname === '/mcp/sse') {
+      const session = await this.ensureSessionLoaded()
+      if (!session) return jsonResponse({ error: 'Relay session not initialized' }, 404)
+
       const mcpServer = this.createMcpServer()
       const transport = new WebStandardStreamableHTTPServerTransport({
         sessionIdGenerator: undefined,

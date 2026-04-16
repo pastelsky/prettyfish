@@ -8,6 +8,7 @@ import type { AppState } from '@/types'
 
 // Same-origin: relay routes (/relay/*, /mcp/*) are served by the same Worker as the SPA.
 const MAX_AUTO_RECONNECT_ATTEMPTS = 3
+const RELAY_HANDSHAKE_TIMEOUT_MS = 5_000
 const RELAY_DEBUG_STORAGE_KEY = 'prettyfish:relay-debug'
 const RELAY_DEBUG_HISTORY_LIMIT = 120
 
@@ -276,6 +277,8 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const reconnectAttemptsRef = useRef(0)
   const heartbeatIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const connectPromiseRef = useRef<Promise<void> | null>(null)
+  const connectTargetRef = useRef<{ sessionId: string; browserToken: string } | null>(null)
   const intentionalDisconnectRef = useRef(false)
   const [browserToken, setBrowserToken] = useState(() => readStored(browserTokenKey(activePageId)))
   const [mcpUrl, setMcpUrl] = useState('')
@@ -365,6 +368,12 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     activePageIdRef.current = activePageId
     attemptedAutoConnectRef.current = false
 
+    if (reconnectTimerRef.current) {
+      clearTimeout(reconnectTimerRef.current)
+      reconnectTimerRef.current = null
+    }
+    connectPromiseRef.current = null
+    connectTargetRef.current = null
     socketRef.current?.close()
     socketRef.current = null
     reconnectAttemptsRef.current = 0
@@ -414,12 +423,37 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     }
   }, [recordDebugEvent])
 
+  const clearReconnectTimer = useCallback((reason?: string) => {
+    if (!reconnectTimerRef.current) return
+    clearTimeout(reconnectTimerRef.current)
+    reconnectTimerRef.current = null
+    if (reason) {
+      recordDebugEvent('reconnect-cleared', reason)
+    }
+  }, [recordDebugEvent])
+
   // ── Auto-reconnect — exponential backoff, max 3 attempts ──────────────────
   // Use a ref to hold the latest connectWithSession to avoid circular dep.
   const connectWithSessionRef = useRef<((sid: string, token: string) => Promise<void>) | undefined>(undefined)
 
-  const scheduleReconnect = useCallback(() => {
+  const scheduleReconnect = useCallback((reason: string) => {
     if (intentionalDisconnectRef.current) return
+    if (reconnectTimerRef.current) {
+      recordDebugEvent('reconnect-skip', 'reconnect already scheduled', { reason })
+      return
+    }
+    if (connectPromiseRef.current) {
+      recordDebugEvent('reconnect-skip', 'connect already in flight', { reason })
+      return
+    }
+    const socketState = socketRef.current?.readyState
+    if (socketState === WebSocket.CONNECTING || socketState === WebSocket.OPEN) {
+      recordDebugEvent('reconnect-skip', 'socket already active', {
+        reason,
+        readyState: socketState,
+      })
+      return
+    }
     const attempts = reconnectAttemptsRef.current
     if (attempts >= MAX_AUTO_RECONNECT_ATTEMPTS) {
       setStatus('error')
@@ -432,13 +466,14 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       return
     }
     const delay = Math.min(1_000 * Math.pow(1.5, attempts), 30_000)
-    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
     statsRef.current.reconnectScheduleCount += 1
     recordDebugEvent('reconnect-scheduled', 'scheduled reconnect attempt', {
+      reason,
       attempt: attempts + 1,
       delayMs: delay,
     })
     reconnectTimerRef.current = setTimeout(() => {
+      reconnectTimerRef.current = null
       const sid = readStored(sessionIdKey(activePageIdRef.current))
       const tok = readStored(browserTokenKey(activePageIdRef.current))
       if (sid && tok && connectWithSessionRef.current) {
@@ -451,8 +486,8 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
   // Cleanup heartbeat and reconnect timer on unmount
   useEffect(() => () => {
     stopHeartbeat()
-    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
-  }, [stopHeartbeat])
+    clearReconnectTimer()
+  }, [clearReconnectTimer, stopHeartbeat])
 
   // ── Core WebSocket connect ─────────────────────────────────────────────────
   const connectWithSession = useCallback(async (
@@ -469,6 +504,20 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       throw new Error('Session ID and browser token are required')
     }
 
+    const existingTarget = connectTargetRef.current
+    if (
+      connectPromiseRef.current
+      && existingTarget?.sessionId === nextSessionId
+      && existingTarget?.browserToken === nextBrowserToken
+    ) {
+      recordDebugEvent('connect-reuse', 'reusing in-flight relay connection attempt', {
+        sessionId: nextSessionId,
+        tokenSuffix: maskTokenSuffix(nextBrowserToken),
+      })
+      return connectPromiseRef.current
+    }
+
+    clearReconnectTimer('cleared pending reconnect before opening relay websocket')
     socketRef.current?.close()
     setStatus('connecting')
     setError(null)
@@ -480,20 +529,40 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
       wsUrl: toWebSocketUrl(nextSessionId, nextBrowserToken),
     })
 
-    await new Promise<void>((resolve, reject) => {
+    const connectPromise = new Promise<void>((resolve, reject) => {
       const socket = new WebSocket(toWebSocketUrl(nextSessionId, nextBrowserToken))
       socketRef.current = socket
       let settled = false
+      const handshakeTimer = setTimeout(() => {
+        if (socketRef.current !== socket || settled) return
+        setStatus('error')
+        if (userInitiatedConnectRef.current) {
+          setError('Timed out waiting for relay handshake')
+        } else {
+          setError(null)
+        }
+        recordDebugEvent('hello-timeout', 'relay handshake timed out before hello', {
+          timeoutMs: RELAY_HANDSHAKE_TIMEOUT_MS,
+        })
+        try {
+          socket.close()
+        } catch {
+          // Ignore close failures and let the rejection propagate.
+        }
+        finishReject(new Error('Timed out waiting for relay handshake'))
+      }, RELAY_HANDSHAKE_TIMEOUT_MS)
 
       const finishResolve = () => {
         if (settled) return
         settled = true
+        clearTimeout(handshakeTimer)
         resolve()
       }
 
       const finishReject = (reason: Error) => {
         if (settled) return
         settled = true
+        clearTimeout(handshakeTimer)
         reject(reason)
       }
 
@@ -522,6 +591,11 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
           recordDebugEvent('ws-error', 'websocket transport error before relay hello', {
             readyState: socket.readyState,
           })
+          try {
+            socket.close()
+          } catch {
+            // Let the close event drive reconnect scheduling when possible.
+          }
           finishReject(new Error('Failed to connect to relay WebSocket'))
         }
       }, { once: true }) 
@@ -538,7 +612,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
             readyState: socket.readyState,
           })
           // Auto-reconnect after unexpected close (not triggered by user)
-          scheduleReconnect()
+          scheduleReconnect('websocket closed unexpectedly')
         }
         finishReject(new Error('Relay WebSocket closed before the session became ready'))
       }) 
@@ -614,7 +688,19 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
         } 
       })
     })
-  }, [executeCommand, scheduleReconnect, startHeartbeat, stopHeartbeat])
+
+    connectPromiseRef.current = connectPromise
+    connectTargetRef.current = { sessionId: nextSessionId, browserToken: nextBrowserToken }
+
+    try {
+      await connectPromise
+    } finally {
+      if (connectPromiseRef.current === connectPromise) {
+        connectPromiseRef.current = null
+        connectTargetRef.current = null
+      }
+    }
+  }, [clearReconnectTimer, executeCommand, recordDebugEvent, scheduleReconnect, startHeartbeat, stopHeartbeat])
 
   // Keep ref updated so scheduleReconnect can call it without circular dep
   connectWithSessionRef.current = connectWithSession
@@ -633,20 +719,9 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     void connectWithSession(sessionId, browserToken).catch(() => undefined)
   }, [browserToken, connectWithSession, sessionId])
 
-  // ── If a session exists but browser is detached, attempt bounded re-attach ───
-  useEffect(() => {
-    if (!sessionId || !browserToken) return
-    if (status === 'connected' || status === 'connecting') return
-    scheduleReconnect()
-    return () => {
-      if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
-      reconnectTimerRef.current = null
-    }
-  }, [browserToken, scheduleReconnect, sessionId, status])
-
   const disconnect = useCallback(() => {
     intentionalDisconnectRef.current = true
-    if (reconnectTimerRef.current) clearTimeout(reconnectTimerRef.current)
+    clearReconnectTimer('manual disconnect cleared pending reconnect')
     reconnectAttemptsRef.current = 0
     recordDebugEvent('disconnect', 'manual disconnect invoked')
     stopHeartbeat()
@@ -657,7 +732,7 @@ export function useRemoteAgentRelay(options: RemoteAgentRelayOptions): RemoteAge
     setError(null)
     // Allow reconnect again after manual re-connect is initiated
     setTimeout(() => { intentionalDisconnectRef.current = false }, 1_000)
-  }, [stopHeartbeat])
+  }, [clearReconnectTimer, recordDebugEvent, stopHeartbeat])
 
   const connect = useCallback(async () => {
     userInitiatedConnectRef.current = true

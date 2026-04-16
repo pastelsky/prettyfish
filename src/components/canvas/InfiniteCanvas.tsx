@@ -10,6 +10,7 @@ import {
   Background,
   BackgroundVariant,
   Controls,
+  PanOnScrollMode,
   useNodesState,
   useReactFlow,
   ReactFlowProvider,
@@ -352,6 +353,10 @@ function InnerCanvas({
       maxZoom={2.5}
       snapToGrid
       snapGrid={[20, 20]}
+      panOnScroll
+      panOnScrollMode={PanOnScrollMode.Free}
+      zoomOnScroll={false}
+      zoomOnPinch
       // Enforce single-selection semantics at the React Flow layer too.
       selectionOnDrag={false}
       multiSelectionKeyCode={null}
