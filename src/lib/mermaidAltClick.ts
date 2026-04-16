@@ -2,10 +2,11 @@
  * mermaidAltClick.ts
  *
  * CodeMirror extension that provides:
- * 1. A hover tooltip showing "⌥ click to open docs" when hovering
+ * 1. A hover tooltip showing "⌥ click → element" when hovering
  *    over a token that has a reference entry.
  * 2. Alt+click handler that fires onAltClick(TokenRef) to open the
  *    docs panel scrolled to the right element.
+ * 3. Underline decoration on the hovered token when Alt is held.
  */
 
 import { hoverTooltip, EditorView } from '@codemirror/view'
@@ -16,7 +17,7 @@ export function mermaidAltClickExtension(
   onAltClick: (ref: TokenRef) => void,
   isDark: boolean,
 ): Extension {
-  // 1. Hover tooltip — only shows the hint text, not a full docs preview
+  // 1. Hover tooltip — shows the hint text for recognized tokens
   const hover = hoverTooltip((view, pos) => {
     const ref = lookupTokenAt(view.state, pos)
     if (!ref) return null
@@ -28,7 +29,6 @@ export function mermaidAltClickExtension(
       arrow: false,
       create() {
         const dom = document.createElement('div')
-        // Styles live in index.css as .cm-mermaid-ref-tooltip[data-dark] / [data-light]
         dom.className = 'cm-mermaid-ref-tooltip'
         dom.dataset.theme = isDark ? 'dark' : 'light'
 
@@ -65,25 +65,35 @@ export function mermaidAltClickExtension(
     },
   })
 
-  // 3. Cursor style — show pointer+alt icon when alt is held
-  const cursorStyle = EditorView.domEventHandlers({
+  // 3. Alt-held cursor style — pointer cursor + underline hint via CSS class
+  const altCursorStyle = EditorView.domEventHandlers({
     keydown(event, view) {
       if (event.key === 'Alt') {
-        view.dom.style.cursor = 'alias'
+        view.dom.classList.add('cm-alt-held')
       }
       return false
     },
     keyup(event, view) {
       if (event.key === 'Alt') {
-        view.dom.style.cursor = ''
+        view.dom.classList.remove('cm-alt-held')
       }
       return false
     },
     blur(_event, view) {
-      view.dom.style.cursor = ''
+      view.dom.classList.remove('cm-alt-held')
       return false
     },
   })
 
-  return [hover, clickHandler, cursorStyle]
+  // 4. Theme for alt-held state — pointer cursor on the content area
+  const altTheme = EditorView.baseTheme({
+    '&light.cm-alt-held .cm-content': {
+      cursor: 'pointer',
+    },
+    '&dark.cm-alt-held .cm-content': {
+      cursor: 'pointer',
+    },
+  })
+
+  return [hover, clickHandler, altCursorStyle, altTheme]
 }
