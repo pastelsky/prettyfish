@@ -39,7 +39,7 @@ function getInitialDocumentState(): UndoableDocumentState {
     mode: (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
       ? 'dark'
       : 'light',
-    editorLigatures: true,
+    editorLigatures: false,
     autoFormat: true,
   }
 }

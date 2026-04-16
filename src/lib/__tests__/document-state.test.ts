@@ -123,7 +123,7 @@ describe('document state normalization', () => {
     expect(normalized!.activePageId).toBe(normalized!.pages[0]!.id)
     expect(normalized!.pages[0]!.activeDiagramId).toBe(normalized!.pages[0]!.diagrams[0]!.id)
     expect(normalized!.mode).toBe('light')
-    expect(normalized!.editorLigatures).toBe(true)
+    expect(normalized!.editorLigatures).toBe(false)
     expect(normalized!.autoFormat).toBe(true)
   })
 

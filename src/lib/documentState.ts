@@ -196,7 +196,7 @@ export function normalizePersistedDocumentState(raw: unknown): PersistedDocument
     pages: recoveredPages,
     activePageId,
     mode: asMode(value.mode, 'light'),
-    editorLigatures: asBoolean(value.editorLigatures, true),
+    editorLigatures: asBoolean(value.editorLigatures, false),
     autoFormat: asBoolean(value.autoFormat, true),
   }
 }
