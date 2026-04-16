@@ -107,7 +107,7 @@ export const DEFAULT_DIAGRAM = `flowchart TD
 // Grid layout constants for diagram placement
 export const ARTBOARD_COLS = 3
 export const ARTBOARD_GAP_X = 80
-export const ARTBOARD_GAP_Y = 100
+export const ARTBOARD_GAP_Y = 50
 export const ARTBOARD_DEFAULT_WIDTH = 640
 export const ARTBOARD_DEFAULT_HEIGHT = 480 // approximate, actual height is dynamic
 
