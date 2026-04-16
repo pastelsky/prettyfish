@@ -9,8 +9,8 @@ import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { insertNewlineKeepIndent } from '@codemirror/commands'
 import { tags } from '@lezer/highlight'
 import { vscodeDark } from '@uiw/codemirror-theme-vscode'
-import { EditorView, keymap } from '@codemirror/view'
-import { Prec } from '@codemirror/state'
+import { EditorView, keymap, Decoration } from '@codemirror/view'
+import { Prec, StateEffect, StateField, type Extension } from '@codemirror/state'
 import { Button } from '@/components/ui/button'
 import {
   GearSix,
@@ -64,6 +64,41 @@ import type { AppMode, Diagram, DiagramConfig, MermaidRenderError } from '@/type
 
 // ── CodeMirror error line highlighting ──
 
+const setErrorLine = StateEffect.define<number | null>()
+
+const errorLineField = StateField.define({
+  create() { return Decoration.none },
+  update(deco, tr) {
+    for (const e of tr.effects) {
+      if (e.is(setErrorLine)) {
+        if (e.value === null) return Decoration.none
+        const lineNum = e.value
+        if (lineNum < 1 || lineNum > tr.state.doc.lines) return Decoration.none
+        const line = tr.state.doc.line(lineNum)
+        return Decoration.set([errorLineDeco.range(line.from)])
+      }
+    }
+    // Remap through document changes so the decoration follows edits
+    return deco.map(tr.changes)
+  },
+  provide: f => EditorView.decorations.from(f),
+})
+
+const errorLineDeco = Decoration.line({ class: 'cm-errorLine' })
+
+const errorLineTheme = EditorView.theme({
+  '.cm-errorLine': {
+    backgroundColor: 'oklch(0.57 0.19 25 / 10%)',
+    outline: '1px solid oklch(0.57 0.19 25 / 15%)',
+    borderRadius: '2px',
+  },
+  '&dark .cm-errorLine': {
+    backgroundColor: 'oklch(0.65 0.16 25 / 12%)',
+    outline: '1px solid oklch(0.65 0.16 25 / 18%)',
+  },
+})
+
+const errorLineExtension: Extension = [errorLineField, errorLineTheme]
 
 const MONO_FONT = "'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', 'Liberation Mono', 'Menlo', 'Monaco', ui-monospace, monospace"
 
@@ -76,6 +111,7 @@ const editorFontTheme = EditorView.theme({
 
 const EXTENSIONS_BASE = [
   editorFontTheme,
+  errorLineExtension,
   EditorView.lineWrapping,
   EditorView.contentAttributes.of({
     'aria-label': 'Mermaid code editor',
@@ -163,6 +199,13 @@ export function Sidebar({
   )
 
 
+
+  // Push error line decoration into editor when renderError changes
+  useEffect(() => {
+    const view = editorViewRef.current
+    if (!view) return
+    view.dispatch({ effects: setErrorLine.of(error?.line ?? null) })
+  }, [error?.line])
 
   const goToErrorLine = useCallback(() => {
     if (!error?.line || !editorViewRef.current) return
