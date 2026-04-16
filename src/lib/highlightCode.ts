@@ -61,7 +61,7 @@ export function highlightMermaidCode(code: string, isDark: boolean): Array<{ tex
 export function getHighlightStyle(isDark: boolean): string {
   if (isDark) {
     return `
-      .tok-keyword { color: #569cd6; }
+      .tok-keyword { color: #569cd6; font-weight: bold; }
       .tok-string { color: #ce9178; }
       .tok-comment { color: #6a9955; font-style: italic; }
       .tok-number { color: #b5cea8; }
@@ -79,7 +79,7 @@ export function getHighlightStyle(isDark: boolean): string {
     `
   } else {
     return `
-      .tok-keyword { color: #0000ff; }
+      .tok-keyword { color: #0000ff; font-weight: bold; }
       .tok-string { color: #a31515; }
       .tok-comment { color: #008000; font-style: italic; }
       .tok-number { color: #098658; }

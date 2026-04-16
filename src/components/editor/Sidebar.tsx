@@ -72,13 +72,13 @@ const EXTENSIONS_BASE = [
 const lightEditorTheme = EditorView.theme({}, { dark: false })
 
 const mermaidEditorHighlightStyle = HighlightStyle.define([
-  { tag: tags.keyword, color: '#5f3dc4' },
+  { tag: tags.keyword, color: '#5f3dc4', fontWeight: 'bold' },
   { tag: [tags.atom, tags.bool, tags.url, tags.contentSeparator, tags.labelName], color: '#173b8c' },
   { tag: [tags.literal, tags.inserted], color: '#005c41' },
   { tag: [tags.string, tags.deleted], color: '#9f1c1c' },
   { tag: [tags.typeName, tags.namespace], color: '#0f5c7a' },
   { tag: tags.className, color: '#0f5c7a' },
-  { tag: tags.comment, color: '#8a5a00' },
+  { tag: tags.comment, color: '#8a5a00', fontStyle: 'italic' },
 ])
 
 interface SidebarProps {
