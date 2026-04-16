@@ -41,7 +41,7 @@ export function chromeGlassPanelClass(mode: ChromeMode): string {
     'rounded-xl border backdrop-blur-xl overflow-hidden',
     'supports-[not(backdrop-filter:blur(1px))]:bg-opacity-100',
     mode === 'dark'
-      ? 'bg-[oklch(0.16_0.015_280/0.72)] border-white/12 [box-shadow:0_8px_32px_rgba(0,0,0,0.48)]'
+      ? 'bg-[oklch(0.16_0.015_280/0.88)] border-white/12 [box-shadow:0_8px_32px_rgba(0,0,0,0.48)]'
       : 'bg-white/72 border-black/10 [box-shadow:0_8px_32px_rgba(0,0,0,0.14)]',
   )
 }
