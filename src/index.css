@@ -450,17 +450,18 @@
 
 /* Detail — secondary line below label, wraps naturally, never truncated */
 .cm-completionDetail {
-  display: block;
-  font-size: 10.5px;
-  font-family: var(--font-sans);
-  font-style: normal;
-  font-weight: 400;
-  color: oklch(0.52 0.01 270);
-  line-height: 1.4;
-  white-space: normal;
-  overflow-wrap: break-word;
-  max-width: 100%;
-  padding: 0;
+  display: block !important;
+  font-size: 10.5px !important;
+  font-family: var(--font-sans) !important;
+  font-style: normal !important;
+  font-weight: 400 !important;
+  color: oklch(0.52 0.01 270) !important;
+  line-height: 1.4 !important;
+  white-space: normal !important;
+  overflow-wrap: break-word !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  padding: 0 !important;
 }
 
 .dark .cm-completionDetail {

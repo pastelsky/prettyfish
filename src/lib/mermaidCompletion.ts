@@ -21,9 +21,16 @@ import { detectDiagramType, type DiagramType } from './detectDiagram'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/** Keyword completion that appends a trailing space on accept */
+/** Keyword completion that appends a trailing space on accept (unless one exists) */
 function kw(label: string, detail: string, boost = 0): Completion {
-  return { label, detail, type: 'keyword', boost, apply: label + ' ' }
+  return {
+    label, detail, type: 'keyword', boost,
+    apply: (view, completion, from, to) => {
+      const after = view.state.doc.sliceString(to, to + 1)
+      const insert = after === ' ' ? completion.label : completion.label + ' '
+      view.dispatch({ changes: { from, to, insert }, selection: { anchor: from + insert.length } })
+    },
+  }
 }
 
 /** Constant completion (no trailing space — usually followed by punctuation) */

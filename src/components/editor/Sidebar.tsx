@@ -10,6 +10,7 @@ import { insertNewlineKeepIndent } from '@codemirror/commands'
 import { tags } from '@lezer/highlight'
 import { vscodeDark } from '@uiw/codemirror-theme-vscode'
 import { EditorView, keymap } from '@codemirror/view'
+import { Prec } from '@codemirror/state'
 import { Button } from '@/components/ui/button'
 import {
   GearSix,
@@ -69,8 +70,10 @@ const EXTENSIONS_BASE = [
   EditorView.contentAttributes.of({
     'aria-label': 'Mermaid code editor',
   }),
-  // Preserve indentation when pressing Enter — matches current line's indent
-  keymap.of([{ key: 'Enter', run: insertNewlineKeepIndent }]),
+  // Preserve indentation when pressing Enter — Prec.high overrides the default
+  // keymap's insertNewlineAndIndent (which falls back to column 0 for Mermaid
+  // since our language definition doesn't include indent rules)
+  Prec.high(keymap.of([{ key: 'Enter', run: insertNewlineKeepIndent }])),
 ]
 
 const lightEditorTheme = EditorView.theme({}, { dark: false })
