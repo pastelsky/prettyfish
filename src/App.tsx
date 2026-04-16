@@ -410,9 +410,14 @@ export default function App() {
           className={isMobile ? 'absolute left-0 right-0 bottom-0 z-30 rounded-t-2xl overflow-hidden' : 'absolute top-16 bottom-4 left-4 z-20'}
           style={isMobile
             ? {
-                height: mobileSidebarCollapsed ? '3.5rem' : '80dvh',
-                maxHeight: mobileSidebarCollapsed ? '3.5rem' : '80dvh',
-                transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1), max-height 0.3s cubic-bezier(0.4,0,0.2,1)',
+                // Fixed full height — animate transform instead of height to avoid
+                // layout recalc on every frame (height animation = layout thrash on mobile).
+                // translateY slides the sheet in/out entirely on the compositor thread.
+                height: '80dvh',
+                maxHeight: '80dvh',
+                transform: mobileSidebarCollapsed ? 'translateY(calc(80dvh - 3.5rem))' : 'translateY(0)',
+                transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
+                willChange: 'transform',
               }
             : { width: sidebarWidth ? `${sidebarWidth}px` : 'clamp(320px, 34vw, 480px)' }}
         >
