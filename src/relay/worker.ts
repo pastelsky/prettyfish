@@ -227,30 +227,41 @@ export async function handleRelayRequest(request: Request, env: RelayWorkerEnv):
   const mcpMatch = url.pathname.match(/^\/mcp\/([^/]+)$/)
   if (mcpMatch) {
     const [, sessionId] = mcpMatch
-    const stub = getSessionStub(env, sessionId)
+    // MCP Streamable HTTP requires Origin validation when the header is present.
+    // CLI clients generally omit Origin, while browser callers must be allow-listed.
+    if (requestOrigin && !isPublicOriginAllowed(requestOrigin)) {
+      return jsonResponse({ error: 'Origin not allowed' }, 403, corsHeaders(requestOrigin))
+    }
+
+    // Pretty Fish is a request/response MCP server and never emits unsolicited
+    // server messages. Advertising a standalone SSE stream makes clients reconnect
+    // whenever that empty stream closes, wasting Worker and Durable Object requests.
+    if (request.method === 'GET' || request.method === 'DELETE') {
+      return new Response(null, {
+        status: 405,
+        headers: {
+          allow: 'POST',
+          ...corsHeaders(requestOrigin),
+        },
+      })
+    }
 
     if (request.method === 'POST') {
+      const stub = getSessionStub(env, sessionId)
       const body = await request.text()
       const accept = request.headers.get('accept') || ''
+      const protocolVersion = request.headers.get('mcp-protocol-version')
+      const headers = new Headers({
+        'content-type': 'application/json',
+        accept,
+      })
+      if (protocolVersion) headers.set('mcp-protocol-version', protocolVersion)
+
       return stub.fetch('https://relay.internal/mcp', {
         method: 'POST',
-        headers: {
-          'content-type': 'application/json',
-          'accept': accept,
-        },
+        headers,
         body,
       })
-    }
-
-    if (request.method === 'GET') {
-      return stub.fetch('https://relay.internal/mcp/sse', {
-        method: 'GET',
-        headers: { accept: 'text/event-stream' },
-      })
-    }
-
-    if (request.method === 'DELETE') {
-      return jsonResponse({ ok: true })
     }
 
     return jsonResponse({ error: 'Method not allowed' }, 405)
@@ -532,7 +543,7 @@ export class RelaySessionDurableObject {
       return response 
     }
 
-    if (url.pathname === '/mcp' || url.pathname === '/mcp/sse') {
+    if (url.pathname === '/mcp') {
       const session = await this.ensureSessionLoaded()
       if (!session) return jsonResponse({ error: 'Relay session not initialized' }, 404)
 
@@ -545,10 +556,7 @@ export class RelaySessionDurableObject {
         enableJsonResponse: true,
       }) 
       await mcpServer.connect(transport)
-      const mcpRequest = url.pathname === '/mcp/sse'
-        ? new Request(request.url.replace('/mcp/sse', '/mcp'), { method: 'GET', headers: request.headers })
-        : request
-      const response = await transport.handleRequest(mcpRequest)
+      const response = await transport.handleRequest(request)
       await transport.close()
       return response
     }

@@ -155,6 +155,19 @@ test.describe('Relay API — MCP endpoint', () => {
     expect(text).toBe('') // empty body
   })
 
+  test('MCP endpoint declines an unused standalone SSE stream', async () => {
+    const res = await fetch(mcpUrl, {
+      method: 'GET',
+      headers: {
+        'Accept': 'text/event-stream',
+        'Origin': 'http://localhost:4175',
+      },
+    })
+
+    expect(res.status).toBe(405)
+    expect(res.headers.get('allow')).toBe('POST')
+  })
+
   test('MCP tools/list returns available tools', async () => {
     const res = await fetch(mcpUrl, {
       method: 'POST',
