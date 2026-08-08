@@ -173,6 +173,15 @@ const sharedValueProps = [
   'Shareable URLs for reviews and async collaboration',
 ]
 
+const ADDITIONAL_GUIDES = [
+  {
+    slug: 'mermaid-live-editor-alternative',
+    heading: 'Mermaid Live Editor Alternative: A Multi-Diagram Workspace',
+    label: 'Mermaid Live Editor alternative',
+    intent: 'Compare a focused Mermaid workspace with a single-diagram sandbox, then choose the workflow that fits the job.',
+  },
+]
+
 const guideFaqs = {
   starter: (label) => `How do I start a Mermaid ${label.toLowerCase()} in Pretty Fish?`,
   starterAnswer: (label) => `Open one of the starter examples on this page, edit the Mermaid source, and keep iterating until the diagram is ready to export or share.`,
@@ -498,7 +507,7 @@ function buildIndexHtml(guideLinks) {
       <p>${escapeHtml(guide.intent)}</p>
       <div class="guide-card__meta">${escapeHtml(guide.label)}</div>
     </article>
-  `).join('')
+  `).join('').trimEnd()
 
   return `<!doctype html>
 <html lang="en">
@@ -539,6 +548,64 @@ function buildIndexHtml(guideLinks) {
 </html>`
 }
 
+function buildMermaidLiveEditorAlternativeHtml(guideLinks) {
+  const pageUrl = `${BASE_URL}/guides/mermaid-live-editor-alternative/`
+  const title = 'Mermaid Live Editor Alternative: A Multi-Diagram Workspace | Pretty Fish'
+  const description = 'Looking for a Mermaid Live Editor alternative? Compare a focused multi-diagram Mermaid workspace with a single-diagram sandbox, then try Pretty Fish without an account.'
+  const relatedLinks = guideLinks
+    .slice(0, 6)
+    .map((guide) => `<li><a href="/guides/${guide.slug}/">${escapeHtml(guide.label)}</a></li>`)
+    .join('')
+  const structuredData = {
+    '@context': 'https://schema.org', '@type': 'TechArticle',
+    headline: 'Mermaid Live Editor Alternative: A Multi-Diagram Workspace', description,
+    author: { '@type': 'Organization', name: 'Pretty Fish' },
+    publisher: { '@type': 'Organization', name: 'Pretty Fish' }, mainEntityOfPage: pageUrl,
+    about: { '@type': 'SoftwareApplication', name: 'Pretty Fish', applicationCategory: 'DeveloperApplication', operatingSystem: 'Any', url: BASE_URL },
+  }
+
+  return `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>${escapeHtml(title)}</title>
+    <meta name="description" content="${escapeHtml(description)}" />
+    <meta name="robots" content="index,follow,max-snippet:-1,max-image-preview:large,max-video-preview:-1" />
+    <link rel="canonical" href="${pageUrl}" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="${escapeHtml(title)}" />
+    <meta property="og:description" content="${escapeHtml(description)}" />
+    <meta property="og:url" content="${pageUrl}" />
+    <meta property="og:image" content="${BASE_URL}/og-image.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="${escapeHtml(title)}" />
+    <meta name="twitter:description" content="${escapeHtml(description)}" />
+    <meta name="twitter:image" content="${BASE_URL}/og-image.png" />
+    <link rel="stylesheet" href="/seo-guides.css" />
+    <script type="application/ld+json">${JSON.stringify(structuredData)}</script>
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div class="hero__eyebrow">Pretty Fish Mermaid Guides</div>
+        <h1>Mermaid Live Editor alternative: work across a whole diagram set</h1>
+        <p>Use the right tool for the job. A single-diagram sandbox is excellent for trying a snippet. Pretty Fish is for the next step: iterating on several Mermaid diagrams, polishing their appearance, and exporting something ready for a document or review.</p>
+        <div class="hero__actions"><a class="button button--primary" href="/">Open Pretty Fish</a><a class="button" href="/guides/">Browse Mermaid guides</a></div>
+      </header>
+      <main class="content-grid">
+        <section class="panel panel--full"><h2>When a Mermaid workspace is the better fit</h2><p>Choose a focused editor when the diagram is part of a larger piece of work: an architecture review, a design document, a database discussion, or an incident write-up. Keeping related diagrams on one canvas reduces the friction of jumping between separate snippets and makes it easier to keep visual treatment consistent.</p><ul><li>You need more than one diagram for the same project or document.</li><li>You want to try visual themes before exporting an SVG or PNG.</li><li>You want Mermaid source to stay editable while you refine the presentation.</li><li>You need a shareable link for a teammate to open without creating an account.</li></ul></section>
+        <section class="panel"><h2>What to keep from a sandbox workflow</h2><p>Mermaid works best when the source remains the source of truth. Start with a small valid example, make one change at a time, and keep the code next to the rendered result. Pretty Fish follows that same loop rather than replacing Mermaid with a proprietary diagram format.</p></section>
+        <section class="panel"><h2>What Pretty Fish adds</h2><ul><li>Multiple diagrams on a single canvas and multiple pages in one workspace.</li><li>Theme choices and configuration controls for a more presentation-ready output.</li><li>SVG and PNG export alongside the original Mermaid source.</li><li>Reference material, templates, and live rendering in the same browser tab.</li></ul></section>
+        <section class="panel panel--full"><h2>A practical migration path</h2><ol><li>Copy an existing Mermaid block into Pretty Fish.</li><li>Check the rendered result and correct syntax while the source is visible.</li><li>Add the companion sequence, ER, or architecture diagram on the same page.</li><li>Choose a theme that matches the document or presentation where the diagram will appear.</li><li>Export the final diagram while retaining the Mermaid code for future edits.</li></ol></section>
+        <section class="panel"><h2>Try a relevant starter</h2><p>Start with the diagram type closest to the task, then adapt the working syntax rather than beginning from a blank editor.</p><ul>${relatedLinks}</ul></section>
+        <section class="panel"><h2>Questions this page answers</h2><div class="faq-list"><details class="faq-item"><summary>Is Pretty Fish compatible with Mermaid?</summary><p>Yes. Pretty Fish keeps Mermaid source editable and renders it live in the browser.</p></details><details class="faq-item"><summary>Can I use Pretty Fish without an account?</summary><p>Yes. Open the editor, paste Mermaid code, and work directly in the browser.</p></details><details class="faq-item"><summary>Can I move from a single diagram to a larger workspace?</summary><p>Yes. Add related diagrams to the canvas, organize them into pages, and preserve the source for each one.</p></details></div></section>
+      </main>
+    </div>
+  </body>
+</html>`
+}
+
 function buildSitemapXml(guideLinks) {
   const pages = [
     { url: `${BASE_URL}/`, priority: '1.0', changefreq: 'weekly' },
@@ -572,6 +639,7 @@ async function main() {
       diagramId,
     }
   })
+  const allGuideLinks = [...guideLinks, ...ADDITIONAL_GUIDES]
 
   await mkdir(guidesDir, { recursive: true })
   await mkdir(screenshotsDir, { recursive: true })
@@ -595,8 +663,12 @@ async function main() {
     await writeFile(path.join(pageDir, 'index.html'), html, 'utf8')
   }
 
-  await writeFile(path.join(guidesDir, 'index.html'), buildIndexHtml(guideLinks), 'utf8')
-  await writeFile(path.join(publicDir, 'sitemap.xml'), buildSitemapXml(guideLinks), 'utf8')
+  const alternativeDir = path.join(guidesDir, 'mermaid-live-editor-alternative')
+  await mkdir(alternativeDir, { recursive: true })
+  await writeFile(path.join(alternativeDir, 'index.html'), buildMermaidLiveEditorAlternativeHtml(guideLinks), 'utf8')
+
+  await writeFile(path.join(guidesDir, 'index.html'), buildIndexHtml(allGuideLinks), 'utf8')
+  await writeFile(path.join(publicDir, 'sitemap.xml'), buildSitemapXml(allGuideLinks), 'utf8')
 }
 
 await main()
