@@ -124,4 +124,17 @@ test.describe('Advanced flows', () => {
     expect(after.zoom).toBeCloseTo(before.zoom, 5)
     expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeGreaterThan(0)
   })
+
+  test('can zoom past 2.5× for dense diagrams', async ({ page }) => {
+    const app = createApp(page)
+    await app.createFlowchartDiagram()
+
+    const zoomIn = page.locator('.react-flow__controls-zoomin')
+    await expect(zoomIn).toBeVisible()
+    for (let index = 0; index < 8; index += 1) {
+      await zoomIn.click()
+    }
+
+    expect((await app.canvas.getViewportTransform()).zoom).toBeGreaterThan(2.5)
+  })
 })

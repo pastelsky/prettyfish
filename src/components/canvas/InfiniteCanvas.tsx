@@ -394,7 +394,10 @@ function InnerCanvas({
         onPaneClick={handlePaneClick}
         onPaneContextMenu={handlePaneContextMenu}
         minZoom={0.1}
-        maxZoom={2.5}
+        // Dense ER and class diagrams are scaled down to fit their card. Allow
+        // enough canvas zoom to bring their text back to (and beyond) its
+        // authored SVG size instead of making the largest diagrams unreadable.
+        maxZoom={5}
         snapToGrid
         snapGrid={[20, 20]}
         panOnScroll
