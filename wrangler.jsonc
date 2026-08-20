@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "prettyfish",
+  "name": "prettyfish-relay",
   "main": "src/worker.ts",
   "compatibility_date": "2026-04-12",
   "observability": {
